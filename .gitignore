@@ -26,3 +26,9 @@ Thumbs.db
 
 # Cache folder we'll create at runtime
 .cache/
+
+# Python init files
+backend/__init__.py
+backend/services/__init__.py
+backend/models/__init__.py
+backend/utils/__init__.py
