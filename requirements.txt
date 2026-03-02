@@ -16,5 +16,14 @@ google-generativeai==0.7.2
 # Frontend
 streamlit==1.38.0
 
+# Task Queue (Celery worker)
+celery==5.4.0
+redis==5.0.8
+
+# Database
+sqlalchemy==2.0.30
+asyncpg==0.30.0          # 0.29.0 doesn't support Python 3.13
+alembic==1.13.1
+
 # Utilities
 tenacity==8.3.0
