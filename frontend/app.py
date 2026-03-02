@@ -270,7 +270,6 @@ def fetch_competitor_history(name: str) -> list:
 
 def main():
 
-    # ── Header ────────────────────────────────────────────────────────────
     st.markdown(
         '<div class="main-title">🔍 Competitor Intelligence Monitor</div>',
         unsafe_allow_html=True
@@ -281,7 +280,6 @@ def main():
         unsafe_allow_html=True
     )
 
-    # ── API health check banner ───────────────────────────────────────────
     if not check_api_health():
         st.error(
             "⚠️ Cannot reach the backend API at localhost:8000. "
@@ -291,7 +289,6 @@ def main():
     else:
         st.success("✅ Backend API connected — all systems operational")
 
-    # ── Tabs: Run Intelligence | History ─────────────────────────────────
     tab1, tab2 = st.tabs(["⚡ Run Intelligence", "📊 Run History"])
 
     with tab1:
@@ -299,6 +296,22 @@ def main():
 
     with tab2:
         history_tab()
+
+    # ── Render report ONCE below tabs — only when loaded from History ──────
+    # run_intelligence_tab() handles its own report rendering inline.
+    # This block only fires when a report was loaded from the History tab
+    # (flagged by the "loaded_from_history" key in session state).
+    if (
+        "report" in st.session_state
+        and st.session_state.get("loaded_from_history", False)
+    ):
+        st.markdown("---")
+        st.markdown(
+            '<div class="section-header">📊 Loaded Report</div>',
+            unsafe_allow_html=True
+        )
+        run_id = st.session_state.get("run_id", "unknown")
+        render_report(st.session_state["report"], report_key=run_id)
 
 
 def run_intelligence_tab():
@@ -433,10 +446,20 @@ def run_intelligence_tab():
             if report:
                 st.session_state["report"] = report
                 st.session_state["run_id"] = run_id
+                # This came from a fresh run, NOT from history
+                st.session_state["loaded_from_history"] = False
 
-    # ── Render report if available ────────────────────────────────────────
-    if "report" in st.session_state:
-        render_report(st.session_state["report"])
+    # ── Render inline for fresh runs only ────────────────────────────────
+    if (
+        "report" in st.session_state
+        and not st.session_state.get("loaded_from_history", False)
+    ):
+        render_report(
+            st.session_state["report"],
+            report_key=st.session_state.get("run_id", "fresh")
+        )
+
+   
 
 
 def history_tab():
@@ -447,10 +470,16 @@ def history_tab():
         unsafe_allow_html=True
     )
 
+    # Refresh button so user can update the list without reloading
+    if st.button("🔄 Refresh", key="refresh_runs"):
+        st.rerun()
+
     runs = fetch_recent_runs()
 
     if not runs:
-        st.info("No runs yet. Go to Run Intelligence and analyze some competitors.")
+        st.info(
+            "No runs yet. Go to Run Intelligence and analyze some competitors."
+        )
         return
 
     for run in runs:
@@ -459,11 +488,15 @@ def history_tab():
             "failed":    "❌",
             "scraping":  "🌐",
             "analyzing": "🧠",
+            "comparing": "⚡",
             "queued":    "⏳",
         }.get(run["status"], "⏳")
 
         competitors_str = ", ".join(run["competitors"])
-        duration = f"{run['duration_seconds']}s" if run["duration_seconds"] else "—"
+        duration = (
+            f"{run['duration_seconds']}s"
+            if run["duration_seconds"] else "—"
+        )
 
         st.markdown(
             f'<div class="history-card">'
@@ -471,22 +504,24 @@ def history_tab():
             f'Status: {run["status"]} &nbsp;|&nbsp; '
             f'Pages: {run["pages_fetched"] or 0} &nbsp;|&nbsp; '
             f'Duration: {duration} &nbsp;|&nbsp; '
-            f'<span style="color:#6B7280;font-size:0.85rem;">{run["created_at"][:19] if run["created_at"] else ""}</span>'
+            f'<span style="color:#6B7280;font-size:0.85rem;">'
+            f'{run["created_at"][:19] if run["created_at"] else ""}'
+            f'</span>'
             f'</div>',
             unsafe_allow_html=True
         )
 
-        # Load report button for completed runs
         if run["status"] == "completed":
-            if st.button(
-                f"Load Report", key=f"load_{run['run_id']}"
-            ):
-                with st.spinner("Loading..."):
+            if st.button("📊 Load Report", key=f"load_{run['run_id']}"):
+                with st.spinner("Loading report..."):
                     report = fetch_report(run["run_id"])
                 if report:
                     st.session_state["report"] = report
                     st.session_state["run_id"] = run["run_id"]
-                    st.success("Report loaded. Switch to Run Intelligence tab to view.")
+                    # Flag that this came from history
+                    # so main() knows to render it below the tabs
+                    st.session_state["loaded_from_history"] = True
+                    st.rerun()
 
     # ── Competitor momentum history ───────────────────────────────────────
     st.markdown("---")
@@ -528,7 +563,7 @@ def history_tab():
 
 # ── Report rendering (same as before) ────────────────────────────────────────
 
-def render_report(report: dict):
+def render_report(report: dict ,report_key: str = "default"):
     st.markdown("---")
 
     competitors = report.get("competitors", [])
@@ -609,8 +644,9 @@ def render_report(report: dict):
     st.download_button(
         label="⬇️ Download as Markdown",
         data=markdown_report,
-        file_name=f"intel_report.md",
-        mime="text/markdown"
+        file_name=f"intel_report_{report_key}.md",
+        mime="text/markdown",
+        key=f"download_{report_key}"   # ← unique key fixes DuplicateWidgetID
     )
 
 
