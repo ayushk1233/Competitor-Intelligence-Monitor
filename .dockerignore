@@ -1,0 +1,13 @@
+.env
+
+# No need to copy these
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+*.md
+.DS_Store
+
+# Not needed inside container
+frontend/

@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     jina_api_key: str = ""
     serper_api_key: str = ""
 
+    # Infrastructure (set in docker-compose, default to local dev values)
+    database_url: str = "postgresql+asyncpg://cim_user:cim_password@localhost:5432/competitor_intel"
+    redis_url: str = "redis://localhost:6379/0"
+
     # App behaviour
     max_pages_per_competitor: int = 4
     request_timeout_seconds: int = 15
