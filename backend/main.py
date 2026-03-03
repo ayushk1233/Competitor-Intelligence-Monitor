@@ -13,12 +13,20 @@ from backend.database.models import (
 from backend.models.schemas import (
     CompetitorAnalysis, ComparisonResult
 )
+from prometheus_fastapi_instrumentator import Instrumentator
+from backend.metrics import pipeline_runs_total, active_pipeline_runs
 
 app = FastAPI(
     title="Competitor Intelligence Monitor",
     description="Strategic intelligence extraction powered by Gemini.",
     version="2.3.0"
 )
+
+# ── Prometheus instrumentation ────────────────────────────────────────────────
+# Auto-instruments all HTTP endpoints with request count and latency metrics
+# Exposes them at GET /metrics — this is what Prometheus scrapes
+Instrumentator().instrument(app).expose(app)
+
 
 app.add_middleware(
     CORSMiddleware,
