@@ -1,4 +1,12 @@
 from prometheus_client import Counter, Histogram, Gauge
+import os
+from prometheus_client import CollectorRegistry, multiprocess
+
+if "PROMETHEUS_MULTIPROC_DIR" in os.environ:
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+else:
+    registry = None
 
 # ── Pipeline metrics ──────────────────────────────────────────────────────────
 

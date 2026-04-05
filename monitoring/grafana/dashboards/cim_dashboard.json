@@ -10,24 +10,22 @@
   "panels": [
     {
       "id": 1,
-      "title": "Pipeline Duration (p95) — seconds",
+      "title": "Pipeline Duration (p95/p50) — seconds",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(pipeline_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum(rate(pipeline_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "p95 latency",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.50, rate(pipeline_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, sum(rate(pipeline_duration_seconds_bucket[5m])) by (le))",
           "legendFormat": "p50 latency",
           "refId": "B"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" }
-      }
+      "fieldConfig": { "defaults": { "unit": "s" } }
     },
     {
       "id": 2,
@@ -36,30 +34,26 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(gemini_api_call_duration_seconds_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, sum(rate(gemini_api_call_duration_seconds_bucket[5m])) by (le, call_type))",
           "legendFormat": "{{ call_type }}",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" }
-      }
+      "fieldConfig": { "defaults": { "unit": "s" } }
     },
     {
       "id": 3,
-      "title": "Gemini Tokens Used — per minute",
+      "title": "LLM Token Throughput",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "rate(gemini_tokens_used_total[1m]) * 60",
-          "legendFormat": "{{ call_type }}",
+          "expr": "sum(rate(gemini_tokens_used_total[1m]))",
+          "legendFormat": "tokens/sec",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "short" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short" } }
     },
     {
       "id": 4,
@@ -68,19 +62,17 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "targets": [
         {
-          "expr": "rate(scrape_success_total[5m])",
+          "expr": "sum(rate(scrape_success_total[1m]))",
           "legendFormat": "Success",
           "refId": "A"
         },
         {
-          "expr": "rate(scrape_failure_total[5m])",
+          "expr": "sum(rate(scrape_failure_total[1m]))",
           "legendFormat": "Failure",
           "refId": "B"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" }
-      }
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
     },
     {
       "id": 5,
@@ -94,9 +86,7 @@
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "short" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short" } }
     },
     {
       "id": 6,
@@ -105,7 +95,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 16 },
       "targets": [
         {
-          "expr": "active_pipeline_runs",
+          "expr": "sum(active_pipeline_runs)",
           "legendFormat": "Active",
           "refId": "A"
         }
@@ -130,7 +120,7 @@
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 16 },
       "targets": [
         {
-          "expr": "increase(pipelines_total{status='completed'}[24h])",
+          "expr": "increase(pipelines_total{status=\"completed\"}[24h])",
           "legendFormat": "Completed",
           "refId": "A"
         }
@@ -149,14 +139,52 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
       "targets": [
         {
-          "expr": "rate(gemini_errors_total[1m]) * 60",
-          "legendFormat": "{{ error_type }}",
+          "expr": "sum(rate(gemini_errors_total[1m]))",
+          "legendFormat": "errors",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": { "unit": "short" }
-      }
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 9,
+      "title": "Pipeline Throughput (per second)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(pipelines_total[1m])",
+          "legendFormat": "pipelines/sec",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Avg Pipeline Duration",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "sum(rate(pipeline_duration_seconds_sum[5m])) / sum(rate(pipeline_duration_seconds_count[5m]))",
+          "legendFormat": "avg duration",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 11,
+      "title": "Pipeline Stage Time Distribution",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 30 },
+      "targets": [
+        {
+          "expr": "sum(rate(pipeline_stage_duration_seconds_sum[5m])) by (stage)",
+          "legendFormat": "{{ stage }}",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "refresh": "10s",
@@ -165,5 +193,5 @@
   "time": { "from": "now-1h", "to": "now" },
   "title": "Competitor Intelligence Monitor — LLMOps Dashboard",
   "uid": "cim-llmops-v1",
-  "version": 1
+  "version": 2
 }

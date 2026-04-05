@@ -44,6 +44,7 @@ services:
       - SERPER_API_KEY=${SERPER_API_KEY}
       - DATABASE_URL=postgresql+asyncpg://cim_user:cim_password@postgres:5432/competitor_intel
       - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,6 +52,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
+      - prometheus_multiproc:/tmp/prometheus
     restart: unless-stopped
 
   # ── Celery Worker ─────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ services:
       - JINA_API_KEY=${JINA_API_KEY}
       - DATABASE_URL=postgresql+asyncpg://cim_user:cim_password@postgres:5432/competitor_intel
       - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,6 +74,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
+      - prometheus_multiproc:/tmp/prometheus
     restart: unless-stopped
 
   # ── Prometheus ────────────────────────────────────────────────────────
@@ -114,3 +118,4 @@ volumes:
   postgres_data:
   prometheus_data:
   grafana_data:
+  prometheus_multiproc:

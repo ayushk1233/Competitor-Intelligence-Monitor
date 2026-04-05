@@ -1,6 +1,8 @@
 # ✅ FIX 1: single clean import block — no duplicates
 import time
-from fastapi import FastAPI, HTTPException, Depends
+import os, glob 
+import shutil
+from fastapi import FastAPI, HTTPException, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -31,15 +33,31 @@ app.add_middleware(
 # ── Prometheus instrumentation ────────────────────────────────────────────────
 # Auto-instruments all HTTP endpoints with request count and latency metrics
 # Exposes them at GET /metrics — this is what Prometheus scrapes
-Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app)
 
+@app.get("/metrics")
+def metrics():
+    from backend.metrics import registry
+    return Response(generate_latest(registry), media_type=CONTENT_TYPE_LATEST)
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
+    PROM_DIR = "/tmp/prometheus"
+
+    # ✅ Clean multiprocess metric files (NOT the directory)
+    if os.path.exists(PROM_DIR):
+        for f in glob.glob(f"{PROM_DIR}/*"):
+            try:
+                os.remove(f)
+            except IsADirectoryError:
+                pass
+    else:
+        os.makedirs(PROM_DIR, exist_ok=True)
+
+    # Existing startup logic
     await create_tables()
-    print("[startup] Database tables ready")
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
@@ -50,6 +68,8 @@ async def health():
         "service": "competitor-intelligence-monitor",
         "version": "2.3.0"
     }
+
+
 
 
 @app.get("/metrics-raw")
