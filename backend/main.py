@@ -1,20 +1,20 @@
+# ✅ FIX 1: single clean import block — no duplicates
 import time
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from starlette.responses import Response
+
+from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 from backend.models.schemas import AnalysisRequest, IntelligenceReport
 from backend.database.connection import get_db, create_tables
 from backend.database.db_service import DatabaseService
-from backend.database.models import (
-    Run, CompetitorAnalysisRecord, ComparisonRecord
-)
-from backend.models.schemas import (
-    CompetitorAnalysis, ComparisonResult
-)
-from prometheus_fastapi_instrumentator import Instrumentator
-from backend.metrics import pipeline_runs_total, active_pipeline_runs
+from backend.database.models import Run, CompetitorAnalysisRecord, ComparisonRecord
+from backend.models.schemas import CompetitorAnalysis, ComparisonResult
+from backend.metrics import active_pipeline_runs
 
 app = FastAPI(
     title="Competitor Intelligence Monitor",
@@ -22,18 +22,17 @@ app = FastAPI(
     version="2.3.0"
 )
 
-# ── Prometheus instrumentation ────────────────────────────────────────────────
-# Auto-instruments all HTTP endpoints with request count and latency metrics
-# Exposes them at GET /metrics — this is what Prometheus scrapes
-Instrumentator().instrument(app).expose(app)
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# ── Prometheus instrumentation ────────────────────────────────────────────────
+# Auto-instruments all HTTP endpoints with request count and latency metrics
+# Exposes them at GET /metrics — this is what Prometheus scrapes
+Instrumentator().instrument(app).expose(app)
+
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────
@@ -51,6 +50,21 @@ async def health():
         "service": "competitor-intelligence-monitor",
         "version": "2.3.0"
     }
+
+
+@app.get("/metrics-raw")
+async def metrics_raw():
+    """
+    Raw Prometheus metrics endpoint.
+    Prometheus scrapes this every 15 seconds.
+    The Instrumentator already adds /metrics — this is a backup
+    for custom metrics that need raw exposition format.
+    """
+    return Response(
+        generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
+
 
 
 # ── POST /api/analyze — returns instantly with run_id ─────────────────────────
@@ -81,7 +95,9 @@ async def analyze(
     run_id = await db_service.create_run(request.competitors)
     await db.commit()
 
-    # Enqueue the background task — returns immediately
+    
+    # Track active runs
+    active_pipeline_runs.inc()
     run_analysis_task.delay(run_id, request.competitors)
 
     print(f"[api] Enqueued run {run_id} for {request.competitors}")

@@ -1,17 +1,16 @@
 global:
-  scrape_interval: 15s      # Collect metrics every 15 seconds
-  evaluation_interval: 15s  # Evaluate alert rules every 15 seconds
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
 
 scrape_configs:
-
-  # Scrape Prometheus itself — always good to monitor the monitor
-  - job_name: "prometheus"
-    static_configs:
-      - targets: ["localhost:9090"]
-
-  # Scrape our FastAPI backend
-  # 'backend' is the Docker service name — resolves to the container IP
   - job_name: "competitor_intel_backend"
     static_configs:
       - targets: ["backend:8000"]
-    metrics_path: "/metrics"   # Our FastAPI will expose metrics here
+    metrics_path: "/metrics"
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

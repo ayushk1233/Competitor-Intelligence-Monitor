@@ -8,12 +8,13 @@ from backend.services.comparison_service import ComparisonService
 from backend.database.db_service import DatabaseService
 from backend.config import get_settings
 
+
 from backend.metrics import (
-    pipeline_runs_total,
-    pipeline_stage_duration_seconds,
-    momentum_score_distribution,
+    pipeline_duration,
+    pipelines_total,
+    pages_fetched_per_run,
     active_pipeline_runs,
-    track_gemini_call
+    pipeline_stage_duration,
 )
 
 settings = get_settings()
@@ -72,7 +73,12 @@ def run_analysis_task(self, run_id: str, competitors: list[str]):
 
 async def _run_pipeline(run_id: str, competitors: list[str]):
     start_time = time.time()
-    active_pipeline_runs.inc()   # ← increment active counter
+
+    # ✅ FIX 2: correct metric names matching metrics.py exactly
+    # Import here to avoid any circular import issues at module load
+    from backend.metrics import gemini_momentum_score
+
+    active_pipeline_runs.inc()
 
     SessionLocal, engine = _make_session_factory()
 
@@ -89,7 +95,7 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                 await db.update_run_status(run_id, "scraping")
                 await session.commit()
 
-                stage_start = time.time()   # ← start timer
+                stage_start = time.time()
 
                 scrape_tasks = [
                     scraper.fetch_competitor(name) for name in competitors
@@ -98,10 +104,10 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                     *scrape_tasks, return_exceptions=True
                 )
 
-                # ← record scraping duration
-                pipeline_stage_duration_seconds.labels(
-                    stage="scraping"
-                ).observe(time.time() - stage_start)
+                # ✅ FIX 2a: correct name — pipeline_stage_duration not pipeline_stage_duration_seconds
+                pipeline_stage_duration.labels(stage="scraping").observe(
+                    time.time() - stage_start
+                )
 
                 valid_pages = []
                 for i, result in enumerate(all_pages):
@@ -122,47 +128,48 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                 await db.update_run_status(run_id, "analyzing")
                 await session.commit()
 
-                stage_start = time.time()   # ← start timer
+                stage_start = time.time()
 
                 analyses = []
                 for pages in valid_pages:
                     analysis = await analyzer.analyze_competitor(pages)
                     analyses.append(analysis)
 
-                    # ← record each momentum score
-                    momentum_score_distribution.observe(
-                        analysis.momentum_score or 0
-                    )
+                    # ✅ FIX 2b: correct name — gemini_momentum_score not momentum_score_distribution
+                    gemini_momentum_score.observe(analysis.momentum_score or 0)
 
                     print(
                         f"[task] ✓ {analysis.name} "
                         f"— momentum: {analysis.momentum_score}/10"
                     )
 
-                # ← record analysis stage duration
-                pipeline_stage_duration_seconds.labels(
-                    stage="analyzing"
-                ).observe(time.time() - stage_start)
+                pipeline_stage_duration.labels(stage="analyzing").observe(
+                    time.time() - stage_start
+                )
 
                 # ── Stage 3: Comparing ────────────────────────────────────
                 print(f"[task] Stage 3: Running comparison synthesis...")
                 await db.update_run_status(run_id, "comparing")
                 await session.commit()
 
-                stage_start = time.time()   # ← start timer
+                stage_start = time.time()
 
                 report = await comparator.generate_report(analyses, start_time)
 
-                # ← record comparison duration
-                pipeline_stage_duration_seconds.labels(
-                    stage="comparing"
-                ).observe(time.time() - stage_start)
+                pipeline_stage_duration.labels(stage="comparing").observe(
+                    time.time() - stage_start
+                )
 
                 await db.save_full_report(run_id, report)
                 await session.commit()
 
-                # ← record successful run
-                pipeline_runs_total.labels(status="completed").inc()
+                # ✅ FIX 2c: correct name — pipelines_total not pipeline_runs_total
+                total_pages = sum(len(p.pages) for p in valid_pages)
+                pages_fetched_per_run.observe(total_pages)
+                pipeline_duration.labels(status="completed").observe(
+                    time.time() - start_time
+                )
+                pipelines_total.labels(status="completed").inc()
 
                 print(
                     f"[task] ✅ Run {run_id} complete "
@@ -170,17 +177,19 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                 )
 
             except Exception:
-                # ← record failed run
-                pipeline_runs_total.labels(status="failed").inc()
+                # ✅ FIX 2d: correct name — pipelines_total not pipeline_runs_total
+                pipeline_duration.labels(status="failed").observe(
+                    time.time() - start_time
+                )
+                pipelines_total.labels(status="failed").inc()
                 raise
 
             finally:
                 await scraper.close()
-                active_pipeline_runs.dec()   # ← decrement active counter
+                active_pipeline_runs.dec()
 
     finally:
         await engine.dispose()
-
 
 async def _mark_failed(run_id: str, error: str):
     SessionLocal, engine = _make_session_factory()

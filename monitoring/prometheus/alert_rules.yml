@@ -1,0 +1,36 @@
+---
+groups:
+  - name: competitor_intel_alerts
+    rules:
+
+      - alert: GeminiHighErrorRate
+        expr: "rate(gemini_errors_total[5m]) > 0.2"
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Gemini API error rate above 20%"
+          description: "Error rate above threshold in last 5 minutes"
+
+      - alert: PipelineSlowResponse
+        expr: >-
+          histogram_quantile(0.95,
+          rate(pipeline_duration_seconds_bucket[10m])) > 180
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pipeline p95 duration exceeds 3 minutes"
+          description: "Pipeline is running slower than expected"
+
+      - alert: HighScrapeFailureRate
+        expr: >-
+          rate(scrape_failure_total[5m]) /
+          (rate(scrape_success_total[5m]) +
+          rate(scrape_failure_total[5m])) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 50% of scrape attempts failing"
+          description: "Scraper success rate dropped below 50%"

@@ -7,6 +7,13 @@ from backend.config import get_settings
 from backend.models.schemas import CompetitorAnalysis, CompetitorPages
 from backend.utils.chunker import merge_page_contents
 
+from backend.metrics import (
+    gemini_request_duration,
+    gemini_requests_total,
+    gemini_tokens_used,
+    gemini_errors_total,
+    gemini_momentum_score,
+)
 settings = get_settings()
 
 genai.configure(api_key=settings.gemini_api_key)
@@ -118,7 +125,7 @@ class AnalysisService:
         # Pause before each call to avoid per-minute quota bursting
         await asyncio.sleep(self.inter_call_delay)
 
-        raw_json = await self._call_gemini(prompt)
+        raw_json = await self._call_gemini_with_metrics(prompt, call_type="analysis")
 
         if not raw_json:
             return self._empty_analysis(
@@ -135,39 +142,77 @@ class AnalysisService:
         )
 
 
-    async def _call_gemini(self, prompt: str) -> str | None:
+    async def _call_gemini_with_metrics(
+        self,
+        prompt: str,
+        call_type: str = "analysis"
+    ) -> str:
         """
-        Send prompt to Gemini.
-        On 429, reads the retry_delay from the error and waits exactly that long.
-        Retries up to 3 times total.
+        Wraps every Gemini call with timing, success/error counters,
+        and token estimation.
         """
-        for attempt in range(3):
+        import time
+        model_name = settings.default_model
+
+        # Rough token estimation: 1 token ≈ 4 characters
+        estimated_tokens = len(prompt) // 4
+        gemini_tokens_used.labels(call_type=call_type).inc(estimated_tokens)
+
+        for attempt in range(1, 4):
+            start = time.time()
             try:
-                response = self.model.generate_content(
-                    prompt,
-                    generation_config=genai.GenerationConfig(
-                        temperature=0.2,
-                        max_output_tokens=2048,
-                    )
-                )
+                import google.generativeai as genai
+                genai.configure(api_key=settings.gemini_api_key)
+                model = genai.GenerativeModel(model_name)
+
+                response = model.generate_content(prompt)
+                duration = time.time() - start
+
+                # Record success metrics
+                gemini_request_duration.labels(
+                    call_type=call_type, model=model_name
+                ).observe(duration)
+                gemini_requests_total.labels(
+                    call_type=call_type, status="success"
+                ).inc()
+
                 return response.text
 
             except Exception as e:
+                duration = time.time() - start
                 error_str = str(e)
-                wait_seconds = self._parse_retry_delay(error_str)
 
-                print(
-                    f"  [analysis] Gemini attempt {attempt + 1} failed "
-                    f"(waiting {wait_seconds}s before retry): "
-                    f"{error_str[:120]}"
-                )
-
-                if attempt < 2:
-                    await asyncio.sleep(wait_seconds)
+                # Classify the error type for the metric label
+                if "429" in error_str or "quota" in error_str.lower():
+                    error_type = "rate_limit"
+                    gemini_requests_total.labels(
+                        call_type=call_type, status="retry"
+                    ).inc()
+                elif "timeout" in error_str.lower():
+                    error_type = "timeout"
+                elif "parse" in error_str.lower():
+                    error_type = "parse_error"
                 else:
-                    print(f"  [analysis] All retries exhausted.")
+                    error_type = "unknown"
 
-        return None
+                gemini_errors_total.labels(error_type=error_type).inc()
+                gemini_request_duration.labels(
+                    call_type=call_type, model=model_name
+                ).observe(duration)
+
+                if attempt == 3:
+                    gemini_requests_total.labels(
+                        call_type=call_type, status="error"
+                    ).inc()
+                    raise
+
+                # Parse retry delay from 429 response
+                retry_delay = self._parse_retry_delay(error_str)
+                print(
+                    f"  [analysis] Gemini attempt {attempt} failed "
+                    f"(waiting {retry_delay}s): {error_str[:80]}"
+                )
+                await asyncio.sleep(retry_delay)
 
     def _parse_retry_delay(self, error_str: str) -> float:
         """
@@ -194,24 +239,16 @@ class AnalysisService:
         page_types: list[str]
     ) -> CompetitorAnalysis:
         try:
-            # Strip markdown code fences if present
             cleaned = re.sub(r"```(?:json)?\s*", "", raw_text).strip()
             cleaned = cleaned.rstrip("```").strip()
-
-            # Fix unescaped backslashes Gemini sometimes produces
-            # Replace lone backslashes that aren't valid JSON escapes
-            cleaned = re.sub(
-                r'\\(?!["\\/bfnrtu])',
-                r'\\\\',
-                cleaned
-            )
-
-            # Fix unescaped newlines inside JSON string values
-            # (Gemini sometimes puts literal newlines mid-string)
+            cleaned = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', cleaned)
             cleaned = re.sub(r'(?<!\\)\n(?=[^"]*"(?:[^"]*"[^"]*")*[^"]*$)', ' ', cleaned)
 
             data = json.loads(cleaned)
             data["momentum_score"] = int(data.get("momentum_score", 5))
+
+            # ✅ OBSERVE #1 — happy path, primary parser succeeded
+            gemini_momentum_score.observe(data["momentum_score"])
 
             return CompetitorAnalysis(
                 name=name,
@@ -225,15 +262,17 @@ class AnalysisService:
             print(f"  [analysis] JSON parse failed for {name}: {e}")
             print(f"  [analysis] Raw response: {raw_text[:300]}")
 
-            # Last resort: try extracting JSON with a broader pattern
             try:
                 json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
                 if json_match:
                     fallback_cleaned = json_match.group(0)
-                    # Remove control characters
                     fallback_cleaned = re.sub(r'[\x00-\x1f\x7f](?<!["\n\t])', '', fallback_cleaned)
                     data = json.loads(fallback_cleaned)
                     data["momentum_score"] = int(data.get("momentum_score", 5))
+
+                    # ✅ OBSERVE #2 — fallback parser recovered the JSON
+                    gemini_momentum_score.observe(data["momentum_score"])
+
                     print(f"  [analysis] Recovered via fallback parser for {name}")
                     return CompetitorAnalysis(
                         name=name,
@@ -246,7 +285,6 @@ class AnalysisService:
                 print(f"  [analysis] Fallback parser also failed: {e2}")
 
             return self._empty_analysis(name, domain, f"Parse error: {e}")
-
     
 
     def _empty_analysis(

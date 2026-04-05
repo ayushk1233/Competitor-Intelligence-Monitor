@@ -7,6 +7,14 @@ from backend.config import get_settings
 from backend.models.schemas import PageData, CompetitorPages
 from backend.utils.cleaner import clean_html
 
+import time
+from backend.metrics import (
+    scrape_requests_total,
+    scrape_success_total,
+    scrape_failure_total,
+    scrape_duration,
+)
+
 settings = get_settings()
 
 # Pages we want to find per competitor, in priority order
@@ -47,15 +55,17 @@ class ScraperService:
 
         print(f"  [scraper] Starting {name} → {domain}")
 
-        # Always fetch homepage first
-        homepage_data = await self._fetch_page(f"https://{domain}", "homepage")
+        # ✅ FIX: pass domain as third argument so metrics can label by domain
+        homepage_data = await self._fetch_page(f"https://{domain}", "homepage", domain)
 
         # Discover and fetch sub-pages concurrently
         sub_urls = await self._discover_pages(domain, homepage_data.content)
         sub_tasks = [
-            self._fetch_page(url, page_type)
+            # ✅ FIX: pass domain here too
+            self._fetch_page(url, page_type, domain)
             for page_type, url in sub_urls.items()
         ]
+        
         sub_results = await asyncio.gather(*sub_tasks, return_exceptions=True)
 
         # Collect successful fetches
@@ -181,25 +191,91 @@ class ScraperService:
 
     
 
-    async def _fetch_page(self, url: str, page_type: str) -> PageData:
-        """
-        Fetch a single page. Try Jina AI reader first for clean markdown.
-        Fall back to raw HTML + BeautifulSoup cleaning.
-        """
-        # Try Jina AI reader first
-        content = await self._fetch_via_jina(url)
+    async def _fetch_page(
+        self, url: str, page_type: str, domain: str
+    ) -> PageData:
+        """Fetch a single page — tries Jina first, falls back to BS4."""
+        start = time.time()
 
-        # Fall back to raw fetch + clean
-        if not content:
-            content = await self._fetch_raw_and_clean(url)
+        # ── Try Jina AI Reader ────────────────────────────────────────────
+        scrape_requests_total.labels(
+            domain=domain, page_type=page_type, method="jina"
+        ).inc()
 
-        success = bool(content and len(content) > 100)
+        try:
+            jina_url = f"https://r.jina.ai/{url}"
+            response = await self.client.get(jina_url, timeout=15)
+            response.raise_for_status()
+            content = clean_html(response.text)
+
+            if content and len(content) > 100:
+                duration = time.time() - start
+                scrape_success_total.labels(
+                    domain=domain, page_type=page_type
+                ).inc()
+                scrape_duration.labels(page_type=page_type).observe(duration)
+
+                return PageData(
+                    url=url,
+                    page_type=page_type,
+                    content=content,
+                    fetch_success=True
+                )
+            raise ValueError("Jina returned empty content")
+
+        except Exception as e:
+            print(f"  [scraper] Jina failed for {url}: {e}")
+
+        # ── Fallback: BeautifulSoup ───────────────────────────────────────
+        scrape_requests_total.labels(
+            domain=domain, page_type=page_type, method="beautifulsoup"
+        ).inc()
+
+        try:
+            response = await self.client.get(url, timeout=15)
+            response.raise_for_status()
+            content = clean_html(response.text)
+            duration = time.time() - start
+
+            if content and len(content) > 100:
+                scrape_success_total.labels(
+                    domain=domain, page_type=page_type
+                ).inc()
+                scrape_duration.labels(page_type=page_type).observe(duration)
+
+                return PageData(
+                    url=url,
+                    page_type=page_type,
+                    content=content,
+                    fetch_success=True
+                )
+
+        except Exception as e:
+            duration = time.time() - start
+            error_str = str(e)
+
+            # Classify failure reason for the metric label
+            if "timeout" in error_str.lower():
+                reason = "timeout"
+            elif "ssl" in error_str.lower() or "certificate" in error_str.lower():
+                reason = "ssl"
+            elif "404" in error_str or "403" in error_str:
+                reason = "http_error"
+            else:
+                reason = "unknown"
+
+            scrape_failure_total.labels(
+                domain=domain, reason=reason
+            ).inc()
+            scrape_duration.labels(page_type=page_type).observe(duration)
+
+            print(f"  [scraper] Raw fetch failed for {url}: {e}")
 
         return PageData(
             url=url,
             page_type=page_type,
-            content=content or "",
-            fetch_success=success
+            content="",
+            fetch_success=False
         )
 
     async def _fetch_via_jina(self, url: str) -> str | None:

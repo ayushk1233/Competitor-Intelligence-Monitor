@@ -1,95 +1,96 @@
 from prometheus_client import Counter, Histogram, Gauge
-import time
 
 # ── Pipeline metrics ──────────────────────────────────────────────────────────
 
-# Counts total pipeline runs, labeled by status (completed/failed)
-pipeline_runs_total = Counter(
-    "cim_pipeline_runs_total",
-    "Total number of intelligence pipeline runs",
-    ["status"]  # label: completed or failed
+pipeline_duration = Histogram(
+    "pipeline_duration_seconds",
+    "Total time for a full intelligence pipeline run",
+    ["status"],          # completed | failed
+    buckets=[10, 20, 30, 45, 60, 90, 120, 180, 300]
 )
 
-# Measures how long each pipeline stage takes in seconds
-pipeline_stage_duration_seconds = Histogram(
-    "cim_pipeline_stage_duration_seconds",
-    "Duration of each pipeline stage in seconds",
-    ["stage"],  # label: scraping, analyzing, comparing
-    buckets=[5, 10, 20, 30, 60, 90, 120, 180]
+pipeline_stage_duration = Histogram(
+    "pipeline_stage_duration_seconds",
+    "Time spent in each pipeline stage",
+    ["stage"],           # scraping | analyzing | comparing
+    buckets=[5, 10, 15, 20, 30, 45, 60, 90]
+)
+
+pipelines_total = Counter(
+    "pipelines_total",
+    "Total number of pipeline runs",
+    ["status"]           # completed | failed
 )
 
 # ── Gemini API metrics ────────────────────────────────────────────────────────
 
-# Counts Gemini API calls, labeled by call type and status
-gemini_api_calls_total = Counter(
-    "cim_gemini_api_calls_total",
-    "Total number of Gemini API calls",
-    ["call_type", "status"]  # call_type: analysis/comparison, status: success/error/retry
+gemini_request_duration = Histogram(
+    "gemini_api_call_duration_seconds",
+    "Time taken for each Gemini API call",
+    ["call_type", "model"],   # call_type: analysis | comparison
+    buckets=[1, 2, 3, 5, 8, 10, 15, 20, 30]
 )
 
-# Measures Gemini response latency
-gemini_api_latency_seconds = Histogram(
-    "cim_gemini_api_latency_seconds",
-    "Gemini API call latency in seconds",
-    ["call_type"],
-    buckets=[1, 2, 5, 10, 15, 20, 30, 45, 60]
+gemini_requests_total = Counter(
+    "gemini_requests_total",
+    "Total Gemini API calls made",
+    ["call_type", "status"]   # status: success | error | retry
 )
 
-# ── Scraping metrics ──────────────────────────────────────────────────────────
-
-# Counts scrape attempts per domain
-scrape_attempts_total = Counter(
-    "cim_scrape_attempts_total",
-    "Total scrape attempts per domain",
-    ["domain", "status"]  # status: success/failed/jina_failed
+gemini_tokens_used = Counter(
+    "gemini_tokens_used_total",
+    "Estimated tokens sent to Gemini",
+    ["call_type"]
 )
 
-# ── Intelligence metrics ──────────────────────────────────────────────────────
+gemini_errors_total = Counter(
+    "gemini_errors_total",
+    "Total Gemini API errors",
+    ["error_type"]       # rate_limit | parse_error | timeout | unknown
+)
 
-# Tracks momentum score distribution — shows what scores Gemini typically gives
-momentum_score_distribution = Histogram(
-    "cim_momentum_score_distribution",
-    "Distribution of momentum scores across analyses",
+gemini_momentum_score = Histogram(
+    "momentum_score_distribution",
+    "Distribution of momentum scores returned by Gemini",
     buckets=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 )
 
-# Tracks how many competitors are currently being analyzed (active jobs)
-active_pipeline_runs = Gauge(
-    "cim_active_pipeline_runs",
-    "Number of pipeline runs currently in progress"
+# ── Scraper metrics ───────────────────────────────────────────────────────────
+
+scrape_requests_total = Counter(
+    "scrape_requests_total",
+    "Total scrape attempts",
+    ["domain", "page_type", "method"]  # method: jina | beautifulsoup
 )
 
+scrape_success_total = Counter(
+    "scrape_success_total",
+    "Successful page fetches",
+    ["domain", "page_type"]
+)
 
-# ── Helper context managers ───────────────────────────────────────────────────
+scrape_failure_total = Counter(
+    "scrape_failure_total",
+    "Failed page fetches",
+    ["domain", "reason"]    # reason: timeout | ssl | http_error | parse_error
+)
 
-class track_gemini_call:
-    """
-    Context manager that times a Gemini call and records metrics.
+scrape_duration = Histogram(
+    "scrape_duration_seconds",
+    "Time to fetch and clean a single page",
+    ["page_type"],
+    buckets=[0.5, 1, 2, 3, 5, 8, 10, 15]
+)
 
-    Usage:
-        with track_gemini_call("analysis"):
-            result = gemini.generate(...)
-    """
-    def __init__(self, call_type: str):
-        self.call_type = call_type
-        self.start_time = None
+pages_fetched_per_run = Histogram(
+    "pages_fetched_per_run",
+    "Number of pages fetched in a single pipeline run",
+    buckets=[1, 2, 3, 4, 5, 8, 10, 15, 20]
+)
 
-    def __enter__(self):
-        self.start_time = time.time()
-        return self
+# ── Active run gauge ──────────────────────────────────────────────────────────
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        duration = time.time() - self.start_time
-        status = "error" if exc_type else "success"
-
-        gemini_api_calls_total.labels(
-            call_type=self.call_type,
-            status=status
-        ).inc()
-
-        gemini_api_latency_seconds.labels(
-            call_type=self.call_type
-        ).observe(duration)
-
-        # Don't suppress the exception
-        return False
+active_pipeline_runs = Gauge(
+    "active_pipeline_runs",
+    "Number of pipeline runs currently in progress"
+)
