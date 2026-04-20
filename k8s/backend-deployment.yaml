@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cim-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cim-backend
+  template:
+    metadata:
+      labels:
+        app: cim-backend
+    spec:
+      containers:
+        - name: backend
+          image: ayushk1503/cim-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://postgres:password@postgres:5432/competitor_intel
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cim-secrets
+                  key: openrouter-api-key
