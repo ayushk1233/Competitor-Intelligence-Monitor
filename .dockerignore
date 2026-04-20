@@ -11,3 +11,6 @@ __pycache__/
 
 # Not needed inside container
 frontend/
+monitoring/
+frontend/
+k8s/
