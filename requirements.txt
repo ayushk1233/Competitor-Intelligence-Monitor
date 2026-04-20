@@ -13,24 +13,17 @@ lxml==5.2.2
 # Gemini API
 google-generativeai==0.7.2
 
-# Frontend
-streamlit==1.38.0
-
-# Task Queue (Celery worker)
+# Task Queue
 celery==5.4.0
 redis==5.0.8
 
 # Database
 sqlalchemy==2.0.30
-asyncpg==0.30.0          # 0.29.0 doesn't support Python 3.13
-alembic==1.13.1
+asyncpg==0.30.0
 
 # Utilities
 tenacity==8.3.0
 
-requests==2.31.0
-
-
+# Monitoring
 prometheus-fastapi-instrumentator==6.1.0
 prometheus-client==0.20.0
-
