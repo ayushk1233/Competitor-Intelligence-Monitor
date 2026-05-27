@@ -76,7 +76,7 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
 
     # ✅ FIX 2: correct metric names matching metrics.py exactly
     # Import here to avoid any circular import issues at module load
-    from backend.metrics import gemini_momentum_score
+    from backend.metrics import llm_momentum_score
 
     active_pipeline_runs.inc()
 
@@ -135,8 +135,8 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                     analysis = await analyzer.analyze_competitor(pages)
                     analyses.append(analysis)
 
-                    # ✅ FIX 2b: correct name — gemini_momentum_score not momentum_score_distribution
-                    gemini_momentum_score.observe(analysis.momentum_score or 0)
+                    # ✅ FIX 2b: correct name — llm_momentum_score not momentum_score_distribution
+                    llm_momentum_score.observe(analysis.momentum_score or 0)
 
                     print(
                         f"[task] ✓ {analysis.name} "

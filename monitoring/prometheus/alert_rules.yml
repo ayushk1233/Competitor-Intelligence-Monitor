@@ -3,13 +3,13 @@ groups:
   - name: competitor_intel_alerts
     rules:
 
-      - alert: GeminiHighErrorRate
-        expr: "rate(gemini_errors_total[5m]) > 0.2"
+      - alert: LLMHighErrorRate
+        expr: "rate(llm_errors_total[5m]) > 0.2"
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "Gemini API error rate above 20%"
+          summary: "LLM API error rate above 20%"
           description: "Error rate above threshold in last 5 minutes"
 
       - alert: PipelineSlowResponse

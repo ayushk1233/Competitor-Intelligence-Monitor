@@ -30,38 +30,39 @@ pipelines_total = Counter(
     ["status"]           # completed | failed
 )
 
-# ── Gemini API metrics ────────────────────────────────────────────────────────
+# ── LLM API metrics (OpenRouter) ─────────────────────────────────────────────
 
-gemini_request_duration = Histogram(
-    "gemini_api_call_duration_seconds",
-    "Time taken for each Gemini API call",
+llm_request_duration = Histogram(
+    "llm_api_call_duration_seconds",
+    "Time taken for each LLM API call",
     ["call_type", "model"],   # call_type: analysis | comparison
     buckets=[1, 2, 3, 5, 8, 10, 15, 20, 30]
 )
 
-gemini_requests_total = Counter(
-    "gemini_requests_total",
-    "Total Gemini API calls made",
+llm_requests_total = Counter(
+    "llm_requests_total",
+    "Total LLM API calls made",
     ["call_type", "status"]   # status: success | error | retry
 )
 
-gemini_tokens_used = Counter(
-    "gemini_tokens_used_total",
-    "Estimated tokens sent to Gemini",
+llm_tokens_used = Counter(
+    "llm_tokens_used_total",
+    "Estimated tokens sent to LLM",
     ["call_type"]
 )
 
-gemini_errors_total = Counter(
-    "gemini_errors_total",
-    "Total Gemini API errors",
+llm_errors_total = Counter(
+    "llm_errors_total",
+    "Total LLM API errors",
     ["error_type"]       # rate_limit | parse_error | timeout | unknown
 )
 
-gemini_momentum_score = Histogram(
+llm_momentum_score = Histogram(
     "momentum_score_distribution",
-    "Distribution of momentum scores returned by Gemini",
+    "Distribution of momentum scores returned by LLM",
     buckets=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 )
+
 
 # ── Scraper metrics ───────────────────────────────────────────────────────────
 

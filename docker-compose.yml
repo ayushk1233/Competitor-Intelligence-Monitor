@@ -39,7 +39,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - JINA_API_KEY=${JINA_API_KEY}
       - SERPER_API_KEY=${SERPER_API_KEY}
       - DATABASE_URL=postgresql+asyncpg://cim_user:cim_password@postgres:5432/competitor_intel
@@ -62,7 +62,7 @@ services:
       dockerfile: Dockerfile.worker
     container_name: cim_worker
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - JINA_API_KEY=${JINA_API_KEY}
       - DATABASE_URL=postgresql+asyncpg://cim_user:cim_password@postgres:5432/competitor_intel
       - REDIS_URL=redis://redis:6379/0

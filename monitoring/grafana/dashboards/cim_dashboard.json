@@ -29,12 +29,12 @@
     },
     {
       "id": 2,
-      "title": "Gemini API Call Duration (p95) — seconds",
+      "title": "LLM API Call Duration (p95) — seconds",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(gemini_api_call_duration_seconds_bucket[5m])) by (le, call_type))",
+          "expr": "histogram_quantile(0.95, sum(rate(llm_api_call_duration_seconds_bucket[5m])) by (le, call_type))",
           "legendFormat": "{{ call_type }}",
           "refId": "A"
         }
@@ -48,7 +48,7 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "sum(rate(gemini_tokens_used_total[1m]))",
+          "expr": "sum(rate(llm_tokens_used_total[1m]))",
           "legendFormat": "tokens/sec",
           "refId": "A"
         }
@@ -134,12 +134,12 @@
     },
     {
       "id": 8,
-      "title": "Gemini Error Rate — per minute",
+      "title": "LLM Error Rate — per minute",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
       "targets": [
         {
-          "expr": "sum(rate(gemini_errors_total[1m]))",
+          "expr": "sum(rate(llm_errors_total[1m]))",
           "legendFormat": "errors",
           "refId": "A"
         }
@@ -193,5 +193,5 @@
   "time": { "from": "now-1h", "to": "now" },
   "title": "Competitor Intelligence Monitor — LLMOps Dashboard",
   "uid": "cim-llmops-v1",
-  "version": 2
+  "version": 3
 }

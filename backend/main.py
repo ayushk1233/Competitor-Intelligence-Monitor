@@ -20,7 +20,7 @@ from backend.metrics import active_pipeline_runs
 
 app = FastAPI(
     title="Competitor Intelligence Monitor",
-    description="Strategic intelligence extraction powered by Gemini.",
+    description="Strategic intelligence extraction powered by OpenRouter LLM.",
     version="2.3.0"
 )
 

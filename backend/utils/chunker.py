@@ -5,7 +5,7 @@ settings = get_settings()
 
 def chunk_text(text: str, max_tokens: int = None) -> list[str]:
     """
-    Split text into chunks that fit within Claude/Gemini context limits.
+    Split text into chunks that fit within LLM context limits.
     Uses word count as a token proxy (1 token ≈ 0.75 words).
     """
     if max_tokens is None:

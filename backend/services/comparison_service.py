@@ -3,7 +3,6 @@ import re
 import asyncio
 from datetime import datetime
 import time
-import google.generativeai as genai
 
 from backend.config import get_settings
 from backend.models.schemas import (
@@ -11,6 +10,7 @@ from backend.models.schemas import (
     ComparisonResult,
     IntelligenceReport
 )
+from backend.services.llm_service import call_openrouter
 
 settings = get_settings()
 
@@ -58,10 +58,7 @@ Return ONLY a valid JSON object with exactly these fields:
 class ComparisonService:
 
     def __init__(self):
-        self.model = genai.GenerativeModel(
-            model_name=settings.default_model,
-            system_instruction=SYSTEM_PROMPT
-        )
+        pass
 
     
 
@@ -116,7 +113,12 @@ class ComparisonService:
             summaries=json.dumps(summaries_dict, indent=2)
         )
 
-        raw_json = await self._call_gemini(prompt)
+        raw_json = await call_openrouter(
+            prompt,
+            system_prompt=SYSTEM_PROMPT,
+            call_type="comparison",
+            max_tokens=2048,
+        )
 
         if not raw_json:
             return self._empty_comparison(analyses)
@@ -124,51 +126,6 @@ class ComparisonService:
         return self._parse_response(raw_json, analyses)
 
    
-
-    async def _call_gemini(self, prompt: str) -> str | None:
-        """
-        Send comparison prompt to Gemini.
-        Reads retry_delay from 429 error and waits exactly that long.
-        """
-        for attempt in range(3):
-            try:
-                response = self.model.generate_content(
-                    prompt,
-                    generation_config=genai.GenerationConfig(
-                        temperature=0.2,
-                        max_output_tokens=2048,
-                    )
-                )
-                return response.text
-
-            except Exception as e:
-                error_str = str(e)
-                wait_seconds = self._parse_retry_delay(error_str)
-
-                print(
-                    f"  [comparison] Gemini attempt {attempt + 1} failed "
-                    f"(waiting {wait_seconds}s): "
-                    f"{error_str[:120]}"
-                )
-
-                if attempt < 2:
-                    await asyncio.sleep(wait_seconds)
-                else:
-                    print(f"  [comparison] All retries exhausted.")
-
-        return None
-
-    def _parse_retry_delay(self, error_str: str) -> float:
-        """Extract retry delay from Gemini 429 error. Falls back to 60s."""
-        match = re.search(r'retry_delay\s*\{\s*seconds:\s*(\d+)', error_str)
-        if match:
-            return float(match.group(1)) + 2
-        match = re.search(r'retry in ([\d.]+)s', error_str)
-        if match:
-            return float(match.group(1)) + 2
-        return 60.0
-
-    
 
     def _parse_response(
         self, raw_text: str, analyses: list[CompetitorAnalysis]

@@ -3,8 +3,8 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # Gemini API
-    gemini_api_key: str
+    # OpenRouter API
+    openrouter_api_key: str
 
     # Optional services
     jina_api_key: str = ""
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     max_pages_per_competitor: int = 4
     request_timeout_seconds: int = 15
     max_tokens_per_chunk: int = 6000
-    default_model: str = "gemini-2.0-flash"
+    default_model: str = "anthropic/claude-3-haiku"
 
     class Config:
         env_file = ".env"

@@ -276,7 +276,7 @@ def main():
     )
     st.markdown(
         '<div class="subtitle">Strategic signals, not summaries. '
-        'Powered by Gemini — built for founders.</div>',
+        'Powered by AI — built for founders.</div>',
         unsafe_allow_html=True
     )
 
@@ -393,7 +393,7 @@ def run_intelligence_tab():
         stage_labels = {
             "queued":    "⏳ Queued — waiting for worker...",
             "scraping":  "🌐 Stage 1 of 3 — Scraping competitor websites...",
-            "analyzing": "🧠 Stage 2 of 3 — Gemini analyzing each competitor...",
+            "analyzing": "🧠 Stage 2 of 3 — AI analyzing each competitor...",
             "comparing": "⚡ Stage 3 of 3 — Running cross-competitor synthesis...",
             "completed": "✅ Complete!",
             "failed":    "❌ Pipeline failed",
