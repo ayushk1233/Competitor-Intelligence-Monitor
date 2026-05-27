@@ -7,6 +7,13 @@ from backend.eval.report import generate_report
 
 from backend.services.scraper_service import ScraperService
 from backend.services.analysis_service import AnalysisService
+from backend.prompts.metadata.prompt_versions import (
+    ANALYSIS_PROMPT_VERSION,
+    COMPARISON_PROMPT_VERSION
+)
+
+MODEL_NAME = "deepseek/deepseek-chat"
+TEMPERATURE = 0.0
 
 
 async def evaluate_company(
@@ -85,7 +92,15 @@ async def run_evaluation_suite():
 
             results.append(result)
 
-        report = generate_report(results)
+        duration = round(time.time() - start, 2)
+        report = generate_report(
+            results=results,
+            model_name=MODEL_NAME,
+            temperature=TEMPERATURE,
+            analysis_prompt_version=ANALYSIS_PROMPT_VERSION,
+            comparison_prompt_version=COMPARISON_PROMPT_VERSION,
+            runtime_seconds=duration
+        )
 
         print("\n")
         print(report)

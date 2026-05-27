@@ -3,13 +3,36 @@ from typing import List
 from backend.eval.models import EvalResult
 
 
-def generate_report(results: List[EvalResult]) -> str:
+def generate_report(
+    results: List[EvalResult],
+    model_name: str,
+    temperature: float,
+    analysis_prompt_version: str,
+    comparison_prompt_version: str,
+    runtime_seconds: float
+) -> str:
 
     lines = []
 
     lines.append("=" * 60)
     lines.append("EVALUATION REPORT")
     lines.append("=" * 60)
+    lines.append("")
+
+    lines.append(f"Model: {model_name}")
+    lines.append(f"Temperature: {temperature}")
+    lines.append(
+        f"Analysis Prompt: "
+        f"{analysis_prompt_version}"
+    )
+    lines.append(
+        f"Comparison Prompt: "
+        f"{comparison_prompt_version}"
+    )
+    lines.append(
+        f"Runtime: "
+        f"{runtime_seconds}s"
+    )
     lines.append("")
 
     total_score = 0.0

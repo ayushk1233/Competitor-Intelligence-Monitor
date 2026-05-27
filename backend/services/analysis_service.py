@@ -10,6 +10,9 @@ from backend.services.llm_service import call_openrouter, ANALYSIS_MODEL
 from backend.metrics import (
     llm_momentum_score,
 )
+from backend.prompts.metadata.prompt_versions import (
+    ANALYSIS_PROMPT_VERSION
+)
 settings = get_settings()
 
 

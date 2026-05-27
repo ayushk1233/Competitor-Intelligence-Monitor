@@ -11,6 +11,9 @@ from backend.models.schemas import (
     IntelligenceReport
 )
 from backend.services.llm_service import call_openrouter, COMPARISON_MODEL
+from backend.prompts.metadata.prompt_versions import (
+    COMPARISON_PROMPT_VERSION
+)
 
 settings = get_settings()
 
