@@ -10,7 +10,7 @@ from backend.models.schemas import (
     ComparisonResult,
     IntelligenceReport
 )
-from backend.services.llm_service import call_openrouter
+from backend.services.llm_service import call_openrouter, COMPARISON_MODEL
 
 settings = get_settings()
 
@@ -116,6 +116,7 @@ class ComparisonService:
         raw_json = await call_openrouter(
             prompt,
             system_prompt=SYSTEM_PROMPT,
+            model=COMPARISON_MODEL,
             call_type="comparison",
             max_tokens=2048,
         )

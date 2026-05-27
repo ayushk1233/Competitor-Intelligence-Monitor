@@ -25,6 +25,9 @@ from backend.metrics import (
 settings = get_settings()
 
 DEFAULT_MODEL = "anthropic/claude-3-haiku"
+ANALYSIS_MODEL = "deepseek/deepseek-chat"
+COMPARISON_MODEL = "deepseek/deepseek-reasoner"
+FALLBACK_MODEL = "anthropic/claude-3-haiku"
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 2.0  # seconds
 
@@ -51,7 +54,7 @@ async def call_openrouter(
     *,
     system_prompt: str | None = None,
     model: str | None = None,
-    temperature: float = 0.2,
+    temperature: float = 0.0,
     max_tokens: int = 4096,
     call_type: str = "analysis",
 ) -> str | None:

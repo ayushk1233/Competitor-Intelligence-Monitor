@@ -5,7 +5,7 @@ import asyncio
 from backend.config import get_settings
 from backend.models.schemas import CompetitorAnalysis, CompetitorPages
 from backend.utils.chunker import merge_page_contents
-from backend.services.llm_service import call_openrouter
+from backend.services.llm_service import call_openrouter, ANALYSIS_MODEL
 
 from backend.metrics import (
     llm_momentum_score,
@@ -45,6 +45,50 @@ Return ONLY a valid JSON object with exactly these fields:
   "analyst_note": "One hard-hitting observation a founder should act on immediately — be specific and direct"
 }}
 
+Tone calibration examples:
+
+enterprise:
+formal, compliance-heavy,
+process-oriented, Fortune-500 language
+
+startup:
+fast-moving, agile,
+lightweight productivity-focused messaging
+
+technical:
+developer-first, APIs,
+infrastructure, engineering-centric language
+
+Examples of technical tone companies:
+- Stripe
+- Vercel
+- Supabase
+- Cloudflare
+
+These companies emphasize:
+- APIs
+- developers
+- infrastructure
+- engineering workflows
+- platform extensibility
+
+This should classify as technical
+even if enterprise customers are mentioned.
+
+visionary:
+future-focused,
+AI-transformation language
+
+AI developer tooling companies
+focused on coding workflows,
+engineering productivity,
+or developer infrastructure
+should usually classify as technical,
+not visionary.
+
+hybrid:
+mix of enterprise + startup messaging
+
 MOMENTUM SCORE CALIBRATION — you MUST use this rubric strictly:
 
 Score 9–10: Company shows ALL of these — major product launches in last 6 months, aggressive hiring across multiple functions, pricing expansion (new tiers or enterprise push), strong AI investment signals, expanding into new markets or verticals. Example: a startup doubling headcount + launching enterprise tier + publishing weekly product updates.
@@ -57,6 +101,55 @@ Score 3–4: Company shows FEW growth signals — messaging is defensive or lega
 
 Score 1–2: Company shows DECLINE or STAGNATION signals — anti-growth messaging (deliberate slow), very thin web presence, no detectable hiring, no product updates, legacy positioning with no forward narrative.
 
+IMPORTANT NEGATIVE EXAMPLES:
+
+A large established company with:
+- stable branding
+- mature enterprise positioning
+- slow product iteration
+- conservative messaging
+- low startup energy
+
+should NOT receive scores above 6.
+
+Examples:
+- IBM should usually fall between 4-6
+Enterprise incumbents should rarely exceed 6
+unless there is clear evidence of:
+- startup-speed execution
+- rapid market repositioning
+- unusually aggressive innovation cycles
+
+- Basecamp should usually fall between 2-4
+
+unless there is strong evidence of:
+- aggressive AI repositioning
+- rapid hiring expansion
+- major product launches
+- startup-like execution speed
+
+Large company does NOT mean high momentum.
+
+A company with strong branding,
+clear positioning,
+or loyal users
+should NOT automatically receive high momentum.
+
+Momentum measures:
+- strategic acceleration
+- expansion velocity
+- execution intensity
+- market movement
+
+NOT:
+- popularity
+- reputation
+- product quality
+- brand recognition
+
+When uncertain, prefer LOWER momentum scores.
+Do not overestimate momentum.
+
 CRITICAL SCORING RULES:
 - A large established company (like TCS, HubSpot) is NOT automatically high momentum — size ≠ momentum
 - A small startup with thin content should score LOW (3–4) not middle (7)
@@ -68,6 +161,23 @@ CRITICAL SCORING RULES:
 Content to analyze:
 {content}"""
 
+
+def ensure_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        cleaned = value.strip()
+        if cleaned.lower() in [
+            "not detected",
+            "none",
+            "n/a",
+            ""
+        ]:
+            return []
+        return [cleaned]
+    return []
 
 
 class AnalysisService:
@@ -118,6 +228,8 @@ class AnalysisService:
         raw_json = await call_openrouter(
             prompt,
             system_prompt=SYSTEM_PROMPT,
+            model=ANALYSIS_MODEL,
+            temperature=0.0,
             call_type="analysis",
         )
 
@@ -155,6 +267,15 @@ class AnalysisService:
             # ✅ OBSERVE #1 — happy path, primary parser succeeded
             llm_momentum_score.observe(data["momentum_score"])
 
+            list_fields = [
+                "recent_launches",
+                "strategic_keywords",
+                "growth_signals",
+                "risk_flags"
+            ]
+            for field in list_fields:
+                data[field] = ensure_list(data.get(field))
+
             return CompetitorAnalysis(
                 name=name,
                 domain=domain,
@@ -177,6 +298,15 @@ class AnalysisService:
 
                     # ✅ OBSERVE #2 — fallback parser recovered the JSON
                     llm_momentum_score.observe(data["momentum_score"])
+
+                    list_fields = [
+                        "recent_launches",
+                        "strategic_keywords",
+                        "growth_signals",
+                        "risk_flags"
+                    ]
+                    for field in list_fields:
+                        data[field] = ensure_list(data.get(field))
 
                     print(f"  [analysis] Recovered via fallback parser for {name}")
                     return CompetitorAnalysis(
