@@ -19,6 +19,14 @@ from backend.retrieval.context_builder import (
     build_ranked_context
 )
 
+from backend.retrieval.signal_extractor import (
+    extract_signals
+)
+
+from backend.retrieval.signal_compressor import (
+    compress_signals
+)
+
 settings = get_settings()
 
 EVALUATION_MODE = True
@@ -227,6 +235,19 @@ class AnalysisService:
 
         merged_content = build_ranked_context(pages_as_dicts)
 
+        raw_signals = extract_signals(
+            merged_content
+        )
+
+        compressed_signals = compress_signals(
+            raw_signals
+        )
+
+        print(
+            "[analysis] Extracted signal types:",
+            list(compressed_signals.keys())
+        )
+
         print(
             f"  [analysis] Built ranked "
             f"context: "
@@ -239,10 +260,37 @@ class AnalysisService:
 
         page_types = [p["page_type"] for p in pages_as_dicts]
 
+        signal_summary = ""
+
+        for (
+            signal_type,
+            evidence_list
+        ) in compressed_signals.items():
+
+            signal_summary += (
+                f"\n[{signal_type.upper()}]\n"
+            )
+
+            for evidence in evidence_list:
+
+                signal_summary += (
+                    f"- {evidence}\n"
+                )
+
+        composite_context = f"""
+STRUCTURED STRATEGIC SIGNALS:
+
+{signal_summary}
+
+SUPPORTING CONTEXT:
+
+{merged_content}
+"""
+
         prompt = USER_PROMPT_TEMPLATE.format(
             company_name=competitor_pages.name,
             page_types=", ".join(page_types),
-            content=merged_content
+            content=composite_context
         )
 
         # Pause before each call to avoid per-minute quota bursting
