@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from backend.retrieval.chunker import (
-    chunk_text
+    semantic_chunk
 )
 
 from backend.retrieval.signal_scorer import (
@@ -18,7 +18,11 @@ def rank_text_chunks(
     page_url: str
 ) -> List[Tuple[str, int]]:
 
-    chunks = chunk_text(text)
+    chunks = semantic_chunk(text)
+
+    print(
+        f"[ranking] Input chunks: {len(chunks)}"
+    )
 
     scored_chunks = []
 
@@ -45,6 +49,10 @@ def rank_text_chunks(
     scored_chunks.sort(
         key=lambda x: x[1],
         reverse=True
+    )
+
+    print(
+        f"[ranking] Ranked chunks: {len(scored_chunks)}"
     )
 
     return scored_chunks

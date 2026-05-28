@@ -1,42 +1,107 @@
-from typing import List
+import re
 
+def semantic_chunk(
+    text: str
+):
 
-CHUNK_SIZE = 1200
+    # -------------------------
+    # Split by semantic breaks
+    # -------------------------
 
-CHUNK_OVERLAP = 200
+    sections = re.split(
 
+        r"\n\s*\n",
 
-def chunk_text(text: str) -> List[str]:
+        text
+    )
 
     chunks = []
 
-    start = 0
+    current_chunk = ""
 
-    while start < len(text):
+    MAX_CHARS = 1200
 
-        end = start + CHUNK_SIZE
+    for section in sections:
 
-        chunk = text[start:end]
+        section = section.strip()
 
-        chunks.append(chunk)
+        if not section:
 
-        start += (
-            CHUNK_SIZE - CHUNK_OVERLAP
+            continue
+
+        # -------------------------
+        # Keep semantic coherence
+        # -------------------------
+
+        if (
+
+            len(current_chunk)
+            + len(section)
+
+            < MAX_CHARS
+        ):
+
+            current_chunk += (
+                "\n\n" + section
+            )
+
+        else:
+
+            if current_chunk:
+
+                chunks.append(
+                    current_chunk.strip()
+                )
+
+            current_chunk = section
+
+    # -------------------------
+    # Final chunk
+    # -------------------------
+
+    if current_chunk:
+
+        chunks.append(
+            current_chunk.strip()
         )
+
+    print(f"[chunker] Produced {len(chunks)} chunks")
+
+    for i, chunk in enumerate(chunks[:5]):
+
+        print(f"\n--- Chunk {i+1} ---")
+
+        print(chunk[:300])
 
     return chunks
 
 if __name__ == "__main__":
 
-    sample = "A" * 5000
+    sample = """
 
-    chunks = chunk_text(sample)
+Welcome to our AI platform.
 
-    print(f"Chunks: {len(chunks)}")
+We help developers build
+scalable infrastructure.
+
+
+We are launching
+new coding agents.
+
+Hiring globally for AI engineers.
+
+
+Enterprise customers can use
+advanced governance features.
+
+"""
+
+    chunks = semantic_chunk(
+        sample
+    )
 
     for i, chunk in enumerate(chunks):
 
-        print(
-            f"Chunk {i + 1}: "
-            f"{len(chunk)} chars"
-        )
+        print(f"\n--- Chunk {i+1} ---\n")
+
+        print(chunk)

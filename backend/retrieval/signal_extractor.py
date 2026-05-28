@@ -66,6 +66,16 @@ def extract_signals(
         text
     )
 
+    print(
+        f"[signals] Received {len(sentences)} chunks"
+    )
+
+    for chunk in sentences[:3]:
+
+        print("\n[signals] SAMPLE CHUNK:\n")
+
+        print(chunk[:300])
+
     # -----------------------------
     # Match signals
     # -----------------------------

@@ -16,6 +16,10 @@ from backend.reasoning.synthesis_reasoner import (
     synthesize_intelligence
 )
 
+from backend.retrieval.evidence_router import (
+    route_evidence
+)
+
 async def run_intelligence_pipeline(
     context: str
 ):
@@ -23,6 +27,24 @@ async def run_intelligence_pipeline(
     # -----------------------------------
     # Run specialist agents concurrently
     # -----------------------------------
+
+    chunks = context.split("\n\n")
+
+    routed = route_evidence(
+        chunks
+    )
+
+    momentum_context = "\n\n".join(
+        routed["momentum"]
+    )
+
+    tone_context = "\n\n".join(
+        routed["tone"]
+    )
+
+    icp_context = "\n\n".join(
+        routed["icp"]
+    )
 
     (
         momentum_result,
@@ -33,11 +55,11 @@ async def run_intelligence_pipeline(
 
     ) = await asyncio.gather(
 
-        analyze_momentum(context),
+        analyze_momentum(momentum_context),
 
-        analyze_tone(context),
+        analyze_tone(tone_context),
 
-        analyze_icp(context)
+        analyze_icp(icp_context)
     )
 
     # -----------------------------------
