@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-05-28 10:34:56",
+  "overall_score": 0.0,
+  "llm_model": "deepseek/deepseek-chat",
+  "temperature": 0.0,
+  "analysis_prompt_version": "analysis_prompt_v1",
+  "comparison_prompt_version": "comparison_prompt_v1",
+  "runtime_seconds": 38.48,
+  "results": []
+}

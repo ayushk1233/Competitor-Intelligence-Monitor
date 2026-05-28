@@ -13,7 +13,12 @@ from backend.metrics import (
 from backend.prompts.metadata.prompt_versions import (
     ANALYSIS_PROMPT_VERSION
 )
+from backend.utils.json_utils import safe_json_loads
+
 settings = get_settings()
+
+EVALUATION_MODE = True
+MAX_CONTEXT_CHARS = 12000 if EVALUATION_MODE else 30000
 
 
 SYSTEM_PROMPT = """You are a competitive intelligence analyst at a VC-backed B2B SaaS startup.
@@ -217,6 +222,10 @@ class AnalysisService:
             )
 
         merged_content = merge_page_contents(pages_as_dicts)
+        if len(merged_content) > MAX_CONTEXT_CHARS:
+            print(f"  [analysis] Truncating context from {len(merged_content)} to {MAX_CONTEXT_CHARS} chars")
+            merged_content = merged_content[:MAX_CONTEXT_CHARS]
+
         page_types = [p["page_type"] for p in pages_as_dicts]
 
         prompt = USER_PROMPT_TEMPLATE.format(
@@ -259,12 +268,7 @@ class AnalysisService:
         page_types: list[str]
     ) -> CompetitorAnalysis:
         try:
-            cleaned = re.sub(r"```(?:json)?\s*", "", raw_text).strip()
-            cleaned = cleaned.rstrip("```").strip()
-            cleaned = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', cleaned)
-            cleaned = re.sub(r'(?<!\\)\n(?=[^"]*"(?:[^"]*"[^"]*")*[^"]*$)', ' ', cleaned)
-
-            data = json.loads(cleaned)
+            data = safe_json_loads(raw_text)
             data["momentum_score"] = int(data.get("momentum_score", 5))
 
             # ✅ OBSERVE #1 — happy path, primary parser succeeded

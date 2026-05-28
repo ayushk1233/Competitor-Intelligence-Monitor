@@ -55,7 +55,7 @@ async def call_openrouter(
     system_prompt: str | None = None,
     model: str | None = None,
     temperature: float = 0.0,
-    max_tokens: int = 4096,
+    max_tokens: int = 1200,
     call_type: str = "analysis",
 ) -> str | None:
     """
@@ -121,6 +121,11 @@ async def call_openrouter(
             # Classify the error for metrics and retry logic
             is_rate_limit = "429" in error_str or "rate" in error_str.lower()
             is_timeout = "timeout" in error_str.lower() or "timed out" in error_str.lower()
+            is_exhausted = "402" in error_str or "credit" in error_str.lower()
+
+            if is_exhausted:
+                print(f"  [llm] OpenRouter credits exhausted! Aborting retries.")
+                raise Exception("OpenRouter credits exhausted")
 
             if is_rate_limit:
                 error_type = "rate_limit"

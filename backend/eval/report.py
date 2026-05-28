@@ -5,7 +5,8 @@ from backend.eval.models import EvalResult
 
 def generate_report(
     results: List[EvalResult],
-    model_name: str,
+    status: str,
+    llm_model: str,
     temperature: float,
     analysis_prompt_version: str,
     comparison_prompt_version: str,
@@ -19,7 +20,8 @@ def generate_report(
     lines.append("=" * 60)
     lines.append("")
 
-    lines.append(f"Model: {model_name}")
+    lines.append(f"Model: {llm_model}")
+    lines.append(f"Evaluation Status: {status}")
     lines.append(f"Temperature: {temperature}")
     lines.append(
         f"Analysis Prompt: "
@@ -93,10 +95,14 @@ def generate_report(
 
     lines.append("")
     lines.append("=" * 60)
-    lines.append(
-        f"OVERALL SUITE SCORE: "
-        f"{round(average_score, 3)}"
-    )
+    if not results:
+        lines.append("OVERALL SUITE SCORE: N/A")
+        lines.append("(No successful evaluations)")
+    else:
+        lines.append(
+            f"OVERALL SUITE SCORE: "
+            f"{round(average_score, 3)}"
+        )
     lines.append("=" * 60)
 
     return "\n".join(lines)

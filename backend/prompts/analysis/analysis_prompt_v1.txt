@@ -34,6 +34,16 @@ Return ONLY a valid JSON object with exactly these fields:
   "analyst_note": "One hard-hitting observation a founder should act on immediately — be specific and direct"
 }}
 
+CRITICAL OUTPUT RULES:
+- Return ONLY valid JSON
+- Do NOT include markdown fences
+- Do NOT include explanations
+- Do NOT include commentary
+- Do NOT truncate fields
+- Ensure all strings are properly escaped
+- Ensure commas are valid JSON commas
+- Response must be parseable with json.loads()
+
 Tone calibration examples:
 
 enterprise:

@@ -11,6 +11,13 @@ from backend.prompts.metadata.prompt_versions import (
     ANALYSIS_PROMPT_VERSION,
     COMPARISON_PROMPT_VERSION
 )
+from backend.eval.snapshot import (
+    EvaluationSnapshot
+)
+
+from backend.eval.storage import (
+    save_evaluation_snapshot
+)
 
 MODEL_NAME = "deepseek/deepseek-chat"
 TEMPERATURE = 0.0
@@ -74,6 +81,8 @@ async def run_evaluation_suite():
     analyzer = AnalysisService()
 
     results = []
+    failed_companies = []
+    failure_reasons = {}
 
     try:
 
@@ -83,19 +92,31 @@ async def run_evaluation_suite():
 
             expectation = test_case["expectation"]
 
-            result = await evaluate_company(
-                scraper=scraper,
-                analyzer=analyzer,
-                company_name=company_name,
-                expectation=expectation
-            )
+            try:
+                result = await evaluate_company(
+                    scraper=scraper,
+                    analyzer=analyzer,
+                    company_name=company_name,
+                    expectation=expectation
+                )
+                results.append(result)
+            except Exception as e:
+                print(f"Skipping failed company: {e}")
+                failed_companies.append(company_name)
+                failure_reasons[company_name] = str(e)
 
-            results.append(result)
+        if len(results) == 0:
+            evaluation_status = "provider_failure"
+        elif len(results) < len(TEST_CASES):
+            evaluation_status = "partial_failure"
+        else:
+            evaluation_status = "success"
 
         duration = round(time.time() - start, 2)
         report = generate_report(
             results=results,
-            model_name=MODEL_NAME,
+            status=evaluation_status,
+            llm_model=MODEL_NAME,
             temperature=TEMPERATURE,
             analysis_prompt_version=ANALYSIS_PROMPT_VERSION,
             comparison_prompt_version=COMPARISON_PROMPT_VERSION,
@@ -104,6 +125,40 @@ async def run_evaluation_suite():
 
         print("\n")
         print(report)
+
+        average_score = (
+            round(sum(r.overall_score for r in results) / len(results), 3)
+            if results else 0.0
+        )
+
+        snapshot = EvaluationSnapshot(
+            timestamp=time.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            status=evaluation_status,
+            overall_score=average_score,
+            llm_model=MODEL_NAME,
+            temperature=TEMPERATURE,
+            analysis_prompt_version=(
+                ANALYSIS_PROMPT_VERSION
+            ),
+            comparison_prompt_version=(
+                COMPARISON_PROMPT_VERSION
+            ),
+            runtime_seconds=duration,
+            results=results,
+            failed_companies=failed_companies,
+            failure_reasons=failure_reasons
+        )
+
+        saved_path = save_evaluation_snapshot(
+            snapshot
+        )
+
+        print(
+            f"\nSaved evaluation snapshot:"
+            f" {saved_path}"
+        )
 
     finally:
 
