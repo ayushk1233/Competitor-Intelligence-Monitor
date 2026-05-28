@@ -27,6 +27,10 @@ from backend.retrieval.signal_compressor import (
     compress_signals
 )
 
+from backend.reasoning.orchestrator import (
+    run_intelligence_pipeline
+)
+
 settings = get_settings()
 
 EVALUATION_MODE = True
@@ -287,24 +291,38 @@ SUPPORTING CONTEXT:
 {merged_content}
 """
 
-        prompt = USER_PROMPT_TEMPLATE.format(
-            company_name=competitor_pages.name,
-            page_types=", ".join(page_types),
-            content=composite_context
+        print(
+            "[analysis] Running multi-agent orchestration..."
         )
 
         # Pause before each call to avoid per-minute quota bursting
         await asyncio.sleep(self.inter_call_delay)
 
-        raw_json = await call_openrouter(
-            prompt,
-            system_prompt=SYSTEM_PROMPT,
-            model=ANALYSIS_MODEL,
-            temperature=0.0,
-            call_type="analysis",
+        # --- OLD MONOLITHIC CALL ---
+        # prompt = USER_PROMPT_TEMPLATE.format(
+        #     company_name=competitor_pages.name,
+        #     page_types=", ".join(page_types),
+        #     content=composite_context
+        # )
+        # raw_json = await call_openrouter(
+        #     prompt,
+        #     system_prompt=SYSTEM_PROMPT,
+        #     model=ANALYSIS_MODEL,
+        #     temperature=0.0,
+        #     call_type="analysis",
+        # )
+
+        agent_result = await run_intelligence_pipeline(
+            composite_context
         )
 
-        if not raw_json:
+        print(
+            "[analysis] Multi-agent synthesis complete"
+        )
+
+        final_analysis = agent_result["final"]
+
+        if not final_analysis:
             return self._empty_analysis(
                 competitor_pages.name,
                 competitor_pages.domain,
@@ -312,7 +330,7 @@ SUPPORTING CONTEXT:
             )
 
         return self._parse_response(
-            raw_json,
+            final_analysis,
             competitor_pages.name,
             competitor_pages.domain,
             page_types

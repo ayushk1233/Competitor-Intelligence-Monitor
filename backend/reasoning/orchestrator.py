@@ -46,6 +46,8 @@ async def run_intelligence_pipeline(
 
     final_result = await synthesize_intelligence(
 
+        context=context,
+
         momentum_analysis=momentum_result,
 
         tone_analysis=tone_result,

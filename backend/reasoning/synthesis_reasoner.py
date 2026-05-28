@@ -1,24 +1,30 @@
 SYNTHESIS_PROMPT = """
 You are a senior competitive intelligence strategist.
 
-Your job is to synthesize multiple specialized analyses into a final strategic intelligence profile.
+Your job is to synthesize multiple specialized analyses into a final strategic intelligence profile, and extract any remaining strategic signals from the raw context.
 
 You will receive:
 - momentum analysis
 - tone analysis
 - ICP analysis
+- original supporting context
 
 Produce a unified strategic assessment.
 
-Return ONLY valid JSON with:
+Return ONLY valid JSON with exactly these fields:
 
 {
-  "core_offering": "...",
-  "icp": "...",
-  "tone": "...",
-  "momentum_score": 0,
-  "strategic_summary": "...",
-  "risk_flags": []
+  "core_offering": "One sentence — what specific problem they solve and for whom",
+  "icp": "Synthesize from the ICP analysis",
+  "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid (from Tone analysis)",
+  "pricing_signals": "Extract from context. Write Not detected if unavailable.",
+  "hiring_signals": "Extract from context. Write Not detected if unavailable.",
+  "recent_launches": ["extract", "from", "context", "or", "momentum", "analysis"],
+  "strategic_keywords": ["extract", "from", "context"],
+  "growth_signals": ["extract", "from", "context", "or", "momentum", "analysis"],
+  "risk_flags": ["extract", "from", "context"],
+  "momentum_score": 7,
+  "analyst_note": "One hard-hitting strategic observation summarizing the synthesis"
 }
 
 Keep reasoning concise and strategic.
@@ -30,6 +36,8 @@ from backend.services.llm_service import (
 
 async def synthesize_intelligence(
 
+    context: str,
+
     momentum_analysis: str,
 
     tone_analysis: str,
@@ -38,7 +46,10 @@ async def synthesize_intelligence(
 ):
 
     user_prompt = f"""
-SYNTHESIZE THESE ANALYSES:
+SYNTHESIZE THESE ANALYSES AND CONTEXT:
+
+[SUPPORTING CONTEXT]
+{context}
 
 [MOMENTUM ANALYSIS]
 {momentum_analysis}
@@ -79,6 +90,8 @@ async def main():
     """
 
     result = await synthesize_intelligence(
+
+        "Sample context string",
 
         momentum,
 

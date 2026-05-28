@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-05-28 12:43:02",
+  "status": "success",
+  "overall_score": 0.22,
+  "llm_model": "deepseek/deepseek-chat",
+  "temperature": 0.0,
+  "analysis_prompt_version": "analysis_prompt_v1",
+  "comparison_prompt_version": "comparison_prompt_v1",
+  "runtime_seconds": 144.9,
+  "results": [
+    {
+      "company_name": "Basecamp",
+      "tone_match": false,
+      "momentum_in_range": false,
+      "keyword_overlap_score": 0.222,
+      "icp_recall_score": 0.0,
+      "overall_score": 0.067,
+      "actual_tone": "hybrid",
+      "actual_momentum": 8,
+      "errors": null
+    },
+    {
+      "company_name": "Stripe",
+      "tone_match": false,
+      "momentum_in_range": true,
+      "keyword_overlap_score": 0.0,
+      "icp_recall_score": 0.0,
+      "overall_score": 0.25,
+      "actual_tone": "hybrid",
+      "actual_momentum": 8,
+      "errors": null
+    },
+    {
+      "company_name": "Ibm",
+      "tone_match": true,
+      "momentum_in_range": false,
+      "keyword_overlap_score": 0.0,
+      "icp_recall_score": 0.0,
+      "overall_score": 0.25,
+      "actual_tone": "enterprise",
+      "actual_momentum": 8,
+      "errors": null
+    },
+    {
+      "company_name": "Cursor",
+      "tone_match": false,
+      "momentum_in_range": false,
+      "keyword_overlap_score": 0.0,
+      "icp_recall_score": 0.0,
+      "overall_score": 0.0,
+      "actual_tone": "hybrid",
+      "actual_momentum": 0,
+      "errors": [
+        "Parse error: Malformed JSON: Illegal trailing comma before end of array: line 22 column 59 (char 1683)"
+      ]
+    },
+    {
+      "company_name": "Hubspot",
+      "tone_match": true,
+      "momentum_in_range": true,
+      "keyword_overlap_score": 0.111,
+      "icp_recall_score": 0.0,
+      "overall_score": 0.533,
+      "actual_tone": "hybrid",
+      "actual_momentum": 8,
+      "errors": null
+    }
+  ],
+  "failed_companies": [],
+  "failure_reasons": {}
+}
