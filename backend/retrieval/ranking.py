@@ -8,19 +8,34 @@ from backend.retrieval.signal_scorer import (
     score_text_signal
 )
 
+from backend.retrieval.semantic_router import (
+    detect_page_weight
+)
+
 
 def rank_text_chunks(
-    text: str
+    text: str,
+    page_url: str
 ) -> List[Tuple[str, int]]:
 
     chunks = chunk_text(text)
 
     scored_chunks = []
 
+    page_weight = detect_page_weight(
+        page_url
+    )
+
     for chunk in chunks:
 
-        score = score_text_signal(
+        signal_score = score_text_signal(
             chunk
+        )
+
+        score = (
+            signal_score
+            +
+            page_weight
         )
 
         scored_chunks.append(

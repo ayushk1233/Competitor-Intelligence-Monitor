@@ -225,12 +225,7 @@ class AnalysisService:
                 "No pages were successfully fetched"
             )
 
-        page_contents = [
-            p["content"]
-            for p in pages_as_dicts
-        ]
-
-        merged_content = build_ranked_context(page_contents)
+        merged_content = build_ranked_context(pages_as_dicts)
 
         print(
             f"  [analysis] Built ranked "

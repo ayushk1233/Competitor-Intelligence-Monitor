@@ -10,7 +10,7 @@ MAX_CHUNKS_PER_PAGE = 2
 
 
 def build_ranked_context(
-    pages: List[str]
+    pages: List[dict]
 ) -> str:
 
     all_ranked_chunks = []
@@ -22,7 +22,8 @@ def build_ranked_context(
     for page in pages:
 
         ranked_chunks = rank_text_chunks(
-            page
+            text=page["content"],
+            page_url=page["url"]
         )
 
         all_ranked_chunks.extend(
