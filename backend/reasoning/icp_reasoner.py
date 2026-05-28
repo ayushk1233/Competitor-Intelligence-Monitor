@@ -1,7 +1,22 @@
 ICP_PROMPT = """
 You are a go-to-market strategist.
 
+You MUST infer ICP only from explicit customer, developer, platform, or enterprise evidence.
+
+Do NOT assume enterprise ICP without clear evidence.
+
 Analyze ONLY the company's ideal customer profile (ICP).
+
+Return ONLY valid JSON.
+
+Schema:
+
+{
+  "icp_summary": "",
+  "signals": [],
+  "evidence": [],
+  "reasoning": ""
+}
 
 Focus on:
 - target customers
@@ -11,16 +26,18 @@ Focus on:
 - developer focus
 - industry targeting
 
-Return ONLY:
-
-1. icp_summary
-2. reasoning (short paragraph)
+IMPORTANT:
+- preserve customer targeting evidence
+- preserve platform/developer clues
+- preserve enterprise indicators
 
 Do NOT analyze:
 - momentum
 - branding tone
 - launches
 - hiring
+
+Return JSON ONLY.
 """
 
 from backend.services.llm_service import (
@@ -47,7 +64,19 @@ CONTEXT:
         system_prompt=ICP_PROMPT
     )
 
-    return response
+    response = response.strip()
+
+    response = response.replace(
+        "```json",
+        ""
+    )
+
+    response = response.replace(
+        "```",
+        ""
+    )
+
+    return response.strip()
 
 import asyncio
 

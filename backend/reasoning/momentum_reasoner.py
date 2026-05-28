@@ -1,25 +1,41 @@
 MOMENTUM_PROMPT = """
 You are a strategic market analyst.
 
-Analyze ONLY the company momentum.
+Do NOT inflate momentum based on generic AI mentions.
 
-Focus on:
+Momentum must be supported by:
+- launches
+- hiring
+- expansion
+- active product development
+- roadmap signals
+
+Analyze ONLY company momentum.
+
+Return ONLY valid JSON.
+
+Schema:
+
+{
+  "momentum_score": 0,
+  "signals": [],
+  "evidence": [],
+  "reasoning": ""
+}
+
+Focus ONLY on:
 - hiring velocity
 - launches
 - AI initiatives
-- product expansion
 - growth indicators
 - innovation cadence
-
-Return ONLY:
-
-1. momentum_score (1-10)
-2. reasoning (short paragraph)
 
 Do NOT analyze:
 - ICP
 - tone
-- market positioning
+- positioning
+
+Return JSON ONLY.
 """
 
 from backend.services.llm_service import (
@@ -47,7 +63,19 @@ CONTEXT:
         system_prompt=MOMENTUM_PROMPT
     )
 
-    return response
+    response = response.strip()
+
+    response = response.replace(
+        "```json",
+        ""
+    )
+
+    response = response.replace(
+        "```",
+        ""
+    )
+
+    return response.strip()
 
 if __name__ == "__main__":
 

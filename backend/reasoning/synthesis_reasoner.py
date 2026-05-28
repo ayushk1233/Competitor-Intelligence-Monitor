@@ -1,15 +1,20 @@
 SYNTHESIS_PROMPT = """
-You are a senior competitive intelligence strategist.
+You are an intelligence assembler.
 
-Your job is to synthesize multiple specialized analyses into a final strategic intelligence profile, and extract any remaining strategic signals from the raw context.
+Your job is NOT to reinterpret analyses.
 
-You will receive:
-- momentum analysis
-- tone analysis
-- ICP analysis
-- original supporting context
+Your job is to:
+- preserve specialist conclusions
+- preserve evidence richness
+- structurally assemble final intelligence
 
-Produce a unified strategic assessment.
+IMPORTANT:
+- do NOT flatten companies into generic enterprise profiles
+- preserve technical/startup distinctions
+- preserve developer/platform nuances
+- preserve momentum differences
+
+Use specialist outputs heavily.
 
 Return ONLY valid JSON with exactly these fields:
 
@@ -27,7 +32,9 @@ Return ONLY valid JSON with exactly these fields:
   "analyst_note": "One hard-hitting strategic observation summarizing the synthesis"
 }
 
-Keep reasoning concise and strategic.
+Do NOT invent new interpretations.
+Do NOT override specialist agents.
+Assemble conservatively.
 """
 from backend.services.llm_service import (
     call_openrouter

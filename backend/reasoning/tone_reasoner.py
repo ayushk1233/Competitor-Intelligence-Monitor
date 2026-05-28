@@ -1,7 +1,33 @@
 TONE_PROMPT = """
 You are a brand positioning analyst.
 
+VERY important:
+
+You MUST classify tone ONLY using explicit evidence from the provided context.
+
+If evidence is weak or ambiguous:
+- return "hybrid"
+
+Do NOT infer enterprise positioning unless:
+- enterprise messaging,
+- compliance language,
+- governance,
+- scalability,
+- or enterprise-specific terminology
+is explicitly present.
+
 Analyze ONLY the company's communication tone.
+
+Return ONLY valid JSON.
+
+Schema:
+
+{
+  "tone_classification": "",
+  "signals": [],
+  "evidence": [],
+  "reasoning": ""
+}
 
 Focus on:
 - branding language
@@ -19,16 +45,18 @@ Classify tone as ONE of:
 - startup
 - hybrid
 
-Return ONLY:
-
-1. tone_classification
-2. reasoning (short paragraph)
+IMPORTANT:
+- preserve messaging evidence
+- preserve branding language
+- preserve positioning examples
 
 Do NOT analyze:
 - momentum
 - ICP
 - growth
 - hiring
+
+Return JSON ONLY.
 """
 
 from backend.services.llm_service import (
@@ -55,7 +83,19 @@ CONTEXT:
         system_prompt=TONE_PROMPT
     )
 
-    return response
+    response = response.strip()
+
+    response = response.replace(
+        "```json",
+        ""
+    )
+
+    response = response.replace(
+        "```",
+        ""
+    )
+
+    return response.strip()
 
 import asyncio
 
