@@ -15,6 +15,10 @@ from backend.prompts.metadata.prompt_versions import (
 )
 from backend.utils.json_utils import safe_json_loads
 
+from backend.retrieval.context_builder import (
+    build_ranked_context
+)
+
 settings = get_settings()
 
 EVALUATION_MODE = True
@@ -221,7 +225,19 @@ class AnalysisService:
                 "No pages were successfully fetched"
             )
 
-        merged_content = merge_page_contents(pages_as_dicts)
+        page_contents = [
+            p["content"]
+            for p in pages_as_dicts
+        ]
+
+        merged_content = build_ranked_context(page_contents)
+
+        print(
+            f"  [analysis] Built ranked "
+            f"context: "
+            f"{len(merged_content)} chars"
+        )
+
         if len(merged_content) > MAX_CONTEXT_CHARS:
             print(f"  [analysis] Truncating context from {len(merged_content)} to {MAX_CONTEXT_CHARS} chars")
             merged_content = merged_content[:MAX_CONTEXT_CHARS]
