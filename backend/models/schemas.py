@@ -47,6 +47,13 @@ class CompetitorAnalysis(BaseModel):
     momentum_score: int             # 1–10
     analyst_note: str
 
+    # Preserved Reasoning Evidence
+    icp_keywords: list[str] = []
+    icp_evidence: list[str] = []
+    tone_evidence: list[str] = []
+    momentum_evidence: list[str] = []
+    agent_outputs: dict = {}
+
     # Metadata
     pages_analyzed: list[str]
     analysis_success: bool = True

@@ -1,55 +1,70 @@
-MOMENTUM_KEYWORDS = [
+MOMENTUM_WEIGHTS = {
+    "launch": 2,
+    "release": 2,
+    "roadmap": 1,
 
-    "launch",
-    "release",
-    "roadmap",
-    "hiring",
-    "jobs",
-    "careers",
-    "AI",
-    "expansion",
-    "announce"
-]
+    "hiring": 3,
+    "expanding team": 3,
+    "open roles": 3,
 
-TONE_KEYWORDS = [
+    "ai": 1,
+    "llm": 2,
+    "agentic ai": 2,
 
-    "developer",
-    "platform",
-    "enterprise",
-    "infrastructure",
-    "simple",
-    "scalable",
-    "modern",
-    "technical"
-]
+    "funding": 3,
+    "acquisition": 3,
+    "expansion": 3,
 
-ICP_KEYWORDS = [
+    "announce": 0
+}
 
-    "customers",
-    "teams",
-    "enterprise",
-    "developers",
-    "businesses",
-    "pricing",
-    "organizations"
-]
+TONE_WEIGHTS = {
+    "developer": 3,
+    "api": 3,
+    "platform": 2,
+    "enterprise": 1,
+    "infrastructure": 3,
+    "simple": 1,
+    "scalable": 1,
+    "modern": 1,
+    "technical": 2
+}
+
+ICP_WEIGHTS = {
+    "developers": 3,
+    "developer": 2,
+    "engineering teams": 3,
+    "engineering": 2,
+    "api": 1,
+    "platform": 1,
+    "customers": 2,
+    "businesses": 2,
+    "enterprise": 1,
+    "pricing": 0,
+    "organizations": 1,
+    "startups": 2,
+    "teams": 2,
+    "project managers": 3,
+    "small businesses": 3,
+    "marketing teams": 3,
+    "operations teams": 3,
+    "agencies": 3,
+    "founders": 3,
+    "companies": 1
+}
 
 def score_chunk(
-
     chunk: str,
-
-    keywords: list[str]
+    weights: dict[str, int],
+    category_name: str = "UNKNOWN"
 ):
-
     lower = chunk.lower()
-
     score = 0
 
-    for keyword in keywords:
-
+    for keyword, weight in weights.items():
         if keyword in lower:
-
-            score += 1
+            score += weight
+            print(f"{category_name.upper()} MATCH: {keyword} (+{weight})")
 
     return score
 
@@ -57,52 +72,40 @@ def route_evidence(
     chunks: list[str]
 ):
 
-    routed = {}
-
-    agent_configs = {
-
-        "momentum": MOMENTUM_KEYWORDS,
-
-        "tone": TONE_KEYWORDS,
-
-        "icp": ICP_KEYWORDS
+    routed = {
+        "momentum": [],
+        "tone": [],
+        "icp": []
+    }
+    
+    # Store tuples of (score, chunk) for sorting later
+    scored_by_agent = {
+        "momentum": [],
+        "tone": [],
+        "icp": []
     }
 
-    for (
+    for chunk in chunks:
+        momentum_score = score_chunk(chunk, MOMENTUM_WEIGHTS, "MOMENTUM")
+        tone_score = score_chunk(chunk, TONE_WEIGHTS, "TONE")
+        icp_score = score_chunk(chunk, ICP_WEIGHTS, "ICP")
+        
+        print("\nCHUNK:")
+        print(chunk[:200].strip() + ("..." if len(chunk) > 200 else ""))
+        print(f"ICP SCORE: {icp_score}")
+        print(f"MOMENTUM SCORE: {momentum_score}")
+        print(f"TONE SCORE: {tone_score}")
 
-        agent,
+        scored_by_agent["momentum"].append((momentum_score, chunk))
+        scored_by_agent["tone"].append((tone_score, chunk))
+        scored_by_agent["icp"].append((icp_score, chunk))
 
-        keywords
-
-    ) in agent_configs.items():
-
-        scored_chunks = []
-
-        for chunk in chunks:
-
-            score = score_chunk(
-
-                chunk,
-
-                keywords
-            )
-
-            scored_chunks.append(
-
-                (
-                    score,
-                    chunk
-                )
-            )
-
+    for agent, scored_chunks in scored_by_agent.items():
         # -------------------------
         # Sort by relevance
         # -------------------------
-
         scored_chunks.sort(
-
             reverse=True,
-
             key=lambda x: x[0]
         )
 
@@ -122,18 +125,24 @@ def route_evidence(
         ]
 
         # -------------------------
-        # Fallback:
-        # preserve some diversity
+        # Fallback: Removed.
+        # Blindly appending chunks[:3] was polluting the context
+        # and causing evidence leakage.
         # -------------------------
 
-        if len(top_chunks) < 3:
-
-            top_chunks.extend(
-
-                chunks[:3]
-            )
-
         routed[agent] = top_chunks
+
+    print("\nFINAL ICP:")
+    for c in routed["icp"]:
+        print(c)
+
+    print("\nFINAL MOMENTUM:")
+    for c in routed["momentum"]:
+        print(c)
+
+    print("\nFINAL TONE:")
+    for c in routed["tone"]:
+        print(c)
 
     return routed
 

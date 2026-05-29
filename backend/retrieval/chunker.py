@@ -1,77 +1,64 @@
 import re
+from backend.utils.cleaner import clean_page_content
 
-def semantic_chunk(
-    text: str
-):
+def semantic_chunk(text):
 
-    # -------------------------
-    # Split by semantic breaks
-    # -------------------------
+    # ---------------------------------------------------
+    # Jina AI reader delivers content as a single long
+    # line with '\n' (not '\n\n') separators. A pure
+    # paragraph split produces only 1-2 chunks.
+    # Strategy:
+    #   1. Split on any double-newline OR single newline
+    #      followed by content (handles both formats).
+    #   2. Accumulate up to MAX_CHARS per chunk so that
+    #      we get 10-30 chunks from a full page.
+    # ---------------------------------------------------
 
-    sections = re.split(
+    # Strip cookie banners before chunking
+    text = clean_page_content(text)
 
-        r"\n\s*\n",
+    MAX_CHARS = 800  # smaller ceiling → more chunks → better ranking diversity
 
-        text
-    )
+    # Split by paragraph blocks (\n\n+) or Markdown headings (# )
+    # This preserves semantic coherence, narrative structure, and
+    # evidence grouping, replacing the destructive sentence splitting.
+    lines = re.split(r"\n\n+|(?=\n?#\s)", text)
 
     chunks = []
+    current = ""
 
-    current_chunk = ""
+    for line in lines:
 
-    MAX_CHARS = 1200
+        line = line.strip()
 
-    for section in sections:
-
-        section = section.strip()
-
-        if not section:
-
+        if not line:
             continue
 
-        # -------------------------
-        # Keep semantic coherence
-        # -------------------------
-
-        if (
-
-            len(current_chunk)
-            + len(section)
-
-            < MAX_CHARS
-        ):
-
-            current_chunk += (
-                "\n\n" + section
-            )
+        if len(current) + len(line) < MAX_CHARS:
+            current += " " + line if current else line
 
         else:
+            if current.strip():
+                chunks.append(current.strip())
+            current = line
 
-            if current_chunk:
+    if current.strip():
+        chunks.append(current.strip())
 
-                chunks.append(
-                    current_chunk.strip()
-                )
+    # Drop trivially short fragments
+    chunks = [c for c in chunks if len(c) > 40]
 
-            current_chunk = section
-
-    # -------------------------
-    # Final chunk
-    # -------------------------
-
-    if current_chunk:
-
-        chunks.append(
-            current_chunk.strip()
-        )
-
-    print(f"[chunker] Produced {len(chunks)} chunks")
+    print(
+        f"[chunker] Produced {len(chunks)} chunks"
+    )
 
     for i, chunk in enumerate(chunks[:5]):
 
-        print(f"\n--- Chunk {i+1} ---")
+        print(f"\n[chunker] Chunk {i+1}")
 
-        print(chunk[:300])
+        print(chunk[:400])
+
+        print("-" * 40)
 
     return chunks
 

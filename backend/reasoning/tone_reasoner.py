@@ -45,6 +45,37 @@ Classify tone as ONE of:
 - startup
 - hybrid
 
+CRITICAL CLASSIFICATION RULES:
+
+Analyze the following indicators carefully:
+
+Startup Indicators:
+- fast-moving, building, founders, small team, careers, shipping, innovation
+
+Technical Indicators:
+- developer, api, sdk, infrastructure, engineering, platform
+
+Enterprise Indicators:
+- compliance, governance, security, large organizations, enterprise customers
+
+Do NOT allow enterprise keywords alone to dominate if startup/technical indicators are strongly present.
+
+If the company is a developer tool, coding assistant, or AI coding platform:
+- Default to "technical" or "startup" UNLESS enterprise compliance/governance language is EXPLICITLY dominant.
+- "AI", "developers", "code", "editor", "IDE" alone do NOT indicate enterprise.
+
+If messaging uses casual, fast-moving, opinionated language:
+- Classify as "startup" even if they mention enterprise customers.
+
+If messaging is formal, compliance-heavy, governance-focused, Fortune-500 oriented:
+- Classify as "enterprise".
+
+If evidence does NOT clearly favor one category:
+- Return "hybrid".
+
+Do NOT default to "enterprise" when uncertain.
+If uncertain → return "hybrid".
+
 IMPORTANT:
 - preserve messaging evidence
 - preserve branding language

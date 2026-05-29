@@ -37,3 +37,112 @@ def extract_page_title(raw_html: str) -> str:
 
 def estimate_word_count(text: str) -> int:
     return len(text.split())
+
+
+# Targeted noise patterns to strip specific spam phrases
+# without destroying surrounding legitimate content.
+NOISE_PATTERNS = [
+    # Metadata pollution
+    r"\btitle:\b",
+    r"\burl source:\b",
+    r"\bpublished time:\b",
+    r"\bmarkdown content:\b",
+
+    # Cookie and language banners
+    r"\bwe use cookies[^.]*\.",
+    r"\bcookies\. without a selection, our default[^.]*\.",
+    r"\baccept all(?: cookies)?\b",
+    r"\baccept cookies\b",
+    r"\bdecline all(?: cookies)?\b",
+    r"\bmanage cookies\b",
+    r"\bmanage preferences\b",
+    r"\bcookie preferences\b",
+    r"\bcookie policy\b",
+    r"\bcookie settings\b",
+    r"×close",
+    r"\bsome cookies are necessary[^.]*\.",
+    r"\bother cookies are optional[^.]*\.",
+    r"\byou can consent to all cookies.*?(?:manage [a-z]+|analytics\.)",
+    r"\[skip to content\](?:\([^)]+\))?",
+    r"\* english select a language",
+    r"\blanguage selector\b",
+    r"\[deutsch\](?:\([^)]+\))?",
+    r"\[english\](?:\([^)]+\))?",
+    r"\[español\](?:\([^)]+\))?",
+    r"\[日本語\](?:\([^)]+\))?",
+    r"\[português\](?:\([^)]+\))?",
+    r"\[français\](?:\([^)]+\))?",
+    r"\bportuguês\b",
+    r"\bfrançais\b",
+    r"\* high contrast",
+
+    # Navigation / Menus / CTAs
+    r"\bcontact sales\b",
+    r"\bsign in\b",
+    r"\blog in\b",
+    r"\blogin\b",
+    r"\bcustomer support\b",
+    r"\bdashboard\b",
+    r"\bchat with sales\b",
+    r"\bstart free trial\b",
+    r"\brequest demo\b",
+    r"\bbook a call\b",
+    r"\bpricing\b",
+    r"\benterprise\b",
+    r"\bresources\b",
+]
+
+_NOISE_RE = re.compile(
+    "|".join(NOISE_PATTERNS),
+    re.IGNORECASE
+)
+
+
+def clean_page_content(text: str) -> str:
+    """
+    Strip cookie consent banners, language selectors, and navigation
+    boilerplate from Jina-fetched page content before chunking.
+    """
+    original_length = len(text)
+    
+    # Remove Jina metadata pollution
+    cleaned = re.sub(r"Title:.*?(?=URL Source:|$)", "", text, flags=re.IGNORECASE|re.DOTALL)
+    cleaned = re.sub(r"URL Source:.*?(?=Published Time:|Markdown Content:|$)", "", cleaned, flags=re.IGNORECASE|re.DOTALL)
+    cleaned = re.sub(r"Published Time:.*?(?=Markdown Content:|$)", "", cleaned, flags=re.IGNORECASE|re.DOTALL)
+    cleaned = re.sub(r"Markdown Content:\s*", "", cleaned, flags=re.IGNORECASE)
+    
+    # Remove image markdown: ![alt](url)
+    cleaned = re.sub(r'!\[[^\]]*\]\([^)]+\)', '', cleaned)
+    
+    # Remove specific noisy links entirely (Navigation & CTAs)
+    noisy_links = r'Pricing|Enterprise|Resources|Contact Sales|Sign In|Dashboard|Chat with sales|Start free trial|Request demo|Book a call'
+    cleaned = re.sub(rf'\[(?:{noisy_links})\]\([^)]+\)', '', cleaned, flags=re.IGNORECASE)
+    
+    # Extract text from remaining link markdown: [text](url) -> text
+    cleaned = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', cleaned)
+    
+    # Remove raw URLs
+    cleaned = re.sub(r'https?://[^\s]+', '', cleaned)
+    
+    # Remove specific noise phrases
+    cleaned = _NOISE_RE.sub(" ", cleaned)
+
+    # Collapse resulting extra whitespace
+    cleaned = re.sub(r" {3,}", "  ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = cleaned.strip()
+
+    cleaned_length = len(cleaned)
+    
+    removed_pct = 0
+    if original_length > 0:
+        removed_pct = 100 - (cleaned_length / original_length * 100)
+        
+    print(
+        f"[cleaner]\n"
+        f"before={original_length}\n"
+        f"after={cleaned_length}\n"
+        f"removed={removed_pct:.0f}%"
+    )
+
+    return cleaned

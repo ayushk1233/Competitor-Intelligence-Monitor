@@ -55,7 +55,7 @@ async def call_openrouter(
     system_prompt: str | None = None,
     model: str | None = None,
     temperature: float = 0.0,
-    max_tokens: int = 1200,
+    max_tokens: int = 4000,
     call_type: str = "analysis",
 ) -> str | None:
     """
@@ -94,6 +94,7 @@ async def call_openrouter(
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                response_format={"type": "json_object"}
             )
 
             duration = time.time() - start

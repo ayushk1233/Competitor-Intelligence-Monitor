@@ -5,24 +5,45 @@ from backend.eval.models import (
     EvalResult
 )
 
+try:
+    from sentence_transformers import SentenceTransformer, util
+    _model = SentenceTransformer('all-MiniLM-L6-v2')
+except Exception as e:
+    print(f"Warning: Could not load sentence-transformers: {e}")
+    _model = None
 
-def jaccard_similarity(expected: set, actual: set) -> float:
+def semantic_similarity(expected: set, actual: set, is_recall: bool = False) -> float:
     if not expected or not actual:
         return 0.0
 
-    intersection = len(expected & actual)
-    union = len(expected | actual)
+    if _model is None:
+        if is_recall:
+            return len(expected & actual) / len(expected)
+        else:
+            return len(expected & actual) / len(expected | actual)
 
-    return intersection / union
-
-
-def keyword_recall(expected: set, actual: set) -> float:
-    if not expected:
+    expected_list = list(expected)
+    actual_list = list(actual)
+    
+    emb_expected = _model.encode(expected_list, convert_to_tensor=True)
+    emb_actual = _model.encode(actual_list, convert_to_tensor=True)
+    
+    cosine_scores = util.cos_sim(emb_expected, emb_actual)
+    
+    max_scores_expected, _ = cosine_scores.max(dim=1)
+    recall_score = max_scores_expected.mean().item()
+    
+    if is_recall:
+        return max(0.0, recall_score)
+        
+    max_scores_actual, _ = cosine_scores.max(dim=0)
+    precision_score = max_scores_actual.mean().item()
+    
+    if recall_score + precision_score == 0:
         return 0.0
-
-    intersection = len(expected & actual)
-
-    return intersection / len(expected)
+        
+    overlap = 2 * (precision_score * recall_score) / (precision_score + recall_score)
+    return max(0.0, overlap)
 
 
 def normalize_keywords(items):
@@ -83,9 +104,10 @@ def score_analysis(
         analysis.strategic_keywords
     )
 
-    keyword_overlap_score = jaccard_similarity(
+    keyword_overlap_score = semantic_similarity(
         expected_keywords,
-        actual_keywords
+        actual_keywords,
+        is_recall=False
     )
 
     # ---------------------------------------
@@ -96,13 +118,14 @@ def score_analysis(
         expectation.expected_icp_keywords
     )
 
-    actual_icp_text = analysis.icp.lower()
+    actual_icp_keywords = normalize_keywords(
+        analysis.icp_keywords
+    )
 
-    actual_icp_keywords = set(actual_icp_text.split())
-
-    icp_recall_score = keyword_recall(
+    icp_recall_score = semantic_similarity(
         expected_icp,
-        actual_icp_keywords
+        actual_icp_keywords,
+        is_recall=True
     )
 
     # ---------------------------------------

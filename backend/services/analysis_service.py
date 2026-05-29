@@ -203,6 +203,15 @@ def ensure_list(value):
         return [cleaned]
     return []
 
+def ensure_string(value):
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return "; ".join([str(v) for v in value])
+    if isinstance(value, dict):
+        return str(value)
+    return str(value)
+
 
 class AnalysisService:
 
@@ -219,6 +228,11 @@ class AnalysisService:
         Returns structured CompetitorAnalysis from OpenRouter LLM.
         """
         print(f"  [analysis] Analyzing {competitor_pages.name}...")
+
+        print("\n=== SCRAPED PAGES ===")
+        for p in competitor_pages.pages:
+            if p.fetch_success and p.content:
+                print(p.page_type, p.url)
 
         pages_as_dicts = [
             {
@@ -237,15 +251,24 @@ class AnalysisService:
                 "No pages were successfully fetched"
             )
 
-        merged_content = build_ranked_context(pages_as_dicts)
+        merged_chunks = build_ranked_context(pages_as_dicts)
+        merged_content_str = "\n\n".join(merged_chunks)
+
+        print("\n=== CONTEXT STATS ===")
+        print(f"Context chars: {len(merged_content_str)}")
+        print(merged_content_str[:1000])
 
         raw_signals = extract_signals(
-            merged_content
+            merged_content_str
         )
 
         compressed_signals = compress_signals(
             raw_signals
         )
+
+        print("\n=== SIGNALS ===")
+        import pprint
+        pprint.pprint(compressed_signals)
 
         print(
             "[analysis] Extracted signal types:",
@@ -255,12 +278,12 @@ class AnalysisService:
         print(
             f"  [analysis] Built ranked "
             f"context: "
-            f"{len(merged_content)} chars"
+            f"{len(merged_content_str)} chars"
         )
 
-        if len(merged_content) > MAX_CONTEXT_CHARS:
-            print(f"  [analysis] Truncating context from {len(merged_content)} to {MAX_CONTEXT_CHARS} chars")
-            merged_content = merged_content[:MAX_CONTEXT_CHARS]
+        if len(merged_content_str) > MAX_CONTEXT_CHARS:
+            print(f"  [analysis] Truncating context from {len(merged_content_str)} to {MAX_CONTEXT_CHARS} chars")
+            merged_content_str = merged_content_str[:MAX_CONTEXT_CHARS]
 
         page_types = [p["page_type"] for p in pages_as_dicts]
 
@@ -281,15 +304,10 @@ class AnalysisService:
                     f"- {evidence}\n"
                 )
 
-        composite_context = f"""
-STRUCTURED STRATEGIC SIGNALS:
-
-{signal_summary}
-
-SUPPORTING CONTEXT:
-
-{merged_content}
-"""
+        signal_summary_chunk = f"STRUCTURED STRATEGIC SIGNALS:\n{signal_summary}"
+        
+        # Prepend the structured signals to the chunks list
+        final_chunks_for_pipeline = [signal_summary_chunk] + merged_chunks
 
         print(
             "[analysis] Running multi-agent orchestration..."
@@ -298,23 +316,13 @@ SUPPORTING CONTEXT:
         # Pause before each call to avoid per-minute quota bursting
         await asyncio.sleep(self.inter_call_delay)
 
-        # --- OLD MONOLITHIC CALL ---
-        # prompt = USER_PROMPT_TEMPLATE.format(
-        #     company_name=competitor_pages.name,
-        #     page_types=", ".join(page_types),
-        #     content=composite_context
-        # )
-        # raw_json = await call_openrouter(
-        #     prompt,
-        #     system_prompt=SYSTEM_PROMPT,
-        #     model=ANALYSIS_MODEL,
-        #     temperature=0.0,
-        #     call_type="analysis",
-        # )
-
         agent_result = await run_intelligence_pipeline(
-            composite_context
+            final_chunks_for_pipeline,
+            compressed_signals
         )
+
+        print("\n=== FINAL ANALYSIS ===")
+        pprint.pprint(agent_result)
 
         print(
             "[analysis] Multi-agent synthesis complete"
@@ -329,11 +337,19 @@ SUPPORTING CONTEXT:
                 "LLM API call failed after retries"
             )
 
+        agent_outputs = {
+            "momentum": agent_result["momentum"],
+            "tone": agent_result["tone"],
+            "icp": agent_result["icp"],
+            "final": agent_result["final"]
+        }
+
         return self._parse_response(
             final_analysis,
             competitor_pages.name,
             competitor_pages.domain,
-            page_types
+            page_types,
+            agent_outputs
         )
 
 
@@ -342,8 +358,11 @@ SUPPORTING CONTEXT:
         raw_text: str,
         name: str,
         domain: str,
-        page_types: list[str]
+        page_types: list[str],
+        agent_outputs: dict = None
     ) -> CompetitorAnalysis:
+        if agent_outputs is None:
+            agent_outputs = {}
         try:
             data = safe_json_loads(raw_text)
             data["momentum_score"] = int(data.get("momentum_score", 5))
@@ -355,16 +374,33 @@ SUPPORTING CONTEXT:
                 "recent_launches",
                 "strategic_keywords",
                 "growth_signals",
-                "risk_flags"
+                "risk_flags",
+                "icp_keywords",
+                "icp_evidence",
+                "tone_evidence",
+                "momentum_evidence"
             ]
             for field in list_fields:
                 data[field] = ensure_list(data.get(field))
+
+            string_fields = [
+                "core_offering",
+                "icp",
+                "messaging_tone",
+                "pricing_signals",
+                "hiring_signals",
+                "analyst_note"
+            ]
+            for field in string_fields:
+                if field in data:
+                    data[field] = ensure_string(data[field])
 
             return CompetitorAnalysis(
                 name=name,
                 domain=domain,
                 pages_analyzed=page_types,
                 analysis_success=True,
+                agent_outputs=agent_outputs,
                 **data
             )
 
@@ -387,10 +423,26 @@ SUPPORTING CONTEXT:
                         "recent_launches",
                         "strategic_keywords",
                         "growth_signals",
-                        "risk_flags"
+                        "risk_flags",
+                        "icp_keywords",
+                        "icp_evidence",
+                        "tone_evidence",
+                        "momentum_evidence"
                     ]
                     for field in list_fields:
                         data[field] = ensure_list(data.get(field))
+
+                    string_fields = [
+                        "core_offering",
+                        "icp",
+                        "messaging_tone",
+                        "pricing_signals",
+                        "hiring_signals",
+                        "analyst_note"
+                    ]
+                    for field in string_fields:
+                        if field in data:
+                            data[field] = ensure_string(data[field])
 
                     print(f"  [analysis] Recovered via fallback parser for {name}")
                     return CompetitorAnalysis(
@@ -398,6 +450,7 @@ SUPPORTING CONTEXT:
                         domain=domain,
                         pages_analyzed=page_types,
                         analysis_success=True,
+                        agent_outputs=agent_outputs,
                         **data
                     )
             except Exception as e2:

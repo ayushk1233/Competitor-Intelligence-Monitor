@@ -25,17 +25,34 @@ PAGE_TYPE_WEIGHTS = {
 }
 
 
+BAD_URL_PATTERNS = [
+    "linkedin",
+    "/contact",
+    "/support",
+    "/help",
+    "/privacy",
+    "/terms",
+    "/legal",
+    "/cookie",
+]
+
+
 def detect_page_weight(
     url: str
 ) -> int:
 
-    url = url.lower()
+    url_lower = url.lower()
+
+    # Penalize useless pages heavily
+    for bad in BAD_URL_PATTERNS:
+        if bad in url_lower:
+            return -100
 
     for keyword, weight in (
         PAGE_TYPE_WEIGHTS.items()
     ):
 
-        if keyword in url:
+        if keyword in url_lower:
             return weight
 
     return PAGE_TYPE_WEIGHTS[

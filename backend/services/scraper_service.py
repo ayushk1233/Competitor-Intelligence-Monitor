@@ -20,10 +20,37 @@ settings = get_settings()
 # Pages we want to find per competitor, in priority order
 TARGET_PATHS = {
     "pricing":  ["/pricing", "/plans", "/price"],
-    "about":    ["/about", "/about-us", "/company"],
+    "about":    ["/about", "/company", "/mission", "/leadership", "/team", "/about-us"],
     "blog":     ["/blog", "/news", "/updates", "/changelog"],
     "careers":  ["/careers", "/jobs", "/join-us", "/hiring"],
 }
+
+# URLs containing any of these patterns will never be selected
+BAD_PAGE_PATTERNS = [
+    "linkedin",
+    "twitter",
+    "facebook",
+    "instagram",
+    "/contact",
+    "/support",
+    "support.",       # support.ibm.com, support.stripe.com etc
+    "mysupport.",     # mysupport.ibm.com
+    "/help",
+    "help.",          # help.hubspot.com
+    "/community",
+    "community.",     # community.ibm.com
+    "kb.",
+    "/knowledgebase",
+    "docs/support",
+    "/privacy",
+    "/terms",
+    "/legal",
+    "/cookies",
+    "/login",
+    "/signin",
+    "/signup",
+    "/404",
+]
 
 
 class ScraperService:
@@ -72,10 +99,21 @@ class ScraperService:
         pages = [homepage_data]
         errors = []
 
+        home_words = set(homepage_data.content.lower().split()) if homepage_data.content else set()
+
         for result in sub_results:
             if isinstance(result, Exception):
                 errors.append(str(result))
             elif result.fetch_success:
+                # Issue #3: Check similarity to homepage to reject clones
+                if result.page_type == "about" and home_words and result.content:
+                    about_words = set(result.content.lower().split())
+                    overlap = len(about_words.intersection(home_words))
+                    union = len(about_words.union(home_words))
+                    if union > 0 and (overlap / union) > 0.80:
+                        print(f"  [scraper] Rejected {result.url} (duplicate of homepage)")
+                        continue
+                
                 pages.append(result)
 
         print(f"  [scraper] {name}: {len(pages)} pages fetched, {len(errors)} errors")
@@ -165,6 +203,13 @@ class ScraperService:
             # Fall back: try each path directly
             for path in paths:
                 url = f"{base_url}{path}"
+
+                # Skip known-bad patterns
+                bad_match = next((bad for bad in BAD_PAGE_PATTERNS if bad in url.lower()), None)
+                if bad_match:
+                    print(f"[page-filter] Rejected: {url}\nReason: {bad_match}")
+                    continue
+
                 try:
                     resp = await self.client.head(url, timeout=5)
                     if resp.status_code < 400:
@@ -178,12 +223,23 @@ class ScraperService:
     def _find_in_links(
         self, links: list[str], target_paths: list[str], base_url: str
     ) -> str | None:
-        """Scan a list of hrefs for any that contain a target path keyword."""
+        """Scan hrefs for target path keywords, excluding BAD_PAGE_PATTERNS."""
         for link in links:
+            link_lower = link.lower()
+
+            # Hard-exclude bad page types
+            bad_match = next((bad for bad in BAD_PAGE_PATTERNS if bad in link_lower), None)
+            if bad_match:
+                print(f"[page-filter] Rejected: {link}\nReason: {bad_match}")
+                continue
+
             for path in target_paths:
                 keyword = path.strip("/")
-                if keyword in link.lower():
-                    # Make absolute URL if relative
+                if keyword in link_lower:
+                    # Prevent 'plans' from matching news articles like "IBM-Announces-Plans"
+                    if keyword == "plans" and ("news" in link_lower or "blog" in link_lower or "press" in link_lower):
+                        continue
+                        
                     if link.startswith("http"):
                         return link
                     return urljoin(base_url, link)
@@ -210,6 +266,14 @@ class ScraperService:
 
             if content and len(content) > 100:
                 duration = time.time() - start
+                
+                if len(content) < 500:
+                    print(
+                        f"[SCRAPER WARNING]\n"
+                        f"Suspiciously small page: {url}\n"
+                        f"Chars: {len(content)}"
+                    )
+
                 scrape_success_total.labels(
                     domain=domain, page_type=page_type
                 ).inc()
@@ -238,6 +302,13 @@ class ScraperService:
             duration = time.time() - start
 
             if content and len(content) > 100:
+                if len(content) < 500:
+                    print(
+                        f"[SCRAPER WARNING]\n"
+                        f"Suspiciously small page: {url}\n"
+                        f"Chars: {len(content)}"
+                    )
+                    
                 scrape_success_total.labels(
                     domain=domain, page_type=page_type
                 ).inc()
