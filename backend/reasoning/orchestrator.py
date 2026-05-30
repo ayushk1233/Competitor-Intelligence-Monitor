@@ -20,6 +20,33 @@ from backend.retrieval.evidence_router import (
     route_evidence
 )
 
+def is_real_momentum_signal(text: str) -> bool:
+    """Accepts launches, shipping velocity, adoption, partnerships, hiring, and funding."""
+    EVENT_TERMS = [
+        "announced", "launches", "launched", "released", "partnership",
+        "partnered", "acquisition", "acquired", "hiring", "expands",
+        "expansion", "investment", "funding", "award", "breakthrough",
+        "introduces", "introducing",
+        # Adoption terms must survive
+        "engineers", "adoption", "users", "growing from", "% of", "thousands",
+        "millions", "used by",
+        # Shipping velocity terms
+        "published", "changelog", "update", "new feature", "added support",
+        "improvement", "now available"
+    ]
+    return any(t in text.lower() for t in EVENT_TERMS)
+
+# Keep old name as alias for backwards compatibility
+is_real_momentum_event = is_real_momentum_signal
+
+def is_marketing_copy(text: str) -> bool:
+    MARKETING_PHRASES = [
+        "next-generation ai", "optimized for scale", "trusted ai",
+        "ai productivity", "modern infrastructure", "future-proof",
+        "hybrid cloud", "enterprise ai"
+    ]
+    return any(t in text.lower() for t in MARKETING_PHRASES)
+
 def sanitize_momentum_evidence(signals_dict: dict) -> dict:
     if not signals_dict:
         return signals_dict
@@ -40,8 +67,14 @@ def sanitize_momentum_evidence(signals_dict: dict) -> dict:
     for category, ev_list in signals_dict.items():
         clean_list = []
         for ev in ev_list:
-            if not any(pat in ev.lower() for pat in HISTORICAL_MOMENTUM_PATTERNS):
-                clean_list.append(ev)
+            if any(pat in ev.lower() for pat in HISTORICAL_MOMENTUM_PATTERNS):
+                continue
+            if is_marketing_copy(ev) and not is_real_momentum_signal(ev):
+                continue
+            # Only validate real-event types for launch; always pass adoption/velocity
+            if category in ("launch_signals",) and not is_real_momentum_signal(ev):
+                continue
+            clean_list.append(ev)
         if clean_list:
             sanitized[category] = clean_list
     return sanitized
@@ -75,16 +108,17 @@ async def run_intelligence_pipeline(
             "founded",
             "origin story"
         ]
-        return [
-            c
-            for c in chunk_list
-            if not any(
-                bad in c.lower()
-                for bad in BAD
-            )
-        ]
+        valid_chunks = []
+        for c in chunk_list:
+            if any(bad in c.lower() for bad in BAD):
+                continue
+            if is_marketing_copy(c) and not is_real_momentum_signal(c):
+                continue
+            valid_chunks.append(c)
+        return valid_chunks
 
-    routed["momentum"] = filter_historical_chunks(routed["momentum"])
+    if "momentum" in routed:
+        routed["momentum"] = filter_historical_chunks(routed["momentum"])
 
     if signals:
         sanitized_signals = sanitize_momentum_evidence(signals)
@@ -96,8 +130,10 @@ async def run_intelligence_pipeline(
                     momentum_context += f"- {ev}\n"
                 momentum_context += "\n"
     else:
+        # Momentum now comes exclusively from structured signals in signal_extractor.
+        # routed["momentum"] no longer exists; fall back to empty context.
         momentum_context = "\n\n".join(
-            routed["momentum"]
+            routed.get("momentum", [])
         )
 
     tone_context = "\n\n".join(

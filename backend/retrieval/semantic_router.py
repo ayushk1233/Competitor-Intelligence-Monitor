@@ -3,25 +3,30 @@ from urllib.parse import urlparse
 
 PAGE_TYPE_WEIGHTS = {
 
-    # high strategic value
+    # high strategic value (Boost pages)
+    "news": 5,
+    "blog": 5,
+    "press": 5,
+    "releases": 5,
+    "changelog": 5,
+    "announcement": 5,
+    "launch": 5,
+
     "careers": 3,
     "jobs": 3,
     "hiring": 3,
 
-    "blog": 2,
-    "news": 2,
-    "announcement": 3,
-    "launch": 3,
-
     "docs": 2,
     "developers": 2,
     "api": 2,
-
     "pricing": 2,
     "enterprise": 2,
 
-    # default
-    "homepage": 1
+    # Lower priority
+    "product": 0,
+    "features": 0,
+    "marketing": 0,
+    "homepage": 0
 }
 
 

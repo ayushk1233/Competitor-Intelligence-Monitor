@@ -19,11 +19,11 @@ Schema:
 {
   "momentum_score": 0,
   "momentum_evidence": {
-    "launches_and_products": [],
-    "hiring_and_expansion": [],
-    "ai_initiatives": [],
-    "partnerships": [],
-    "shipping_velocity": []
+    "launch_signals": [],
+    "shipping_velocity_signals": [],
+    "adoption_signals": [],
+    "hiring_signals": [],
+    "partnership_signals": []
   },
   "reasoning": ""
 }
@@ -41,18 +41,31 @@ Focus ONLY on:
 - growth indicators
 - innovation cadence
 
-Apply the following explicit weighting (sum up to max of 10):
-- AI or major product launch = +2
-- major funding/acquisition = +2
-- frequent shipping / high changelog velocity = +2
-- hiring surge / expanding team = +2
-- new feature release = +1
-- thought leadership / major blog traction = +1
-- partnership announcement = +1
-- infrastructure or pricing upgrade = +1
-- customer growth / scaling indicators = +1
+Momentum agent may only use evidence present in:
+- launch_signals
+- shipping_velocity_signals
+- adoption_signals
+- hiring_signals
+- partnership_signals
 
-Calculate the final momentum score as an integer from 0 to 10 by summing the applicable points.
+Apply the following explicit weighting:
+- launch_signals: +2 each
+- shipping_velocity_signals: +1.5 each
+- adoption_signals: +2 each
+- partnership_signals: +2 each
+- hiring_signals: +2 each
+
+Calculate the final momentum score as an integer from 0 to 10 by summing the applicable points. Cap score at 10.
+
+Before final score:
+count unique evidence items.
+Rule:
+0-1 evidence items -> max score 3
+2-3 evidence items -> max score 5
+4-5 evidence items -> max score 7
+6+ evidence items -> max score 9
+
+Prevent inflation from a single large chunk.
 If a company shows relentless shipping speed (e.g. constant changelog updates), score it highly even without VC funding or AI.
 
 CRITICAL:
@@ -101,18 +114,26 @@ Reduce score when evidence shows:
 These indicate maturity, not acceleration.
 
 CRITICAL HIRING RULES:
-Only allow hiring signals when explicit evidence contains:
+A hiring signal may only exist if evidence contains:
 - hiring
+- hiring now
 - open roles
-- job openings
-- join our team
 - careers
+- join our team
 - recruiting
-- we are hiring
-- growing our team
+- job openings
+- we're hiring
 
-If none exist, return:
-"hiring_and_expansion": []
+If none of those terms exist:
+return []
+
+Never infer hiring from:
+- investments
+- AI initiatives
+- partnerships
+- company growth
+- infrastructure expansion
+- product launches
 
 No inference allowed.
 

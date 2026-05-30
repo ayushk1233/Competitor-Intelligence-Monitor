@@ -46,8 +46,8 @@ TEST_CASES = [
         "company_name": "IBM",
         "expectation": EvalExpectation(
             expected_tone="enterprise",
-            momentum_min=4,
-            momentum_max=6,
+            momentum_min=5,
+            momentum_max=7,
             expected_keywords=[
                 "enterprise",
                 "cloud",

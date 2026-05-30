@@ -1,22 +1,5 @@
-MOMENTUM_WEIGHTS = {
-    "launch": 2,
-    "release": 2,
-    "roadmap": 1,
-
-    "hiring": 3,
-    "expanding team": 3,
-    "open roles": 3,
-
-    "ai": 1,
-    "llm": 2,
-    "agentic ai": 2,
-
-    "funding": 3,
-    "acquisition": 3,
-    "expansion": 3,
-
-    "announce": 0
-}
+# NOTE: Momentum is now exclusively derived from structured signals in signal_extractor.py.
+# This router handles ONLY tone and ICP routing.
 
 TONE_WEIGHTS = {
     "developer": 3,
@@ -73,30 +56,25 @@ def route_evidence(
 ):
 
     routed = {
-        "momentum": [],
         "tone": [],
         "icp": []
     }
     
     # Store tuples of (score, chunk) for sorting later
     scored_by_agent = {
-        "momentum": [],
         "tone": [],
         "icp": []
     }
 
     for chunk in chunks:
-        momentum_score = score_chunk(chunk, MOMENTUM_WEIGHTS, "MOMENTUM")
         tone_score = score_chunk(chunk, TONE_WEIGHTS, "TONE")
         icp_score = score_chunk(chunk, ICP_WEIGHTS, "ICP")
         
         print("\nCHUNK:")
         print(chunk[:200].strip() + ("..." if len(chunk) > 200 else ""))
         print(f"ICP SCORE: {icp_score}")
-        print(f"MOMENTUM SCORE: {momentum_score}")
         print(f"TONE SCORE: {tone_score}")
 
-        scored_by_agent["momentum"].append((momentum_score, chunk))
         scored_by_agent["tone"].append((tone_score, chunk))
         scored_by_agent["icp"].append((icp_score, chunk))
 
@@ -134,10 +112,6 @@ def route_evidence(
 
     print("\nFINAL ICP:")
     for c in routed["icp"]:
-        print(c)
-
-    print("\nFINAL MOMENTUM:")
-    for c in routed["momentum"]:
         print(c)
 
     print("\nFINAL TONE:")
