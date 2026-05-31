@@ -122,19 +122,38 @@ async def run_intelligence_pipeline(
 
     if signals:
         sanitized_signals = sanitize_momentum_evidence(signals)
+
+        # Build structured-only context — NO raw chunks reach momentum LLM
         momentum_context = "MOMENTUM SIGNALS\n\n"
-        for category, evidence_list in sanitized_signals.items():
+        momentum_context += "Only the following structured signals are available.\n"
+        momentum_context += "Do NOT infer additional evidence beyond what is listed below.\n\n"
+
+        MOMENTUM_CATEGORIES = [
+            "launch_signals",
+            "shipping_velocity_signals",
+            "adoption_signals",
+            "hiring_signals",
+            "partnership_signals",
+        ]
+        total_evidence = 0
+        for category in MOMENTUM_CATEGORIES:
+            evidence_list = sanitized_signals.get(category, [])
+            total_evidence += len(evidence_list)
+            category_label = category.replace("_", " ").upper()
             if evidence_list:
-                momentum_context += f"--- {category.replace('_', ' ').upper()} ---\n"
+                momentum_context += f"--- {category_label} ---\n"
                 for ev in evidence_list:
                     momentum_context += f"- {ev}\n"
                 momentum_context += "\n"
+            else:
+                momentum_context += f"--- {category_label} ---\n"
+                momentum_context += "(none)\n\n"
+
+        momentum_context += f"Total unique evidence items: {total_evidence}\n"
     else:
-        # Momentum now comes exclusively from structured signals in signal_extractor.
-        # routed["momentum"] no longer exists; fall back to empty context.
-        momentum_context = "\n\n".join(
-            routed.get("momentum", [])
-        )
+        # No structured signals provided — momentum context is empty
+        # The LLM will score conservatively with no evidence
+        momentum_context = "MOMENTUM SIGNALS\n\nNo structured signals available.\nReturn momentum_score: 1\n"
 
     tone_context = "\n\n".join(
         routed["tone"]

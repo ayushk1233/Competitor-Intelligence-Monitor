@@ -2,6 +2,7 @@
 # This router handles ONLY tone and ICP routing.
 
 TONE_WEIGHTS = {
+    # Technical / developer signals (existing — do NOT reduce)
     "developer": 3,
     "api": 3,
     "platform": 2,
@@ -10,10 +11,30 @@ TONE_WEIGHTS = {
     "simple": 1,
     "scalable": 1,
     "modern": 1,
-    "technical": 2
+    "technical": 2,
+    # HubSpot / CRM / SMB signals
+    "marketing": 2,
+    "sales": 2,
+    "crm": 3,
+    "customer platform": 3,
+    "customer success": 2,
+    "growth": 1,
+    "business growth": 2,
+    "revenue": 1,
+    # Stripe / payments / fintech signals
+    "payments": 2,
+    "payment": 2,
+    "commerce": 2,
+    "checkout": 2,
+    "fintech": 2,
+    "financial": 1,
+    "startup": 1,
+    "agentic": 2,
+    "partnership": 1,
 }
 
 ICP_WEIGHTS = {
+    # Developer / technical / enterprise signals (existing — do NOT reduce)
     "developers": 3,
     "developer": 2,
     "engineering teams": 3,
@@ -33,7 +54,28 @@ ICP_WEIGHTS = {
     "operations teams": 3,
     "agencies": 3,
     "founders": 3,
-    "companies": 1
+    "companies": 1,
+    # HubSpot / CRM / SMB signals
+    "sales teams": 3,
+    "revenue teams": 3,
+    "customer support": 2,
+    "customer service": 2,
+    "customer success": 2,
+    "crm": 3,
+    "growing businesses": 2,
+    "marketing": 2,
+    "sales": 2,
+    "customer platform": 2,
+    # Stripe / payments / fintech signals
+    "payments": 2,
+    "payment": 2,
+    "commerce": 2,
+    "checkout": 2,
+    "merchants": 3,
+    "businesses of all sizes": 3,
+    "internet economy": 2,
+    "fintech": 2,
+    "global businesses": 2,
 }
 
 def score_chunk(
@@ -110,13 +152,31 @@ def route_evidence(
 
         routed[agent] = top_chunks
 
-    print("\nFINAL ICP:")
-    for c in routed["icp"]:
-        print(c)
+    # Fallback: if routing returned nothing, use any chunks with a score > 0
+    # sorted globally. Prevents reasoners from receiving empty context.
+    for agent in ("tone", "icp"):
+        if not routed[agent] and scored_by_agent[agent]:
+            fallback = [
+                chunk for score, chunk in sorted(
+                    scored_by_agent[agent], key=lambda x: x[0], reverse=True
+                )[:3]
+                if score >= 0  # accept even score-0 chunks as last resort
+            ]
+            if fallback:
+                routed[agent] = fallback
+                print(f"[router] {agent} fallback activated ({len(fallback)} chunks)")
 
-    print("\nFINAL TONE:")
-    for c in routed["tone"]:
-        print(c)
+    # Issue 4: Routing audit
+    print("\n===== ROUTING AUDIT =====")
+    print(f"Tone chunks routed: {len(routed['tone'])}")
+    print("TOP TONE CHUNKS:")
+    for c in routed["tone"][:5]:
+        print(f"  {repr(c[:150])}")
+    print(f"\nICP chunks routed: {len(routed['icp'])}")
+    print("TOP ICP CHUNKS:")
+    for c in routed["icp"][:5]:
+        print(f"  {repr(c[:150])}")
+    print("=" * 25)
 
     return routed
 

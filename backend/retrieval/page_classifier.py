@@ -13,8 +13,28 @@ def classify_page_type(
     if "docs" in lower or "developers" in lower:
         return "docs"
 
-    if "blog" in lower or "news" in lower:
+    # Issue 3: Granular news/press/blog classification.
+    # Priority order matters — newsroom before generic news.
+    if "newsroom" in lower:
+        return "news"
+
+    if "press" in lower:
+        return "press"
+
+    if "blog" in lower:
+        return "blog"
+
+    if "news" in lower:
+        return "news"
+
+    if "announcement" in lower or "launches" in lower:
         return "launches"
+
+    if "research" in lower:
+        return "research"
+
+    if "changelog" in lower:
+        return "changelog"
 
     return "homepage"
 

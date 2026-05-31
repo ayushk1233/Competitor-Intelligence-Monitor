@@ -1,79 +1,364 @@
-SIGNAL_PATTERNS = {
-
-    "ai_initiatives": [
-        "ai agent", "agentic ai", "llm", "foundation model", 
-        "generative ai", "machine learning", "artificial intelligence", 
-        "reasoning model"
-    ],
-
-    "launch_signals": [
-        "today announced",
-        "today we announced",
-        "launched",
-        "new product",
-        "general availability",
-        "ga",
-        "public beta",
-        "now available",
-        "introduced a new",
-    ],
-
-    "hiring_signals": [
-        "hiring", "careers", "join us", "jobs", "expanding team",
-        "open roles", "recruiting", "growing engineering", "hiring globally",
-        "career opportunities"
-    ],
-
-    "technical_signals": [
-        "api", "developer", "platform", "sdk", "infrastructure",
-        "framework", "developer tools", "deployment", "observability"
-    ],
-
-    "enterprise_signals": [
-        "enterprise", "security", "compliance", "governance", "scalable",
-        "enterprise-grade", "large organizations", "regulated industries"
-    ],
-
-    "partnership_signals": [
-        "partnership", "partnered", "teamed up", "alliance", 
-        "joint venture", "collaboration with"
-    ],
-}
-
-# Regex patterns to extract individual shipping velocity items from changelog-style content
-SHIPPING_VELOCITY_LINE_PATTERNS = [
-    r"published\s+20\d\d\s+(.+)",
-    r"released?\s+(.+)",
-    r"introduces?\s+(.+)",
-    r"added support\s+(?:for\s+)?(.+)",
-    r"(?:^|\n)(?:new|update)[:\s]+(.+)",
-    r"(?:^|\n)-\s+(.+)",
-]
-
-# Regex patterns to detect adoption metrics
-ADOPTION_REGEXES = [
-    r"\d+%\s+of\s+engineers",
-    r"\d+,\d+\s+engineers",
-    r"over\s+\d+%\s+adoption",
-    r"adoption.*?\d+.*?\d+",
-    r"growing\s+from\s+.+?to\s+.+?engineers",
-    r"thousands\s+of\s+users",
-    r"millions\s+of\s+users",
-    r"used\s+by\s+.+?engineers",
-    r"\d+,\d+\s+developers",
-    r"\d+%\s+of\s+our\s+(?:org|team|engineers)",
-]
-
-
 import re
 from collections import defaultdict
 import hashlib
 
+# ---------------------------------------------------------------------------
+# PATTERN DEFINITIONS
+# ---------------------------------------------------------------------------
+
+# Issue 1: Atomic launch detection — broad, case-insensitive
+# Each match yields one atomic event string
+LAUNCH_PATTERNS = [
+    # Explicit product event phrases
+    (r"product\s+announcement[:\s]+(.{5,80})", 1),
+    (r"products?\s+announced\s+at\s+(.{5,80})", 1),
+    (r"announced\s+at\s+\w+\s*20\d{2}[:\s]+(.{5,80})", 1),
+    (r"meet\s+([A-Z][A-Za-z0-9 ®™]{2,50})", 1),      # "Meet IBM Bob"
+    (r"introducing\s+([A-Za-z0-9 ®™]{3,60})", 1),     # "Introducing IBM Concert Platform"
+    (r"introduces?\s+([A-Za-z0-9 ®™]{3,60})", 1),
+    (r"launched?\s+([A-Za-z0-9 ®™]{3,60})", 1),
+    (r"released?\s+([A-Za-z0-9 ®™]{3,60})", 1),
+    (r"today\s+(?:we\s+)?announced\s+(.{5,80})", 1),
+    (r"now\s+available[:\s]+(.{5,80})", 1),
+    (r"general\s+availability[:\s]+(.{5,80})", 1),
+    (r"public\s+beta[:\s]+(.{5,80})", 1),
+    (r"published\s+20\d{2}\s+(.{3,80})", 1),
+    (r"ga\s+release[:\s]+(.{5,80})", 1),
+    (r"new\s+platform[:\s]+(.{5,80})", 1),
+    (r"new\s+product[:\s]+(.{5,80})", 1),
+    (r"added\s+support\s+for\s+(.{5,80})", 1),
+]
+
+# Issue 5: AI / model launches — STRICT named-product patterns only.
+# Do NOT use generic 'multimodal model:' or 'llm:' — these match sentence fragments.
+AI_PRODUCT_PATTERNS = [
+    (r"(granite(?:\s+vision)?\s+[\d.]+)", 0),        # "Granite Vision 3.0", "Granite 3"
+    (r"(granite\s+vision)", 0),                       # "Granite Vision" (no version)
+    (r"(watsonx(?:\.[a-z]+)?)", 0),                   # "watsonx", "watsonx.ai"
+    (r"new\s+(?:open.source\s+)?(?:ai\s+)?model[:\s]+([A-Z][A-Za-z0-9 ]{2,40})", 1),
+    (r"open.source\s+([A-Z][A-Za-z][A-Za-z0-9 ®™]{2,40})", 1),  # "open-source Granite Vision"
+]
+
+# Issue 4: Shipping velocity patterns — broad event-level detection
+SHIPPING_PATTERNS_DETECT = [
+    r"think\s+20\d{2}",
+    r"product\s+announcement",
+    r"announced\s+at",
+    r"new\s+capability",
+    r"new\s+feature",
+    r"new\s+platform",
+    r"introducing",
+    r"meet\s+[A-Z]",
+    r"released?",
+    r"published\s+20\d{2}",
+    r"changelog",
+    r"release\s+notes",
+]
+
+# Per-line patterns for extracting individual velocity items
+SHIPPING_LINE_PATTERNS = [
+    (r"published\s+20\d{2}\s+(.+)", 1),
+    (r"introduces?\s+(.+)", 1),
+    (r"added\s+support(?:\s+for)?\s+(.+)", 1),
+    (r"meet\s+([A-Z][A-Za-z0-9 ®™]{2,50})", 1),
+    (r"now\s+available:\s+(.+)", 1),
+    (r"product\s+announcement[:\s]+(.{5,80})", 1),
+]
+
+# Issue 2: Partnership — broad, sentence-level extraction
+PARTNERSHIP_PATTERNS = [
+    r"partner(?:ed|ship|ing)?(?:\s+with)?",
+    r"collaboration",
+    r"joint\s+(?:venture|initiative|effort)",
+    r"working\s+with",
+    r"alliance",
+    r"commit\s+\$",                  # "Commit $5 Billion"
+    r"and\s+red\s+hat",
+    r"and\s+microsoft",
+    r"and\s+aws",
+    r"and\s+google",
+    r"and\s+openai",
+    r"teamed\s+up",
+    r"\$\d+\s+billion",              # "$5 Billion" deals
+    r"strategic\s+(?:deal|agreement|relationship)",
+]
+
+# Issue 3: Adoption — expanded to include market validation
+ADOPTION_REGEXES = [
+    # Numeric adoption
+    r"\d+%\s+of\s+engineers",
+    r"\d+%\s+of\s+our\s+(?:org|team|engineers|organization)",
+    r"\d+,\d+\s+engineers",
+    r"\d+,\d+\s+developers",
+    r"over\s+\d+%\s+adoption",
+    r"over\s+\d+%\s+of\s+engineers",
+    r"growing\s+from\s+\d+\s+to\s+(?:over\s+)?\d+\s+engineers",
+    r"adoption\s+(?:went|grew|growing)\s+from\s+\w+\s+to\s+over\s+\d+%",
+    r"thousands\s+of\s+users",
+    r"millions\s+of\s+users",
+    r"used\s+by\s+(?:over\s+)?\d+",
+    # Market validation / benchmark performance
+    r"(?:ranked|ranking|rank)\s+(?:first|second|third|#1|#2|\d+)\b",
+    r"(?:first|second|third)\s+(?:place|in|on)\s+(?:the\s+)?(?:leaderboard|benchmark|ranking)",
+    r"leaderboard",
+    r"top\s+performer",
+    r"top\s+model",
+    r"outperforms?",
+    r"head.and.shoulders\s+above",
+    r"state.of.the.art",
+    r"sota",
+    r"best.in.class",
+    r"industry.leading",
+    r"customers?(?:\s+including|\s+such\s+as|\s+like)",
+    r"organizations?\s+(?:use|using|rely)",
+    r"trusted\s+by",
+]
+
+# Issue 4: False positive rejection
+FALSE_POSITIVE_PATTERNS = [
+    ".py", ".js", ".tsx", ".ts", ".css", ".html",
+    "marketing-static", "cdn", "/assets/", "favicon",
+    "summary.py", "segmentation.py", "report.py", "test_",
+    "http://", "https://", ".com/", ".io/",
+]
+
+# Strict hiring — only explicit open-position language
+HIRING_REQUIRED_TERMS = [
+    "we are hiring",
+    "we're hiring",
+    "hiring engineers",
+    "hiring now",
+    "open roles",
+    "job openings",
+    "recruiting",
+    "growing our team",
+    "careers page",
+    "open positions",
+    "apply now",
+    "job board",
+    "search jobs",
+    "job alerts",
+]
+
+AI_INITIATIVE_KEYWORDS = [
+    "ai agent", "agentic ai", "llm", "foundation model",
+    "generative ai", "machine learning", "artificial intelligence",
+    "reasoning model"
+]
+
+AI_ACTION_VERBS = [
+    "announce", "launch", "commit", "release", "introduce",
+    "unveil", "expand", "partner", "invest", "acquire"
+]
+
+TECHNICAL_KEYWORDS = [
+    "api", "developer", "platform", "sdk", "infrastructure",
+    "framework", "developer tools", "deployment", "observability"
+]
+
+ENTERPRISE_KEYWORDS = [
+    "enterprise", "security", "compliance", "governance", "scalable",
+    "enterprise-grade", "large organizations", "regulated industries"
+]
+
+HISTORICAL_TERMS = [
+    "years ago", "first released", "founded", "origin story",
+    "started the company", "we built", "over the years",
+    "for decades", "27 years", "23 years"
+]
+
+PRICING_TERMS = [
+    "per month", "billed annually", "fixed price",
+    "unlimited users", "storage space", "free trial", "payment options"
+]
+
+NEWSLETTER_TERMS = [
+    "newsletter", "join more than", "stay in touch"
+]
+
+
+# ---------------------------------------------------------------------------
+# HELPER FUNCTIONS
+# ---------------------------------------------------------------------------
+
+def is_false_positive(text: str) -> bool:
+    for pat in FALSE_POSITIVE_PATTERNS:
+        if pat in text:
+            return True
+    return False
+
+
+def is_pricing_or_package_description(text: str) -> bool:
+    lower = text.lower()
+    return any(t in lower for t in PRICING_TERMS)
+
+
+def is_newsletter_description(text: str) -> bool:
+    lower = text.lower()
+    return any(t in lower for t in NEWSLETTER_TERMS)
+
+
+def has_historical_context(text: str) -> bool:
+    lower = text.lower()
+    return any(t in lower for t in HISTORICAL_TERMS)
+
+
+def has_recent_context(text: str) -> bool:
+    lower = text.lower()
+    RECENT = ["2024", "2025", "2026", "today", "recently", "announced",
+              "launched", "now available", "beta", "general availability"]
+    return any(t in lower for t in RECENT)
+
+
+def clean_capture(text: str) -> str:
+    """Strip markdown noise, links, and extra whitespace from a captured group."""
+    # Remove markdown link text [...](...) 
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    # Remove leftover URLs
+    text = re.sub(r'https?://\S+', '', text)
+    # Remove markdown symbols
+    text = re.sub(r'[#\*\[\]]+', '', text)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+def extract_atomic_launch_signals(paragraph: str) -> list:
+    """
+    Issue 1 & 5: Extract individual launch events + AI product launches.
+    Each pattern yields one atomic item. Never stores the whole paragraph.
+    """
+    items = []
+    seen = set()
+
+    all_patterns = LAUNCH_PATTERNS + AI_PRODUCT_PATTERNS
+
+    for pattern, group_idx in all_patterns:
+        for m in re.finditer(pattern, paragraph, flags=re.IGNORECASE):
+            try:
+                captured = m.group(group_idx).strip() if m.lastindex and m.lastindex >= group_idx else m.group(0).strip()
+            except IndexError:
+                captured = m.group(0).strip()
+            captured = clean_capture(captured)
+            if len(captured) > 3 and not is_false_positive(captured):
+                key = captured.lower()[:40]
+                if key not in seen:
+                    seen.add(key)
+                    items.append(captured)
+
+    return items
+
+
+def extract_shipping_velocity(paragraph: str) -> list:
+    """
+    Issue 4: Extract individual shipping velocity entries.
+    Returns one item per feature/announcement line.
+    """
+    items = []
+    seen = set()
+
+    # First try line-level patterns
+    for line in paragraph.split('\n'):
+        line = line.strip()
+        if not line or len(line) < 10:
+            continue
+        for pattern, group_idx in SHIPPING_LINE_PATTERNS:
+            m = re.search(pattern, line, flags=re.IGNORECASE)
+            if m:
+                try:
+                    captured = m.group(group_idx).strip() if m.lastindex and m.lastindex >= group_idx else line
+                except IndexError:
+                    captured = line
+                captured = clean_capture(captured)
+                if len(captured) > 5 and not is_false_positive(captured):
+                    key = captured.lower()[:40]
+                    if key not in seen:
+                        seen.add(key)
+                        items.append(captured)
+                break
+
+    return items
+
+
+def extract_adoption_signals(paragraph: str) -> list:
+    """
+    Issue 3: Expanded adoption extraction — numeric evidence + market validation.
+    """
+    found = []
+    seen = set()
+
+    for pattern in ADOPTION_REGEXES:
+        for m in re.finditer(pattern, paragraph, flags=re.IGNORECASE):
+            # Extract surrounding sentence for context
+            start = max(0, m.start() - 60)
+            end = min(len(paragraph), m.end() + 60)
+            snippet = paragraph[start:end].strip()
+            snippet = clean_capture(snippet)
+            if snippet and len(snippet) > 5 and not is_false_positive(snippet):
+                key = snippet.lower()[:50]
+                if key not in seen:
+                    seen.add(key)
+                    found.append(snippet)
+
+    return found
+
+
+def extract_partnership_signals(paragraph: str) -> list:
+    """
+    Issue 2: Sentence-level partnership extraction.
+    Returns sentences that contain partnership evidence.
+    """
+    found = []
+    sentences = re.split(r'(?<=[.!?])\s+|\n', paragraph)
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if len(sentence) < 15:
+            continue
+        lower = sentence.lower()
+        for pattern in PARTNERSHIP_PATTERNS:
+            if re.search(pattern, lower, flags=re.IGNORECASE):
+                cleaned = clean_capture(sentence)
+                if cleaned and len(cleaned) > 10 and not is_false_positive(cleaned):
+                    found.append(cleaned)
+                break
+
+    return found
+
+
+def extract_hiring_signals(paragraph: str) -> list:
+    """
+    Strict hiring — only explicit open-position language.
+    Rejects generic 'join our team' / 'careers' without job specifics.
+    """
+    lower = paragraph.lower()
+    for term in HIRING_REQUIRED_TERMS:
+        if term in lower:
+            return [paragraph.strip()]
+    return []
+
+
+def _dedup_launch_signals(items: list) -> list:
+    """
+    Remove substrings: if 'Granite' and 'Granite Vision 3' both exist,
+    keep only the longest (most specific) form.
+    """
+    # Sort longest-first
+    sorted_items = sorted(items, key=len, reverse=True)
+    result = []
+    for candidate in sorted_items:
+        cl = candidate.lower()
+        # Skip if this is a substring of something already kept
+        if any(cl in kept.lower() for kept in result):
+            continue
+        result.append(candidate)
+    return result
+
+
 def deduplicate_signals(extracted: dict) -> dict:
     seen_hashes = set()
     deduped = defaultdict(list)
-    
-    # Priority order for deduplication
+
     priority = [
         "launch_signals",
         "adoption_signals",
@@ -84,19 +369,16 @@ def deduplicate_signals(extracted: dict) -> dict:
         "enterprise_signals",
         "ai_initiatives"
     ]
-    
+
     for category in priority:
         if category in extracted:
             for chunk in extracted[category]:
-                # Normalize chunk text
                 normalized = re.sub(r'\W+', '', chunk.lower())
                 chunk_hash = hashlib.md5(normalized.encode()).hexdigest()
-                
                 if chunk_hash not in seen_hashes:
                     seen_hashes.add(chunk_hash)
                     deduped[category].append(chunk)
-                    
-    # Handle any remaining categories not in priority list
+
     for category, chunks in extracted.items():
         if category not in priority:
             for chunk in chunks:
@@ -105,231 +387,131 @@ def deduplicate_signals(extracted: dict) -> dict:
                 if chunk_hash not in seen_hashes:
                     seen_hashes.add(chunk_hash)
                     deduped[category].append(chunk)
-                    
+
     return dict(deduped)
 
 
-def is_pricing_or_package_description(text: str) -> bool:
-    lower_text = text.lower()
-    PRICING_TERMS = [
-        "per month", "$299", "billed annually", "fixed price",
-        "unlimited users", "storage space", "free trial", "payment options"
-    ]
-    return any(term in lower_text for term in PRICING_TERMS)
+# ---------------------------------------------------------------------------
+# MAIN ENTRY POINT
+# ---------------------------------------------------------------------------
 
-def is_newsletter_description(text: str) -> bool:
-    lower_text = text.lower()
-    NEWSLETTER_TERMS = [
-        "newsletter", "join more than", "product updates", "stay in touch"
-    ]
-    return any(term in lower_text for term in NEWSLETTER_TERMS)
-
-def has_recent_launch_context(text: str) -> bool:
-    lower_text = text.lower()
-    
-    HISTORICAL_TERMS = [
-        "years ago",
-        "first released",
-        "founded",
-        "origin story",
-        "started the company",
-        "we built",
-        "over the years",
-        "for decades",
-        "27 years",
-        "23 years"
-    ]
-    if any(term in lower_text for term in HISTORICAL_TERMS):
-        return False
-        
-    RECENT_TERMS = [
-        "2025",
-        "2026",
-        "today",
-        "recently",
-        "new",
-        "launching",
-        "announced",
-        "now available",
-        "beta",
-        "general availability",
-        "ga"
-    ]
-    if not any(term in lower_text for term in RECENT_TERMS):
-        return False
-        
-    return True
-
-
-def extract_granular_signals(paragraph: str) -> list[str]:
-    """
-    For changelog-style paragraphs, extract each individual release/feature
-    as a separate signal rather than storing the whole block.
-    """
-    items = []
-    lines = paragraph.split('\n')
-    for line in lines:
-        line = line.strip()
-        if not line or len(line) < 10:
-            continue
-        line_lower = line.lower()
-        for pattern in SHIPPING_VELOCITY_LINE_PATTERNS:
-            m = re.search(pattern, line_lower)
-            if m:
-                # extract the captured group if present, else use the line
-                captured = m.group(1).strip() if m.lastindex else line
-                if len(captured) > 5:
-                    items.append(captured)
-                break
-    # If no line-level extraction worked, fall back to the whole paragraph
-    if not items:
-        items.append(paragraph.strip())
-    return items
-
-
-def extract_adoption_signals(paragraph: str) -> list[str]:
-    """
-    Use regex to extract individual adoption metrics from a paragraph.
-    """
-    found = []
-    for pattern in ADOPTION_REGEXES:
-        for m in re.finditer(pattern, paragraph, flags=re.IGNORECASE):
-            match_text = m.group(0).strip()
-            if match_text and len(match_text) > 5:
-                found.append(match_text)
-    return found
-
-
-def extract_signals(
-    text: str
-):
-
+def extract_signals(text: str) -> dict:
     extracted = defaultdict(list)
 
-    # ---------------------------------------------------
-    # Split on paragraph boundaries, NOT sentence endings.
-    # Sentence splitting (r'(?<=[.!?])\s+') destroys
-    # semantic coherence and creates 100+ micro-fragments.
-    # Paragraph-level splitting yields 5-15 meaningful
-    # evidence units per company.
-    # ---------------------------------------------------
-
+    # Split on paragraph boundaries
     paragraphs = [
         p.strip()
         for p in re.split(r"\n\s*\n", text)
         if p.strip() and len(p.strip()) > 30
     ]
 
-    print(
-        f"[signals] Received {len(paragraphs)} chunks"
-    )
+    print(f"[signals] Received {len(paragraphs)} chunks")
 
     for i, chunk in enumerate(paragraphs[:3]):
-
         print(f"\n[signals] Sample Chunk {i+1}")
-
         print(chunk[:400])
-
         print("-" * 40)
-
-    # ---------------------------------------------------
-    # Match signals against each paragraph
-    # ---------------------------------------------------
 
     for paragraph in paragraphs:
 
-        paragraph_lower = paragraph.lower()
+        # Skip noise
+        if is_pricing_or_package_description(paragraph):
+            continue
+        if is_newsletter_description(paragraph):
+            continue
 
-        # ---- Adoption: regex-based extraction (runs for every paragraph) ----
-        adoption_items = extract_adoption_signals(paragraph)
-        for item in adoption_items:
+        # ---- LAUNCH (atomic, every paragraph) ----
+        launch_items = extract_atomic_launch_signals(paragraph)
+        for item in launch_items:
+            extracted["launch_signals"].append(item)
+            print(f"[signals] launch: {item[:80]}")
+
+        # ---- ADOPTION (regex + market validation, every paragraph) ----
+        for item in extract_adoption_signals(paragraph):
             extracted["adoption_signals"].append(item)
-            print(f"[signals] Matched adoption_signals: {item[:80]}")
+            print(f"[signals] adoption: {item[:80]}")
 
-        for (
-            signal_type,
-            keywords
-        ) in SIGNAL_PATTERNS.items():
+        # ---- PARTNERSHIPS (sentence-level, every paragraph) ----
+        for item in extract_partnership_signals(paragraph):
+            extracted["partnership_signals"].append(item)
+            print(f"[signals] partnership: {item[:80]}")
 
-            # Skip adoption here; handled above
-            if signal_type == "adoption_signals":
-                continue
+        # ---- HIRING (strict) ----
+        for item in extract_hiring_signals(paragraph):
+            extracted["hiring_signals"].append(item)
+            print(f"[signals] hiring: {item[:80]}")
 
-            if signal_type == "ai_initiatives":
-                match_count = sum(paragraph_lower.count(kw) for kw in keywords)
-                action_verbs = ["announce", "launch", "commit", "release", "introduce", "unveil", "expand", "partner", "invest", "acquire"]
-                has_action_verb = any(v in paragraph_lower for v in action_verbs)
-                if match_count >= 2 and has_action_verb:
-                    extracted[signal_type].append(paragraph.strip())
-                    print(f"[signals] Matched {signal_type} (score: {match_count})")
-
-            elif signal_type == "launch_signals":
-                if is_pricing_or_package_description(paragraph):
-                    continue
-                if is_newsletter_description(paragraph):
-                    continue
-                if has_recent_launch_context(paragraph):
-                    for keyword in keywords:
-                        if keyword in paragraph_lower:
-                            extracted[signal_type].append(paragraph.strip())
-                            print(f"[signals] Matched {signal_type}")
-                            break
-
-            elif signal_type == "shipping_velocity_signals":
-                # Check if this is a changelog-style paragraph
-                is_changelog = any(k in paragraph_lower for k in [
-                    "published 2024", "published 2025", "published 2026",
-                    "changelog", "release notes"
-                ])
-                for keyword in keywords:
-                    if keyword in paragraph_lower:
-                        if is_changelog:
-                            # Extract granularly
-                            items = extract_granular_signals(paragraph)
-                            for item in items:
-                                extracted[signal_type].append(item)
-                                print(f"[signals] Matched shipping_velocity_signals (granular): {item[:60]}")
-                        else:
-                            extracted[signal_type].append(paragraph.strip())
-                            print(f"[signals] Matched {signal_type}")
-                        break
-
+        # ---- SHIPPING VELOCITY (changelog/announcement detection) ----
+        paragraph_lower = paragraph.lower()
+        is_velocity_paragraph = any(
+            re.search(pat, paragraph_lower, flags=re.IGNORECASE)
+            for pat in SHIPPING_PATTERNS_DETECT
+        )
+        if is_velocity_paragraph and not has_historical_context(paragraph):
+            items = extract_shipping_velocity(paragraph)
+            if items:
+                for item in items:
+                    extracted["shipping_velocity_signals"].append(item)
+                    print(f"[signals] shipping_velocity: {item[:60]}")
             else:
-                for keyword in keywords:
-                    if keyword in paragraph_lower:
-                        extracted[signal_type].append(paragraph.strip())
-                        print(f"[signals] Matched {signal_type}")
-                        break
+                # Store a cleaned snippet of the whole paragraph as one item
+                snippet = clean_capture(paragraph[:200])
+                if snippet:
+                    extracted["shipping_velocity_signals"].append(snippet)
+                    print(f"[signals] shipping_velocity (para): {snippet[:60]}")
 
-    deduped_signals = deduplicate_signals(extracted)
-    
-    print("\n" + "="*50)
-    print("SIGNAL AUDIT")
-    print("="*50)
-    for cat in ["launch_signals", "shipping_velocity_signals", "adoption_signals", "hiring_signals", "partnership_signals"]:
-        items = deduped_signals.get(cat, [])
+        # ---- AI INITIATIVES (2+ keywords + action verb) ----
+        match_count = sum(paragraph_lower.count(kw) for kw in AI_INITIATIVE_KEYWORDS)
+        has_action_verb = any(v in paragraph_lower for v in AI_ACTION_VERBS)
+        if match_count >= 2 and has_action_verb:
+            extracted["ai_initiatives"].append(paragraph.strip())
+            print(f"[signals] ai_initiatives (score: {match_count})")
+
+        # ---- TECHNICAL ----
+        if any(kw in paragraph_lower for kw in TECHNICAL_KEYWORDS):
+            extracted["technical_signals"].append(paragraph.strip())
+
+        # ---- ENTERPRISE ----
+        if any(kw in paragraph_lower for kw in ENTERPRISE_KEYWORDS):
+            extracted["enterprise_signals"].append(paragraph.strip())
+
+    # Deduplicate launch signals by longest-match (before hash dedup)
+    if "launch_signals" in extracted:
+        extracted["launch_signals"] = _dedup_launch_signals(extracted["launch_signals"])
+
+    deduped = deduplicate_signals(extracted)
+
+    # ---- SIGNAL AUDIT ----
+    print("\n" + "=" * 50)
+    print("===== SIGNAL AUDIT =====")
+    print("=" * 50)
+    for cat in ["launch_signals", "shipping_velocity_signals", "adoption_signals",
+                "hiring_signals", "partnership_signals"]:
+        items = deduped.get(cat, [])
         print(f"{cat}: {len(items)}")
-        for ex in items[:3]:
+        for ex in items[:5]:
             print(f"  - {ex[:100]}")
-    print("="*50)
-        
-    return deduped_signals
+    print("=" * 50)
+
+    return deduped
+
 
 if __name__ == "__main__":
 
     sample = """
-    Introducing our new AI agent platform.
+    Products announced at Think 2026 — Meet IBM Bob, your SDLC partner.
+    Introducing IBM Concert Platform: Closing the gap between insight and action.
 
-    We are hiring engineers
-    to expand our developer API.
+    IBM and Red Hat Commit $5 Billion to Redefine the Future of Open Source in the AI Era.
 
-    Enterprise customers can
-    now use advanced security
-    controls.
+    Granite Vision 3 achieved second place on OCRBench leaderboard,
+    head-and-shoulders above any other small model.
+
+    adoption growing from 150 to over 500 engineers (~60% of our org!)
+
+    We are hiring engineers. Search Jobs. Open roles in ML and infrastructure.
     """
 
-    signals = extract_signals(
-        sample
-    )
-
-    print(signals)
+    signals = extract_signals(sample)
+    from pprint import pprint
+    pprint(signals)
