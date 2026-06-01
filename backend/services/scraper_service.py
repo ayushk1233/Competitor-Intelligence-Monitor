@@ -17,13 +17,63 @@ from backend.metrics import (
 
 settings = get_settings()
 
-# Pages we want to find per competitor, in priority order
+# Pages we want to find per competitor
 TARGET_PATHS = {
-    "pricing":  ["/pricing", "/plans", "/price"],
-    "about":    ["/about", "/company", "/mission", "/leadership", "/team", "/about-us"],
-    "blog":     ["/blog", "/news", "/updates", "/changelog"],
-    "careers":  ["/careers", "/jobs", "/join-us", "/hiring"],
+    "about": [
+        "/about",
+        "/company",
+        "/mission",
+        "/leadership",
+        "/team",
+        "/about-us"
+    ],
+    "blog": [
+        "/blog",
+        "/news",
+        "/updates",
+        "/changelog"
+    ],
+    "news": [
+        "/newsroom",
+        "/press",
+        "/press-room",
+        "/media",
+        "/announcements"
+    ],
+    "customers": [
+        "/customers",
+        "/customer-stories",
+        "/case-studies",
+        "/success-stories"
+    ],
+    "events": [
+        "/events",
+        "/sessions",
+        "/conference",
+        "/summit"
+    ],
+    "pricing": [
+        "/pricing",
+        "/plans",
+        "/price"
+    ],
+    "careers": [
+        "/careers",
+        "/jobs",
+        "/join-us",
+        "/hiring"
+    ]
 }
+
+PAGE_DISCOVERY_PRIORITY = [
+    "about",
+    "blog",
+    "news",
+    "customers",
+    "events",
+    "pricing",
+    "careers"
+]
 
 # URLs containing any of these patterns will never be selected
 BAD_PAGE_PATTERNS = [
@@ -189,20 +239,24 @@ class ScraperService:
         except Exception:
             all_links = []
 
-        for page_type, paths in TARGET_PATHS.items():
+        for page_type in PAGE_DISCOVERY_PRIORITY:
+            paths = TARGET_PATHS[page_type]
             # Check if already have enough pages
             if len(found) >= settings.max_pages_per_competitor - 1:
                 break
 
             # Try to find in scraped links first
             match = self._find_in_links(all_links, paths, base_url)
-            if match:
+            if match and match not in found.values():
                 found[page_type] = match
                 continue
 
             # Fall back: try each path directly
             for path in paths:
                 url = f"{base_url}{path}"
+                
+                if url in found.values():
+                    continue
 
                 # Skip known-bad patterns
                 bad_match = next((bad for bad in BAD_PAGE_PATTERNS if bad in url.lower()), None)
@@ -217,6 +271,11 @@ class ScraperService:
                         break
                 except Exception:
                     continue
+
+        print("\n===== DISCOVERY AUDIT =====")
+        print("Selected Pages:")
+        for pt, u in found.items():
+            print(f"{pt:<10} {u}")
 
         return found
 

@@ -1,6 +1,41 @@
 import re
+import json
 from collections import defaultdict
 import hashlib
+
+
+def split_into_sentences(text: str) -> list:
+    return [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n', text) if s.strip()]
+
+def is_low_quality(sentence: str) -> bool:
+    if len(sentence.split()) < 5:
+        return True
+    lower = sentence.lower()
+    BAD = ["read more", "press inquiries", "contact", "media@", "learn more", "story"]
+    return any(b in lower for b in BAD)
+
+def format_signal(text: str, source_type: str) -> str:
+    lower = text.lower()
+    conf = 0.50
+    if "launches" in lower: conf = 0.95
+    elif "released" in lower: conf = 0.90
+    elif "introduced" in lower: conf = 0.85
+    elif "powers" in lower: conf = 0.75
+    elif "helps power" in lower: conf = 0.70
+    return json.dumps({
+        "text": text,
+        "confidence": conf,
+        "source_type": source_type
+    })
+
+def normalize(signal: str) -> str:
+    try:
+        obj = json.loads(signal)
+        text = obj.get("text", signal)
+    except:
+        text = signal
+    return re.sub(r'\W+', '', text.lower())
+
 
 # ---------------------------------------------------------------------------
 # PATTERN DEFINITIONS
@@ -29,6 +64,28 @@ LAUNCH_PATTERNS = [
     (r"added\s+support\s+for\s+(.{5,80})", 1),
 ]
 
+# Sentence-level launch patterns (Stripe momentum fix)
+LAUNCH_SENTENCE_PATTERNS = [
+    r"\blaunches\b",
+    r"\blaunched\b",
+    r"\blaunch\b",
+    r"\breleased\b",
+    r"\brelease\b",
+    r"\brollout\b",
+    r"\brolling out\b",
+    r"\bnew product\b",
+    r"\bnew products\b",
+    r"\bintroduced\b",
+    r"\bintroducing\b",
+    r"\bavailable now\b",
+    r"\bnow available\b",
+    r"\bships\b",
+    r"\bshipping\b",
+    r"\bbuilds out\b",
+    r"\bpowers\b",
+    r"\bhelps power\b"
+]
+
 # Issue 5: AI / model launches — STRICT named-product patterns only.
 # Do NOT use generic 'multimodal model:' or 'llm:' — these match sentence fragments.
 AI_PRODUCT_PATTERNS = [
@@ -40,6 +97,31 @@ AI_PRODUCT_PATTERNS = [
 ]
 
 # Issue 4: Shipping velocity patterns — broad event-level detection
+
+SHIPPING_PATTERNS = [
+    r"\b\d+\s+launches\b",
+    r"\bshipped\b",
+    r"\bshipping\b",
+    r"\brolling out\b",
+    r"\breleased\b",
+    r"\blaunches\b",
+    r"\bintroduced\b",
+    r"\bnew products\b",
+    r"\bnow available\b",
+]
+
+ADOPTION_PATTERNS = [
+    r"every company",
+    r"customers",
+    r"businesses",
+    r"expands its use",
+    r"millions of users",
+    r"adoption",
+    r"used by",
+    r"growing",
+    r"growth",
+]
+
 SHIPPING_PATTERNS_DETECT = [
     r"think\s+20\d{2}",
     r"product\s+announcement",
@@ -249,6 +331,33 @@ def extract_atomic_launch_signals(paragraph: str) -> list:
     return items
 
 
+def extract_sentence_launch_signals(paragraph: str) -> list:
+    """
+    Sentence-level extraction for launches (fixes Stripe momentum).
+    """
+    found = []
+    sentences = re.split(r'(?<=[.!?])\s+|\n', paragraph)
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if len(sentence) < 20:
+            if len(sentence) > 3:
+                print(f"  [signals] launch candidate rejected (too short): {sentence}")
+            continue
+            
+        lower = sentence.lower()
+        for pattern in LAUNCH_SENTENCE_PATTERNS:
+            if re.search(pattern, lower, flags=re.IGNORECASE):
+                cleaned = clean_capture(sentence)
+                if cleaned and not is_false_positive(cleaned):
+                    if len(cleaned) >= 20:
+                        found.append(cleaned)
+                        print(f"  [signals] launch candidate accepted: {cleaned}")
+                    else:
+                        print(f"  [signals] launch candidate rejected (too short after clean): {cleaned}")
+                break
+    return found
+
+
 def extract_shipping_velocity(paragraph: str) -> list:
     """
     Issue 4: Extract individual shipping velocity entries.
@@ -373,7 +482,7 @@ def deduplicate_signals(extracted: dict) -> dict:
     for category in priority:
         if category in extracted:
             for chunk in extracted[category]:
-                normalized = re.sub(r'\W+', '', chunk.lower())
+                normalized = normalize(chunk)
                 chunk_hash = hashlib.md5(normalized.encode()).hexdigest()
                 if chunk_hash not in seen_hashes:
                     seen_hashes.add(chunk_hash)
@@ -382,7 +491,7 @@ def deduplicate_signals(extracted: dict) -> dict:
     for category, chunks in extracted.items():
         if category not in priority:
             for chunk in chunks:
-                normalized = re.sub(r'\W+', '', chunk.lower())
+                normalized = normalize(chunk)
                 chunk_hash = hashlib.md5(normalized.encode()).hexdigest()
                 if chunk_hash not in seen_hashes:
                     seen_hashes.add(chunk_hash)
@@ -398,90 +507,102 @@ def deduplicate_signals(extracted: dict) -> dict:
 def extract_signals(text: str) -> dict:
     extracted = defaultdict(list)
 
-    # Split on paragraph boundaries
-    paragraphs = [
-        p.strip()
-        for p in re.split(r"\n\s*\n", text)
-        if p.strip() and len(p.strip()) > 30
-    ]
+    sentences = split_into_sentences(text)
+    print(f"[signals] Received {len(sentences)} sentences")
 
-    print(f"[signals] Received {len(paragraphs)} chunks")
-
-    for i, chunk in enumerate(paragraphs[:3]):
-        print(f"\n[signals] Sample Chunk {i+1}")
-        print(chunk[:400])
-        print("-" * 40)
-
-    for paragraph in paragraphs:
+    # Evaluate each sentence independently
+    for sentence in sentences:
+        if is_low_quality(sentence):
+            print(f"[signal rejected] low quality: {sentence[:40]}")
+            continue
 
         # Skip noise
-        if is_pricing_or_package_description(paragraph):
-            continue
-        if is_newsletter_description(paragraph):
+        if is_pricing_or_package_description(sentence) or is_newsletter_description(sentence):
             continue
 
-        # ---- LAUNCH (atomic, every paragraph) ----
-        launch_items = extract_atomic_launch_signals(paragraph)
-        for item in launch_items:
-            extracted["launch_signals"].append(item)
-            print(f"[signals] launch: {item[:80]}")
+        sentence_lower = sentence.lower()
+        
+        # ---- LAUNCH ----
+        # Use existing logic for atomic signals (IBM support)
+        launch_items = extract_atomic_launch_signals(sentence)
+        launch_sentences = extract_sentence_launch_signals(sentence)
+        
+        for item in launch_items + launch_sentences:
+            sig = format_signal(item, "launch")
+            extracted["launch_signals"].append(sig)
+            print(f"[signal accepted] launch: {item[:80]}")
 
-        # ---- ADOPTION (regex + market validation, every paragraph) ----
-        for item in extract_adoption_signals(paragraph):
-            extracted["adoption_signals"].append(item)
-            print(f"[signals] adoption: {item[:80]}")
-
-        # ---- PARTNERSHIPS (sentence-level, every paragraph) ----
-        for item in extract_partnership_signals(paragraph):
-            extracted["partnership_signals"].append(item)
-            print(f"[signals] partnership: {item[:80]}")
-
-        # ---- HIRING (strict) ----
-        for item in extract_hiring_signals(paragraph):
-            extracted["hiring_signals"].append(item)
-            print(f"[signals] hiring: {item[:80]}")
-
-        # ---- SHIPPING VELOCITY (changelog/announcement detection) ----
-        paragraph_lower = paragraph.lower()
-        is_velocity_paragraph = any(
-            re.search(pat, paragraph_lower, flags=re.IGNORECASE)
-            for pat in SHIPPING_PATTERNS_DETECT
-        )
-        if is_velocity_paragraph and not has_historical_context(paragraph):
-            items = extract_shipping_velocity(paragraph)
-            if items:
+        # ---- SHIPPING VELOCITY ----
+        has_shipping = False
+        for pat in SHIPPING_PATTERNS:
+            if re.search(pat, sentence_lower, flags=re.IGNORECASE):
+                m = re.search(pat, sentence_lower, flags=re.IGNORECASE)
+                sig_text = m.group(0)
+                sig = format_signal(sig_text, "shipping_velocity")
+                extracted["shipping_velocity_signals"].append(sig)
+                print(f"[signal accepted] shipping_velocity: {sig_text}")
+                has_shipping = True
+        
+        if not has_shipping:
+            # Fallback for IBM
+            if any(re.search(pat, sentence_lower, flags=re.IGNORECASE) for pat in SHIPPING_PATTERNS_DETECT):
+                items = extract_shipping_velocity(sentence)
                 for item in items:
-                    extracted["shipping_velocity_signals"].append(item)
-                    print(f"[signals] shipping_velocity: {item[:60]}")
-            else:
-                # Store a cleaned snippet of the whole paragraph as one item
-                snippet = clean_capture(paragraph[:200])
-                if snippet:
-                    extracted["shipping_velocity_signals"].append(snippet)
-                    print(f"[signals] shipping_velocity (para): {snippet[:60]}")
+                    sig = format_signal(item, "shipping_velocity")
+                    extracted["shipping_velocity_signals"].append(sig)
+                    print(f"[signal accepted] shipping_velocity: {item[:60]}")
 
-        # ---- AI INITIATIVES (2+ keywords + action verb) ----
-        match_count = sum(paragraph_lower.count(kw) for kw in AI_INITIATIVE_KEYWORDS)
-        has_action_verb = any(v in paragraph_lower for v in AI_ACTION_VERBS)
+        # ---- ADOPTION ----
+        has_adoption = False
+        for pat in ADOPTION_PATTERNS:
+            if re.search(pat, sentence_lower, flags=re.IGNORECASE):
+                sig = format_signal(sentence, "adoption")
+                extracted["adoption_signals"].append(sig)
+                print(f"[signal accepted] adoption: {sentence[:60]}")
+                has_adoption = True
+                break
+                
+        if not has_adoption:
+            for item in extract_adoption_signals(sentence):
+                sig = format_signal(item, "adoption")
+                extracted["adoption_signals"].append(sig)
+                print(f"[signal accepted] adoption: {item[:80]}")
+
+        # ---- PARTNERSHIPS ----
+        for item in extract_partnership_signals(sentence):
+            sig = format_signal(item, "partnership")
+            extracted["partnership_signals"].append(sig)
+            print(f"[signal accepted] partnership: {item[:80]}")
+
+        # ---- HIRING ----
+        for item in extract_hiring_signals(sentence):
+            sig = format_signal(item, "hiring")
+            extracted["hiring_signals"].append(sig)
+            print(f"[signal accepted] hiring: {item[:80]}")
+
+        # ---- AI INITIATIVES ----
+        match_count = sum(sentence_lower.count(kw) for kw in AI_INITIATIVE_KEYWORDS)
+        has_action_verb = any(v in sentence_lower for v in AI_ACTION_VERBS)
         if match_count >= 2 and has_action_verb:
-            extracted["ai_initiatives"].append(paragraph.strip())
-            print(f"[signals] ai_initiatives (score: {match_count})")
+            sig = format_signal(sentence, "ai_initiative")
+            extracted["ai_initiatives"].append(sig)
+            print(f"[signal accepted] ai_initiative: {sentence[:40]}")
 
         # ---- TECHNICAL ----
-        if any(kw in paragraph_lower for kw in TECHNICAL_KEYWORDS):
-            extracted["technical_signals"].append(paragraph.strip())
+        if any(kw in sentence_lower for kw in TECHNICAL_KEYWORDS):
+            sig = format_signal(sentence, "technical")
+            extracted["technical_signals"].append(sig)
 
         # ---- ENTERPRISE ----
-        if any(kw in paragraph_lower for kw in ENTERPRISE_KEYWORDS):
-            extracted["enterprise_signals"].append(paragraph.strip())
+        if any(kw in sentence_lower for kw in ENTERPRISE_KEYWORDS):
+            sig = format_signal(sentence, "enterprise")
+            extracted["enterprise_signals"].append(sig)
 
-    # Deduplicate launch signals by longest-match (before hash dedup)
     if "launch_signals" in extracted:
         extracted["launch_signals"] = _dedup_launch_signals(extracted["launch_signals"])
 
     deduped = deduplicate_signals(extracted)
 
-    # ---- SIGNAL AUDIT ----
     print("\n" + "=" * 50)
     print("===== SIGNAL AUDIT =====")
     print("=" * 50)
@@ -490,11 +611,27 @@ def extract_signals(text: str) -> dict:
         items = deduped.get(cat, [])
         print(f"{cat}: {len(items)}")
         for ex in items[:5]:
-            print(f"  - {ex[:100]}")
+            try:
+                obj = json.loads(ex)
+                text = obj.get("text", ex)
+            except:
+                text = ex
+            print(f"  - {text[:100]}")
     print("=" * 50)
 
-    return deduped
+    # Revert signal objects back into plain strings to fix Pydantic validation
+    final_signals = defaultdict(list)
+    for cat, items in deduped.items():
+        for ex in items:
+            try:
+                obj = json.loads(ex)
+                text = obj.get("text", ex)
+            except:
+                text = ex
+            print(f"[debug] {cat} signal type: {type(text)}")
+            final_signals[cat].append(text)
 
+    return dict(final_signals)
 
 if __name__ == "__main__":
 
