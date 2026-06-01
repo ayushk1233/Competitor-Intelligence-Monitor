@@ -1,241 +1,184 @@
 import re
-import json
 
-with open("backend/retrieval/signal_extractor.py", "r") as f:
-    code = f.read()
+with open('backend/retrieval/signal_extractor.py', 'r') as f:
+    content = f.read()
 
-if "import json" not in code:
-    code = code.replace("import re", "import re\nimport json")
+# PROBLEM 1: ARTIFACT_PATTERNS
+artifact_str = """# ---------------------------------------------------------------------------
+# PATTERN DEFINITIONS
+# ---------------------------------------------------------------------------
 
-# Add split_into_sentences and format_signal
-new_funcs = """
-def split_into_sentences(text: str) -> list:
-    return [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n', text) if s.strip()]
+ARTIFACT_PATTERNS = [
+    r"q=\d+",
+    r"w=\d+",
+    r"\\.jpg",
+    r"\\.png",
+    r"\\.webp",
+    r"&q=",
+    r"&w="
+]
+"""
+content = content.replace("""# ---------------------------------------------------------------------------
+# PATTERN DEFINITIONS
+# ---------------------------------------------------------------------------""", artifact_str)
 
-def is_low_quality(sentence: str) -> bool:
-    if len(sentence.split()) < 5:
-        return True
-    lower = sentence.lower()
-    BAD = ["read more", "press inquiries", "contact", "media@", "learn more", "story"]
-    return any(b in lower for b in BAD)
+# Update clean_capture
+clean_cap_old = """def clean_capture(text: str) -> str:
+    \"\"\"Strip markdown noise, links, and extra whitespace from a captured group.\"\"\"
+    # Remove markdown link text [...](...) """
+clean_cap_new = """def clean_capture(text: str) -> str:
+    \"\"\"Strip markdown noise, links, and extra whitespace from a captured group.\"\"\"
+    for pat in ARTIFACT_PATTERNS:
+        text = re.sub(pat, '', text, flags=re.IGNORECASE)
+    # Remove markdown link text [...](...) """
+content = content.replace(clean_cap_old, clean_cap_new)
 
-def format_signal(text: str, source_type: str) -> str:
-    lower = text.lower()
-    conf = 0.50
-    if "launches" in lower: conf = 0.95
-    elif "released" in lower: conf = 0.90
-    elif "introduced" in lower: conf = 0.85
-    elif "powers" in lower: conf = 0.75
-    elif "helps power" in lower: conf = 0.70
-    return json.dumps({
-        "text": text,
-        "confidence": conf,
-        "source_type": source_type
-    })
+clean_cap_end_old = """    # Remove markdown symbols
+    text = re.sub(r'[#\*\[\]]+', '', text)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text"""
+clean_cap_end_new = """    # Remove markdown symbols
+    text = re.sub(r'[#\*\[\]]+', '', text)
+    text = re.sub(r'^[^a-zA-Z0-9]+', '', text)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text"""
+content = content.replace(clean_cap_end_old, clean_cap_end_new)
 
-def normalize(signal: str) -> str:
+
+# PROBLEM 2 & 3: OCR Noise and Quote Normalization
+helpers_old = """# ---------------------------------------------------------------------------
+# HELPER FUNCTIONS
+# ---------------------------------------------------------------------------
+
+def is_false_positive(text: str) -> bool:"""
+helpers_new = """# ---------------------------------------------------------------------------
+# HELPER FUNCTIONS
+# ---------------------------------------------------------------------------
+
+def is_ocr_noise(text: str) -> bool:
+    words = text.split()
+    if not words:
+        return False
+    avg_len = sum(len(w) for w in words) / len(words)
+    single_char_count = sum(1 for w in words if len(w) == 1)
+    single_char_ratio = single_char_count / len(words)
+    return avg_len < 2.2 or single_char_ratio > 0.4
+
+def extract_quote_content(text: str) -> str:
+    if ">" in text:
+        return text.split(">", 1)[1].strip()
+    return text
+
+def calculate_quality_score(text: str) -> float:
     try:
-        obj = json.loads(signal)
-        text = obj.get("text", signal)
+        import json
+        obj = json.loads(text)
+        text_val = obj.get("text", text)
     except:
-        text = signal
-    return re.sub(r'\W+', '', text.lower())
+        text_val = text
+        
+    length_score = min(len(text_val) / 100.0, 1.0)
+    keywords = ["launch", "release", "new", "percent", "%", "million", "billion", "growth", "engineers", "developers", "adoption", "published", "feature"]
+    kw_score = sum(0.5 for kw in keywords if kw in text_val.lower())
+    noise_penalty = 0.5 if len(text_val) > 300 else 0.0
+    return length_score + kw_score - noise_penalty
 
-"""
+def is_false_positive(text: str) -> bool:"""
+content = content.replace(helpers_old, helpers_new)
 
-if "def split_into_sentences" not in code:
-    code = code.replace("# ---------------------------------------------------------------------------", new_funcs + "\n# ---------------------------------------------------------------------------", 1)
+# PROBLEM 4: SIGNAL RE-CATEGORIZATION
+launch_patterns_old = """    r"\\bhelps power\\b"
+]"""
+launch_patterns_new = """    r"\\bhelps power\\b",
+    r"published\\s+20\\d\\d",
+    r"new feature",
+    r"feature release",
+    r"agent",
+    r"indexing",
+    r"semantic search",
+    r"reinforcement learning"
+]"""
+content = content.replace(launch_patterns_old, launch_patterns_new)
 
-patterns = """
-SHIPPING_PATTERNS = [
-    r"\\b\\d+\\s+launches\\b",
-    r"\\bshipped\\b",
-    r"\\bshipping\\b",
-    r"\\brolling out\\b",
-    r"\\breleased\\b",
-    r"\\blaunches\\b",
-    r"\\bintroduced\\b",
-    r"\\bnew products\\b",
-    r"\\bnow available\\b",
-]
+shipping_detect_old = """    r"introducing",
+    r"meet\\s+[A-Z]",
+    r"released?",
+    r"published\\s+20\\d{2}",
+    r"changelog",
+    r"release\\s+notes",
+]"""
+shipping_detect_new = """    r"introducing",
+    r"meet\\s+[A-Z]",
+    r"released?",
+    r"changelog",
+    r"release\\s+notes",
+]"""
+content = content.replace(shipping_detect_old, shipping_detect_new)
 
-ADOPTION_PATTERNS = [
-    r"every company",
-    r"customers",
-    r"businesses",
-    r"expands its use",
-    r"millions of users",
-    r"adoption",
-    r"used by",
-    r"growing",
-    r"growth",
-]
-"""
-if "SHIPPING_PATTERNS =" not in code:
-    code = code.replace("SHIPPING_PATTERNS_DETECT =", patterns + "\nSHIPPING_PATTERNS_DETECT =")
+# Also remove from SHIPPING_LINE_PATTERNS
+shipping_line_old = """# Per-line patterns for extracting individual velocity items
+SHIPPING_LINE_PATTERNS = [
+    (r"published\\s+20\\d{2}\\s+(.+)", 1),
+    (r"introduces?\\s+(.+)", 1),"""
+shipping_line_new = """# Per-line patterns for extracting individual velocity items
+SHIPPING_LINE_PATTERNS = [
+    (r"introduces?\\s+(.+)", 1),"""
+content = content.replace(shipping_line_old, shipping_line_new)
 
-# update deduplicate_signals to use normalize
-code = code.replace("normalized = re.sub(r'\W+', '', chunk.lower())", "normalized = normalize(chunk)")
+# PROBLEM 5: DUPLICATE SIGNALS
+dedup_old = """        cl = candidate.lower()
+        # Skip if this is a substring of something already kept
+        if any(cl in kept.lower() for kept in result):
+            continue"""
+dedup_new = """        cl = re.sub(r'\\s+', ' ', re.sub(r'[^\\w\\s]', '', candidate.lower())).strip()
+        # Skip if this is a substring of something already kept
+        if any(cl in re.sub(r'\\s+', ' ', re.sub(r'[^\\w\\s]', '', kept.lower())).strip() for kept in result):
+            continue"""
+content = content.replace(dedup_old, dedup_new)
 
-# Replace extract_signals
-import ast
 
-old_main = code[code.find("def extract_signals(text: str) -> dict:"):code.find("if __name__ == \"__main__\":")]
-
-new_main = """def extract_signals(text: str) -> dict:
-    extracted = defaultdict(list)
-
-    sentences = split_into_sentences(text)
-    print(f"[signals] Received {len(sentences)} sentences")
-
-    # Evaluate each sentence independently
+# Apply quote extraction and OCR filtering at loop start
+loop_start_old = """    # Evaluate each sentence independently
     for sentence in sentences:
         if is_low_quality(sentence):
             print(f"[signal rejected] low quality: {sentence[:40]}")
+            continue"""
+loop_start_new = """    # Evaluate each sentence independently
+    for sentence in sentences:
+        sentence = extract_quote_content(sentence)
+        if is_low_quality(sentence):
+            print(f"[signal rejected]\\n[low quality]\\n[{sentence[:40]}]\\n")
             continue
+        if is_ocr_noise(sentence):
+            print(f"[signal rejected]\\n[ocr noise]\\n[{sentence[:40]}]\\n")
+            continue"""
+content = content.replace(loop_start_old, loop_start_new)
 
-        # Skip noise
-        if is_pricing_or_package_description(sentence) or is_newsletter_description(sentence):
-            continue
 
-        sentence_lower = sentence.lower()
-        
-        # ---- LAUNCH ----
-        # Use existing logic for atomic signals (IBM support)
-        launch_items = extract_atomic_launch_signals(sentence)
-        launch_sentences = extract_sentence_launch_signals(sentence)
-        
-        for item in launch_items + launch_sentences:
-            sig = format_signal(item, "launch")
-            extracted["launch_signals"].append(sig)
-            print(f"[signal accepted] launch: {item[:80]}")
+# PROBLEM 7: Replace all [signal accepted] prints
+content = re.sub(r'print\(f"\[signal accepted\] (.*?): \{(.*?)\}"\)', r'print(f"[signal accepted]\\n[\1]\\n[{\2}]\\n")', content)
+content = re.sub(r'print\(f"\[launch accepted\] \{(.*?)\}"\)', r'print(f"[signal accepted]\\n[launch]\\n[{\1}]\\n")', content)
+content = re.sub(r'print\(f"\[growth accepted\] \{(.*?)\}"\)', r'print(f"[signal accepted]\\n[adoption]\\n[{\1}]\\n")', content)
 
-        # ---- SHIPPING VELOCITY ----
-        has_shipping = False
-        for pat in SHIPPING_PATTERNS:
-            if re.search(pat, sentence_lower, flags=re.IGNORECASE):
-                m = re.search(pat, sentence_lower, flags=re.IGNORECASE)
-                sig_text = m.group(0)
-                sig = format_signal(sig_text, "shipping_velocity")
-                extracted["shipping_velocity_signals"].append(sig)
-                print(f"[signal accepted] shipping_velocity: {sig_text}")
-                has_shipping = True
-        
-        if not has_shipping:
-            # Fallback for IBM
-            if any(re.search(pat, sentence_lower, flags=re.IGNORECASE) for pat in SHIPPING_PATTERNS_DETECT):
-                items = extract_shipping_velocity(sentence)
-                for item in items:
-                    sig = format_signal(item, "shipping_velocity")
-                    extracted["shipping_velocity_signals"].append(sig)
-                    print(f"[signal accepted] shipping_velocity: {item[:60]}")
+# PROBLEM 6: SIGNAL RANKING
+ranking_old = """    # Revert signal objects back into plain strings to fix Pydantic validation
+    final_signals = defaultdict(list)
+    for cat, items in deduped.items():
+        for ex in items:"""
+ranking_new = """    # Apply ranking
+    for cat in ["launch_signals", "adoption_signals", "partnership_signals"]:
+        if cat in deduped:
+            deduped[cat] = sorted(deduped[cat], key=calculate_quality_score, reverse=True)[:10]
 
-        # ---- ADOPTION ----
-        has_adoption = False
-        for pat in ADOPTION_PATTERNS:
-            if re.search(pat, sentence_lower, flags=re.IGNORECASE):
-                sig = format_signal(sentence, "adoption")
-                extracted["adoption_signals"].append(sig)
-                print(f"[signal accepted] adoption: {sentence[:60]}")
-                has_adoption = True
-                break
-                
-        if not has_adoption:
-            for item in extract_adoption_signals(sentence):
-                sig = format_signal(item, "adoption")
-                extracted["adoption_signals"].append(sig)
-                print(f"[signal accepted] adoption: {item[:80]}")
+    # Revert signal objects back into plain strings to fix Pydantic validation
+    final_signals = defaultdict(list)
+    for cat, items in deduped.items():
+        for ex in items:"""
+content = content.replace(ranking_old, ranking_new)
 
-        # ---- PARTNERSHIPS ----
-        for item in extract_partnership_signals(sentence):
-            sig = format_signal(item, "partnership")
-            extracted["partnership_signals"].append(sig)
-            print(f"[signal accepted] partnership: {item[:80]}")
 
-        # ---- HIRING ----
-        for item in extract_hiring_signals(sentence):
-            sig = format_signal(item, "hiring")
-            extracted["hiring_signals"].append(sig)
-            print(f"[signal accepted] hiring: {item[:80]}")
+with open('backend/retrieval/signal_extractor.py', 'w') as f:
+    f.write(content)
 
-        # ---- AI INITIATIVES ----
-        match_count = sum(sentence_lower.count(kw) for kw in AI_INITIATIVE_KEYWORDS)
-        has_action_verb = any(v in sentence_lower for v in AI_ACTION_VERBS)
-        if match_count >= 2 and has_action_verb:
-            sig = format_signal(sentence, "ai_initiative")
-            extracted["ai_initiatives"].append(sig)
-            print(f"[signal accepted] ai_initiative: {sentence[:40]}")
-
-        # ---- TECHNICAL ----
-        if any(kw in sentence_lower for kw in TECHNICAL_KEYWORDS):
-            sig = format_signal(sentence, "technical")
-            extracted["technical_signals"].append(sig)
-
-        # ---- ENTERPRISE ----
-        if any(kw in sentence_lower for kw in ENTERPRISE_KEYWORDS):
-            sig = format_signal(sentence, "enterprise")
-            extracted["enterprise_signals"].append(sig)
-
-    if "launch_signals" in extracted:
-        extracted["launch_signals"] = _dedup_launch_signals(extracted["launch_signals"])
-
-    deduped = deduplicate_signals(extracted)
-
-    print("\\n" + "=" * 50)
-    print("===== SIGNAL AUDIT =====")
-    print("=" * 50)
-    for cat in ["launch_signals", "shipping_velocity_signals", "adoption_signals",
-                "hiring_signals", "partnership_signals"]:
-        items = deduped.get(cat, [])
-        print(f"{cat}: {len(items)}")
-        for ex in items[:5]:
-            try:
-                obj = json.loads(ex)
-                text = obj.get("text", ex)
-            except:
-                text = ex
-            print(f"  - {text[:100]}")
-    print("=" * 50)
-
-    return deduped
-
-"""
-
-code = code.replace(old_main, new_main)
-
-# Also update _dedup_launch_signals to parse json
-old_dedup = """def _dedup_launch_signals(items: list) -> list:
-    # Sort longest-first
-    sorted_items = sorted(items, key=len, reverse=True)
-    result = []
-    for candidate in sorted_items:
-        cl = candidate.lower()
-        # Skip if this is a substring of something already kept
-        if any(cl in kept.lower() for kept in result):
-            continue
-        result.append(candidate)
-    return result"""
-
-new_dedup = """def _dedup_launch_signals(items: list) -> list:
-    import json
-    def get_text(s):
-        try:
-            return json.loads(s).get("text", s)
-        except:
-            return s
-            
-    sorted_items = sorted(items, key=lambda x: len(get_text(x)), reverse=True)
-    result = []
-    for candidate in sorted_items:
-        cl = get_text(candidate).lower()
-        if any(cl in get_text(kept).lower() for kept in result):
-            continue
-        result.append(candidate)
-    return result"""
-
-code = code.replace(old_dedup, new_dedup)
-
-with open("backend/retrieval/signal_extractor.py", "w") as f:
-    f.write(code)
-
-print("Patch applied successfully")

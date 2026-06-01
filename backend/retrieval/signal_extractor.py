@@ -5,10 +5,12 @@ import hashlib
 
 
 def split_into_sentences(text: str) -> list:
+    # Split merged feature lists like "Semantic search Published 2025 Reinforcement learning..."
+    text = re.sub(r'(Published 20\d\d)\s+(?=[A-Z])', r'\1. ', text)
     return [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n', text) if s.strip()]
 
 def is_low_quality(sentence: str) -> bool:
-    if len(sentence.split()) < 5:
+    if len(sentence.split()) < 5 and not re.search(r'Published 20\d\d', sentence, re.IGNORECASE):
         return True
     lower = sentence.lower()
     BAD = ["read more", "press inquiries", "contact", "media@", "learn more", "story"]
@@ -41,6 +43,17 @@ def normalize(signal: str) -> str:
 # PATTERN DEFINITIONS
 # ---------------------------------------------------------------------------
 
+ARTIFACT_PATTERNS = [
+    r"q=\d+",
+    r"w=\d+",
+    r"\.jpg",
+    r"\.png",
+    r"\.webp",
+    r"&q=",
+    r"&w="
+]
+
+
 # Issue 1: Atomic launch detection — broad, case-insensitive
 # Each match yields one atomic event string
 LAUNCH_PATTERNS = [
@@ -62,6 +75,11 @@ LAUNCH_PATTERNS = [
     (r"new\s+platform[:\s]+(.{5,80})", 1),
     (r"new\s+product[:\s]+(.{5,80})", 1),
     (r"added\s+support\s+for\s+(.{5,80})", 1),
+    (r"([A-Za-z][A-Za-z0-9\- ]{5,40}\s+published\s+20\d\d)", 1),
+    (r"(new feature)", 1),
+    (r"(feature release)", 1),
+    (r"(semantic search)", 1),
+    (r"(reinforcement learning)", 1)
 ]
 
 # Sentence-level launch patterns (Stripe momentum fix)
@@ -164,14 +182,12 @@ SHIPPING_PATTERNS_DETECT = [
     r"introducing",
     r"meet\s+[A-Z]",
     r"released?",
-    r"published\s+20\d{2}",
     r"changelog",
     r"release\s+notes",
 ]
 
 # Per-line patterns for extracting individual velocity items
 SHIPPING_LINE_PATTERNS = [
-    (r"published\s+20\d{2}\s+(.+)", 1),
     (r"introduces?\s+(.+)", 1),
     (r"added\s+support(?:\s+for)?\s+(.+)", 1),
     (r"meet\s+([A-Z][A-Za-z0-9 ®™]{2,50})", 1),
@@ -295,6 +311,42 @@ NEWSLETTER_TERMS = [
 # HELPER FUNCTIONS
 # ---------------------------------------------------------------------------
 
+def is_ocr_noise(text: str) -> bool:
+    words = text.split()
+    if not words:
+        return False
+    avg_len = sum(len(w) for w in words) / len(words)
+    single_char_count = sum(1 for w in words if len(w) == 1)
+    single_char_ratio = single_char_count / len(words)
+    return avg_len < 2.2 or single_char_ratio > 0.4
+
+def extract_quote_content(text: str) -> str:
+    if ">" in text:
+        return text.split(">", 1)[1].strip()
+    return text
+
+def calculate_quality_score(text: str) -> float:
+    try:
+        import json
+        obj = json.loads(text)
+        text_val = obj.get("text", text)
+    except:
+        text_val = text
+        
+    length_score = min(len(text_val) / 100.0, 1.0)
+    keywords = ["launch", "release", "new", "percent", "%", "million", "billion", "growth", "engineers", "developers", "adoption", "published", "feature"]
+    kw_score = sum(0.5 for kw in keywords if kw in text_val.lower())
+    
+    import re
+    if re.search(r'published 20\d\d', text_val, re.IGNORECASE):
+        kw_score += 2.0
+    
+    if "semantic search" in text_val.lower() or "indexing" in text_val.lower() or "collaboration" in text_val.lower():
+        kw_score += 2.0
+        
+    noise_penalty = 0.5 if len(text_val) > 300 else 0.0
+    return length_score + kw_score - noise_penalty
+
 def is_false_positive(text: str) -> bool:
     for pat in FALSE_POSITIVE_PATTERNS:
         if pat in text:
@@ -326,12 +378,15 @@ def has_recent_context(text: str) -> bool:
 
 def clean_capture(text: str) -> str:
     """Strip markdown noise, links, and extra whitespace from a captured group."""
+    for pat in ARTIFACT_PATTERNS:
+        text = re.sub(pat, '', text, flags=re.IGNORECASE)
     # Remove markdown link text [...](...) 
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
     # Remove leftover URLs
     text = re.sub(r'https?://\S+', '', text)
     # Remove markdown symbols
     text = re.sub(r'[#\*\[\]]+', '', text)
+    text = re.sub(r'^[^a-zA-Z0-9]+', '', text)
     # Collapse whitespace
     text = re.sub(r'\s+', ' ', text).strip()
     return text
@@ -488,9 +543,9 @@ def _dedup_launch_signals(items: list) -> list:
     sorted_items = sorted(items, key=len, reverse=True)
     result = []
     for candidate in sorted_items:
-        cl = candidate.lower()
+        cl = re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', candidate.lower())).strip()
         # Skip if this is a substring of something already kept
-        if any(cl in kept.lower() for kept in result):
+        if any(cl in re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', kept.lower())).strip() for kept in result):
             continue
         result.append(candidate)
     return result
@@ -544,8 +599,12 @@ def extract_signals(text: str) -> dict:
 
     # Evaluate each sentence independently
     for sentence in sentences:
+        sentence = extract_quote_content(sentence)
         if is_low_quality(sentence):
-            print(f"[signal rejected] low quality: {sentence[:40]}")
+            print(f"[signal rejected]\n[low quality]\n[{sentence[:40]}]\n")
+            continue
+        if is_ocr_noise(sentence):
+            print(f"[signal rejected]\n[ocr noise]\n[{sentence[:40]}]\n")
             continue
 
         # Skip noise
@@ -562,7 +621,7 @@ def extract_signals(text: str) -> dict:
             if re.search(pat, sentence_lower, flags=re.IGNORECASE):
                 sig = format_signal(sentence, "launch")
                 extracted["launch_signals"].insert(0, sig)
-                print(f"[launch accepted] {sentence[:80]}")
+                print(f"[signal accepted]\n[launch]\n[{sentence[:80]}]\n")
                 has_priority_launch = True
                 break
                 
@@ -571,7 +630,7 @@ def extract_signals(text: str) -> dict:
                 if prod in sentence_lower:
                     sig = format_signal(sentence + " [announced]", "launch")
                     extracted["launch_signals"].append(sig)
-                    print(f"[launch accepted] {sentence[:80]}")
+                    print(f"[signal accepted]\n[launch]\n[{sentence[:80]}]\n")
                     has_priority_launch = True
                     break
         
@@ -581,7 +640,7 @@ def extract_signals(text: str) -> dict:
             if re.search(pat, sentence_lower, flags=re.IGNORECASE):
                 sig = format_signal(sentence, "adoption")
                 extracted["adoption_signals"].insert(0, sig)
-                print(f"[growth accepted] {sentence[:80]}")
+                print(f"[signal accepted]\n[adoption]\n[{sentence[:80]}]\n")
                 has_priority_growth = True
                 break
                 
@@ -596,7 +655,7 @@ def extract_signals(text: str) -> dict:
         for item in launch_items + launch_sentences:
             sig = format_signal(item, "launch")
             extracted["launch_signals"].append(sig)
-            print(f"[signal accepted] launch: {item[:80]}")
+            print(f"[signal accepted]\n[launch]\n[{item[:80]}]\n")
 
         # ---- SHIPPING VELOCITY ----
         has_shipping = False
@@ -606,7 +665,7 @@ def extract_signals(text: str) -> dict:
                 sig_text = m.group(0)
                 sig = format_signal(sig_text, "shipping_velocity")
                 extracted["shipping_velocity_signals"].append(sig)
-                print(f"[signal accepted] shipping_velocity: {sig_text}")
+                print(f"[signal accepted]\n[shipping_velocity]\n[{sig_text}]\n")
                 has_shipping = True
         
         if not has_shipping:
@@ -616,7 +675,7 @@ def extract_signals(text: str) -> dict:
                 for item in items:
                     sig = format_signal(item, "shipping_velocity")
                     extracted["shipping_velocity_signals"].append(sig)
-                    print(f"[signal accepted] shipping_velocity: {item[:60]}")
+                    print(f"[signal accepted]\n[shipping_velocity]\n[{item[:60]}]\n")
 
         # ---- ADOPTION ----
         has_adoption = False
@@ -624,7 +683,7 @@ def extract_signals(text: str) -> dict:
             if re.search(pat, sentence_lower, flags=re.IGNORECASE):
                 sig = format_signal(sentence, "adoption")
                 extracted["adoption_signals"].append(sig)
-                print(f"[signal accepted] adoption: {sentence[:60]}")
+                print(f"[signal accepted]\n[adoption]\n[{sentence[:60]}]\n")
                 has_adoption = True
                 break
                 
@@ -632,19 +691,19 @@ def extract_signals(text: str) -> dict:
             for item in extract_adoption_signals(sentence):
                 sig = format_signal(item, "adoption")
                 extracted["adoption_signals"].append(sig)
-                print(f"[signal accepted] adoption: {item[:80]}")
+                print(f"[signal accepted]\n[adoption]\n[{item[:80]}]\n")
 
         # ---- PARTNERSHIPS ----
         for item in extract_partnership_signals(sentence):
             sig = format_signal(item, "partnership")
             extracted["partnership_signals"].append(sig)
-            print(f"[signal accepted] partnership: {item[:80]}")
+            print(f"[signal accepted]\n[partnership]\n[{item[:80]}]\n")
 
         # ---- HIRING ----
         for item in extract_hiring_signals(sentence):
             sig = format_signal(item, "hiring")
             extracted["hiring_signals"].append(sig)
-            print(f"[signal accepted] hiring: {item[:80]}")
+            print(f"[signal accepted]\n[hiring]\n[{item[:80]}]\n")
 
         # ---- AI INITIATIVES ----
         match_count = sum(sentence_lower.count(kw) for kw in AI_INITIATIVE_KEYWORDS)
@@ -652,7 +711,7 @@ def extract_signals(text: str) -> dict:
         if match_count >= 2 and has_action_verb:
             sig = format_signal(sentence, "ai_initiative")
             extracted["ai_initiatives"].append(sig)
-            print(f"[signal accepted] ai_initiative: {sentence[:40]}")
+            print(f"[signal accepted]\n[ai_initiative]\n[{sentence[:40]}]\n")
 
         # ---- TECHNICAL ----
         if any(kw in sentence_lower for kw in TECHNICAL_KEYWORDS):
@@ -684,6 +743,11 @@ def extract_signals(text: str) -> dict:
                 text = ex
             print(f"  - {text[:100]}")
     print("=" * 50)
+
+    # Apply ranking
+    for cat in ["launch_signals", "adoption_signals", "partnership_signals"]:
+        if cat in deduped:
+            deduped[cat] = sorted(deduped[cat], key=calculate_quality_score, reverse=True)[:10]
 
     # Revert signal objects back into plain strings to fix Pydantic validation
     final_signals = defaultdict(list)

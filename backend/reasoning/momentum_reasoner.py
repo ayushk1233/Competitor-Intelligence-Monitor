@@ -48,22 +48,39 @@ Momentum agent may only use evidence present in:
 - hiring_signals
 - partnership_signals
 
-Apply the following explicit weighting:
-- launch_signals: +2 each
-- shipping_velocity_signals: +1.5 each
-- adoption_signals: +2 each
-- partnership_signals: +2 each
-- hiring_signals: +2 each
+Momentum Scoring Rubric:
 
-Calculate the final momentum score as an integer from 0 to 10 by summing the applicable points. Cap score at 10.
+Score 1-3:
+Little or no evidence of launches, hiring, adoption, partnerships, or shipping velocity.
 
-Before final score:
-count unique evidence items.
-Rule:
-0-1 evidence items -> max score 3
-2-3 evidence items -> max score 5
-4-5 evidence items -> max score 7
-6+ evidence items -> max score 9
+Score 4-5:
+A few recent signals exist but activity appears moderate.
+
+Score 6-7:
+Multiple recent launches, adoption indicators, partnerships, or product updates exist.
+
+Score 8-9:
+Strong evidence of rapid momentum.
+Examples:
+- many launches
+- active changelog/product updates
+- multiple adoption signals
+- AI initiatives
+- partnerships
+- visible growth
+
+Score 10:
+Exceptional momentum with overwhelming evidence across most categories.
+
+IMPORTANT:
+
+If there are:
+
+5+ launch signals
+OR
+10+ total signals across categories
+
+then momentum_score should not be below 8 unless strong negative momentum signals exist.
 
 Prevent inflation from a single large chunk.
 If a company shows relentless shipping speed (e.g. constant changelog updates), score it highly even without VC funding or AI.
