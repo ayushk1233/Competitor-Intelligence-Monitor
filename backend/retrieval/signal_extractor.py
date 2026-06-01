@@ -122,6 +122,38 @@ ADOPTION_PATTERNS = [
     r"growth",
 ]
 
+INTRODUCING_PATTERNS = [
+    r"\bintroducing\b",
+    r"\bnew\b",
+    r"\bbeta\b",
+    r"\bannounced\b",
+    r"\bannouncement\b",
+    r"\blatest announcements\b",
+    r"\bnow available\b",
+    r"\bavailable now\b",
+    r"\bagent cli\b",
+]
+
+HUBSPOT_PRODUCTS = [
+    "breeze",
+    "agent cli",
+    "agentic",
+    "copilot",
+    "content hub",
+    "sales hub",
+    "service hub",
+    "marketing hub",
+    "commerce hub",
+    "operations hub",
+]
+
+GROWTH_PATTERNS = [
+    r"\bover \$\d+ (?:million|billion)\b",
+    r"\b\d+k global customers\b",
+    r"\brevenue\b",
+    r"\bgrowth\b",
+]
+
 SHIPPING_PATTERNS_DETECT = [
     r"think\s+20\d{2}",
     r"product\s+announcement",
@@ -522,6 +554,40 @@ def extract_signals(text: str) -> dict:
 
         sentence_lower = sentence.lower()
         
+        # ---- PRIORITY LAUNCH (HubSpot) ----
+        has_priority_launch = False
+        print(f"[launch candidate] {sentence[:60]}")
+        
+        for pat in INTRODUCING_PATTERNS:
+            if re.search(pat, sentence_lower, flags=re.IGNORECASE):
+                sig = format_signal(sentence, "launch")
+                extracted["launch_signals"].insert(0, sig)
+                print(f"[launch accepted] {sentence[:80]}")
+                has_priority_launch = True
+                break
+                
+        if not has_priority_launch:
+            for prod in HUBSPOT_PRODUCTS:
+                if prod in sentence_lower:
+                    sig = format_signal(sentence + " [announced]", "launch")
+                    extracted["launch_signals"].append(sig)
+                    print(f"[launch accepted] {sentence[:80]}")
+                    has_priority_launch = True
+                    break
+        
+        # ---- PRIORITY GROWTH (HubSpot) ----
+        has_priority_growth = False
+        for pat in GROWTH_PATTERNS:
+            if re.search(pat, sentence_lower, flags=re.IGNORECASE):
+                sig = format_signal(sentence, "adoption")
+                extracted["adoption_signals"].insert(0, sig)
+                print(f"[growth accepted] {sentence[:80]}")
+                has_priority_growth = True
+                break
+                
+        if has_priority_launch or has_priority_growth:
+            continue
+        
         # ---- LAUNCH ----
         # Use existing logic for atomic signals (IBM support)
         launch_items = extract_atomic_launch_signals(sentence)
@@ -628,6 +694,8 @@ def extract_signals(text: str) -> dict:
                 text = obj.get("text", ex)
             except:
                 text = ex
+            # Neutralize double quotes to prevent downstream LLM JSON errors
+            text = text.replace('"', "'")
             print(f"[debug] {cat} signal type: {type(text)}")
             final_signals[cat].append(text)
 
