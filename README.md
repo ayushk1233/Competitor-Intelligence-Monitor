@@ -1,283 +1,651 @@
-# 🔍 Competitor Intelligence Monitor
+# Competitor Intelligence Monitor (CIM)
 
-> **Strategic signals, not summaries.** Drop in 2–5 competitor names or URLs. Get a VC-grade intelligence briefing in under 90 seconds — powered by Gemini.
-
----
-
-## What It Does
-
-Most competitive research tools give you company descriptions. This gives you **signals** — the kind a founder or product strategist can act on today.
-
-For each competitor it extracts:
-
-| Signal | What it reveals |
-|---|---|
-| **Core Offering** | Exact problem solved and for whom |
-| **ICP** | Who they're really selling to (from messaging evidence) |
-| **Pricing Signals** | Tier names, price points, model, recent changes |
-| **Hiring Signals** | Which functions dominate open roles → growth direction |
-| **Recent Launches** | New features and product announcements |
-| **Growth Signals** | Funding indicators, new markets, expansion patterns |
-| **Risk Flags** | Pivot signals, inconsistent messaging, decline signs |
-| **Momentum Score** | Calibrated 1–10 score using a 5-band rubric (not a default 7) |
-| **Analyst Note** | One hard-hitting action item for the founder |
-
-Then it synthesizes across all competitors:
-- 🏆 **Market leader** + why they're hard to displace
-- 🚀 **Fastest mover** + specific evidence
-- 💡 **Messaging gaps** — the positioning territory nobody owns
-- ⚠️ **Threat ranking** — who to watch most carefully
-- 📋 **Executive briefing** — 6–8 sentence structured brief, ready to forward
+> AI-Powered Competitive Intelligence Platform for Monitoring Competitors, Detecting Strategic Shifts, and Generating Actionable Business Intelligence.
 
 ---
 
-## Two Ways to Use It
+# Overview
 
-### 🖥️ Streamlit UI (Recommended)
-Visual dashboard with progress tracking, competitor cards, and markdown export.
+Competitor Intelligence Monitor (CIM) is an AI-powered platform that continuously analyzes competitor websites, extracts strategic signals, identifies market movements, and generates structured intelligence reports.
 
-```bash
-streamlit run frontend/app.py
-```
-→ Open `http://localhost:8501`
-
-### ⚡ FastAPI + Swagger UI (API / Programmatic)
-Full REST API with interactive docs — great for integrations, automation, or just exploring the response schema.
-
-```bash
-uvicorn backend.main:app --reload
-```
-→ Swagger UI: `http://localhost:8000/docs`  
-→ ReDoc: `http://localhost:8000/redoc`
+Unlike traditional competitor monitoring tools that only aggregate information, CIM transforms raw competitor activity into strategic insights that can help founders, product managers, sales teams, investors, and business leaders make better decisions.
 
 ---
 
-## Quick Start
+# Why CIM?
 
-### 1. Clone the repo
-```bash
-git clone https://github.com/YOUR_USERNAME/competitor-intel.git
-cd competitor-intel
+Most competitor tools answer:
+
+> What happened?
+
+CIM aims to answer:
+
+> What happened?
+
+> Why did it happen?
+
+> What does it mean?
+
+> What should we do next?
+
+The long-term vision is to evolve CIM into a Competitive Intelligence Copilot that acts as an AI-powered competitive analyst for organizations.
+
+---
+
+# Current Status
+
+## Version
+
+```text
+v1.0-benchmark-0.80
 ```
 
-### 2. Create a virtual environment
+## Benchmark Performance
+
+```mermaid
+xychart-beta
+    title "CIM Evaluation Benchmark Results"
+    x-axis ["Basecamp","Stripe","IBM","Cursor","HubSpot"]
+    y-axis "Score" 0 --> 1
+    bar [0.76, 0.82, 0.801, 0.815, 0.805]
+```
+
+### Overall Benchmark Score
+
+```text
+0.800
+```
+
+## Project Progress
+
+```mermaid
+pie showData
+    title Roadmap Progress
+    "Phase 1 - Core Intelligence Engine" : 100
+    "Phase 2 - Production Foundation" : 100
+    "Phase 3 - LLMOps & Evaluation" : 85
+    "Phase 4 - Cloud Infrastructure" : 0
+    "Phase 5 - Intelligence Copilot" : 0
+```
+
+Evaluation measures:
+
+* Tone Classification Accuracy
+* Momentum Detection Accuracy
+* ICP Recall
+* Strategic Keyword Recall
+
+---
+
+# Core Features
+
+## Competitor Analysis
+
+Analyze any competitor website and extract:
+
+* Core Offering
+* ICP (Ideal Customer Profile)
+* Messaging Tone
+* Pricing Signals
+* Hiring Signals
+* Recent Launches
+* Strategic Keywords
+* Growth Indicators
+* Risk Flags
+* Momentum Score
+* Analyst Notes
+
+---
+
+## Strategic Signal Detection
+
+```mermaid
+flowchart TD
+    A[Raw Website Content] --> B[Launch Signals]
+    A --> C[Adoption Signals]
+    A --> D[Hiring Signals]
+    A --> E[Partnership Signals]
+    A --> F[Shipping Velocity Signals]
+    B --> G[Momentum Scoring]
+    C --> G
+    D --> G
+    E --> G
+    F --> G
+    G --> H[Strategic Intelligence]
+```
+
+Automatically detects:
+
+### Launch Signals
+
+Examples:
+
+* Product launches
+* Feature releases
+* New offerings
+
+### Adoption Signals
+
+Examples:
+
+* Customer growth
+* Revenue growth
+* Usage expansion
+
+### Hiring Signals
+
+Examples:
+
+* Engineering hiring
+* AI hiring
+* Leadership hiring
+
+### Partnership Signals
+
+Examples:
+
+* Integrations
+* Strategic partnerships
+* Ecosystem expansion
+
+### Shipping Velocity Signals
+
+Examples:
+
+* Changelog updates
+* Release frequency
+* Product iteration speed
+
+---
+
+## Competitor Comparison
+
+Compare multiple competitors and generate:
+
+* Market Leader Identification
+* Fastest Mover Detection
+* AI Emphasis Ranking
+* Messaging Gap Analysis
+* Threat Ranking
+* Executive Briefings
+
+---
+
+## Evaluation Framework
+
+The platform includes a dedicated evaluation framework that measures intelligence quality before deployment.
+
+This allows:
+
+* Prompt experimentation
+* Model comparison
+* Regression testing
+* Quality assurance
+
+The evaluation framework acts as a quality gate for future deployments.
+
+---
+
+# Architecture
+
+## High-Level Flow
+
+```mermaid
+flowchart TD
+    A[Competitor Website] --> B[Page Discovery]
+    B --> C[Scraper]
+    C --> D[Content Cleaning]
+    D --> E[Chunking]
+    E --> F[Retrieval & Ranking]
+    F --> G[Evidence Routing]
+    G --> H[Signal Extraction]
+    H --> I[Context Builder]
+    I --> J[LLM Analysis]
+    J --> K[Comparison Engine]
+    K --> L[Final Intelligence Report]
+```
+
+---
+
+## Quality Layer
+
+```mermaid
+flowchart LR
+    A[Code Change] --> B[Unit Tests]
+    B --> C[Evaluation Suite]
+    C --> D{Score >= 0.80?}
+    D -->|Yes| E[Deploy]
+    D -->|No| F[Reject]
+```
+
+---
+
+# Tech Stack
+
+## Backend
+
+* FastAPI
+* Python
+* SQLAlchemy
+* Alembic
+
+## AI Layer
+
+* OpenRouter
+* DeepSeek
+* Claude
+* Structured Prompt Engineering
+
+## Data Layer
+
+* PostgreSQL
+* Redis
+
+## Async Processing
+
+* Celery
+
+## Monitoring
+
+* Prometheus
+* Grafana
+
+## Evaluation
+
+* Custom Benchmark Suite
+* Regression Testing Framework
+
+---
+
+# Current Repository Structure
+
+```text
+.
+├── backend/
+│   ├── database/
+│   ├── eval/
+│   ├── models/
+│   ├── prompts/
+│   ├── reasoning/
+│   ├── retrieval/
+│   ├── services/
+│   └── utils/
+├── frontend/
+├── monitoring/
+│   ├── grafana/
+│   └── prometheus/
+├── tests/
+├── k8s/
+├── docker-compose.yml
+├── Dockerfile
+└── Dockerfile.worker
+```
+
+---
+
+# How CIM Works
+
+## Step 1
+
+User submits competitors:
+
+```text
+Stripe
+Cursor
+HubSpot
+```
+
+---
+
+## Step 2
+
+CIM discovers and retrieves:
+
+* Homepage
+* Pricing Pages
+* About Pages
+* Blog Posts
+* Customer Stories
+* Careers Pages
+* Announcements
+
+---
+
+## Step 3
+
+Strategic signals are extracted:
+
+```text
+Launches
+Hiring
+Partnerships
+Adoption
+Growth
+Shipping Velocity
+```
+
+---
+
+## Step 4
+
+AI agents generate intelligence:
+
+```text
+ICP
+Tone
+Momentum
+Risks
+Strategic Observations
+```
+
+---
+
+## Step 5
+
+A final competitive intelligence report is generated.
+
+---
+
+# Running Locally
+
+## Clone Repository
+
+```bash
+git clone <repo-url>
+cd competitor-intelligence-monitor
+```
+
+## Create Environment
+
 ```bash
 python -m venv venv
-
-# Mac / Linux
 source venv/bin/activate
-
-# Windows
-venv\Scripts\activate
 ```
 
-### 3. Install dependencies
+## Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure your API key
+## Start Services
+
 ```bash
-cp .env.example .env
+docker compose up -d
 ```
 
-Edit `.env`:
-```env
-GEMINI_API_KEY=your_key_here        # Required — get free at aistudio.google.com
-JINA_API_KEY=your_key_here          # Optional — improves scraping quality
-```
+## Run Backend
 
-Get a free Gemini key → [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-
-### 5. Launch
 ```bash
-# Streamlit UI
-streamlit run frontend/app.py
-
-# OR FastAPI server
 uvicorn backend.main:app --reload
 ```
 
----
+## Run Frontend
 
-## API Reference
-
-### `POST /api/analyze`
-
-Run the full 3-stage intelligence pipeline.
-
-**Request body:**
-```json
-{
-  "competitors": ["Notion", "Linear", "Basecamp"],
-  "options": {
-    "include_blog": true,
-    "include_careers": true
-  }
-}
-```
-
-**Accepts names or URLs** — `"Notion"`, `"notion.so"`, or `"https://notion.so"` all work.
-
-**Constraints:** minimum 2 competitors, maximum 5.
-
-**Response:** Full `IntelligenceReport` — see schema at `/docs`.
-
----
-
-### `GET /health`
-
-Service health check.
-
-```json
-{ "status": "ok", "service": "competitor-intelligence-monitor" }
+```bash
+streamlit run frontend/app.py
 ```
 
 ---
 
-### Swagger UI
+# Running Evaluations
 
-The FastAPI server auto-generates interactive docs with the full response schema, request validation, and a live **Try it out** button.
+Run the benchmark suite:
 
+```bash
+python -m backend.eval.runner
 ```
-http://localhost:8000/docs
-```
 
-![Swagger UI](https://fastapi.tiangolo.com/img/index/index-03-swagger-02.png)
+Example Output:
 
----
-
-## Pipeline Architecture
-
-```
-Input (names or URLs)
-        │
-        ▼
-┌─────────────────────────────────────────────────┐
-│  Stage 1 — Scrape  (async, all competitors)      │
-│  ├── Domain resolution (name → TLD probing)      │
-│  ├── Jina AI Reader (clean markdown)             │
-│  └── BeautifulSoup fallback (raw HTML clean)     │
-│  Pages: homepage · pricing · about · blog · jobs │
-└───────────────────────┬─────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────┐
-│  Stage 2 — Analyze  (per competitor, sequential) │
-│  ├── Token-aware page merging (priority order)   │
-│  ├── Gemini prompt with 5-band momentum rubric   │
-│  ├── Smart JSON cleaning (escape fixer + regex)  │
-│  └── 429 rate-limit handler (reads retry_delay)  │
-└───────────────────────┬─────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────┐
-│  Stage 3 — Compare  (cross-competitor synthesis) │
-│  ├── Structured comparison prompt                │
-│  ├── Market leader · fastest mover · pivot       │
-│  ├── Messaging gap analysis                      │
-│  └── 6–8 sentence executive briefing             │
-└───────────────────────┬─────────────────────────┘
-                        │
-                        ▼
-              IntelligenceReport
-        (Streamlit UI  /  API JSON)
+```text
+Overall Suite Score: 0.800
 ```
 
 ---
 
-## Project Structure
+# Benefits
 
+## Founders
+
+Understand:
+
+* Competitor strategy
+* Product direction
+* Market positioning
+
+Without manually tracking dozens of websites.
+
+---
+
+## Product Teams
+
+Monitor:
+
+* Product launches
+* Feature updates
+* Pricing changes
+
+and identify roadmap threats early.
+
+---
+
+## Sales Teams
+
+Generate competitive intelligence and battlecard-style insights.
+
+---
+
+## Investors
+
+Track:
+
+* Market shifts
+* Emerging competitors
+* Growth signals
+
+across an industry.
+
+---
+
+## Strategy Teams
+
+Detect:
+
+* Strategic pivots
+* AI adoption
+* Enterprise expansion
+* Market movement
+
+before they become obvious.
+
+---
+
+# Future Roadmap
+
+```mermaid
+flowchart LR
+    A[v1.0<br>Analysis Engine] --> B[v1.1<br>CI/CD + Eval Gates]
+    B --> C[v1.2<br>Drift Detection]
+    C --> D[v1.3<br>Monitoring Platform]
+    D --> E[v2.0<br>Historical Intelligence]
+    E --> F[v3.0<br>Competitive Intelligence Copilot]
 ```
-competitor-intel/
-├── backend/
-│   ├── main.py                    # FastAPI app + run_intelligence_pipeline()
-│   ├── config.py                  # Pydantic settings (env vars)
-│   ├── services/
-│   │   ├── scraper_service.py     # Async scraper — Jina + BS4 fallback
-│   │   ├── analysis_service.py    # Gemini analysis with momentum rubric
-│   │   └── comparison_service.py # Cross-competitor synthesis
-│   ├── models/
-│   │   └── schemas.py             # Pydantic schemas (request + response)
-│   └── utils/
-│       ├── chunker.py             # Token-aware page merger
-│       └── cleaner.py             # HTML → plain text cleaner
-├── frontend/
-│   └── app.py                     # Streamlit UI with progress + export
-├── requirements.txt
-└── .env                           # Your API keys (not committed)
+
+---
+
+# Current (v1.0) – LLMOps Completion
+
+## Planned
+
+### GitHub Actions
+
+```text
+Push
+ ↓
+Tests
+ ↓
+Eval Suite
+ ↓
+Deploy
+```
+
+### CI/CD Quality Gates
+
+Prevent deployments that reduce intelligence quality.
+
+---
+
+### Drift Detection
+
+Detect:
+
+* Messaging changes
+* Product pivots
+* AI adoption shifts
+* Strategic movements
+
+Example:
+
+```text
+HubSpot:
+CRM → CRM + AI Agents
 ```
 
 ---
 
-## Configuration
+# Next (v1.1) – Production Deployment
 
-All settings live in `config.py` and are loaded from `.env`:
+## Planned Infrastructure
 
-| Variable | Default | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | — | **Required.** Your Gemini API key |
-| `JINA_API_KEY` | `""` | Optional. Improves scraping quality significantly |
-| `DEFAULT_MODEL` | `gemini-2.0-flash` | Gemini model to use |
-| `MAX_PAGES_PER_COMPETITOR` | `4` | Homepage + up to 3 sub-pages |
-| `MAX_TOKENS_PER_CHUNK` | `6000` | Token budget per Gemini call |
-| `REQUEST_TIMEOUT_SECONDS` | `15` | HTTP timeout per page fetch |
+* Terraform
+* AWS ECS
+* PostgreSQL RDS
+* ElastiCache Redis
+* Application Load Balancer
+* GitHub Actions Deployment
 
----
+Goal:
 
-## Momentum Score Rubric
-
-Gemini scores each competitor 1–10 using a calibrated 5-band rubric — not a "safe 7":
-
-| Score | Meaning |
-|---|---|
-| **9–10** | All signals firing: major launches + broad hiring + pricing expansion + AI push + new markets |
-| **7–8** | Most signals present: recent updates, moderate hiring, growth messaging, some AI |
-| **5–6** | Maintaining not expanding: mature product, stable messaging, selective hiring |
-| **3–4** | Few growth signals: defensive messaging, static pricing, thin content, no launches |
-| **1–2** | Stagnation or decline: anti-growth messaging, no hiring, no updates, legacy positioning |
-
-> **Calibration rules:** Large company ≠ high momentum (TCS ≠ 9). Small startup with thin content scores 3–4, not 7. When uncertain, Gemini scores lower, not higher.
+Production-ready cloud deployment.
 
 ---
 
-## Test Scenarios
+# Future (v2.0) – Historical Intelligence Platform
 
-Try these to see differentiated momentum scores in action:
+## Planned
 
-| Category | Competitors to compare |
-|---|---|
-| **Project management** | Linear, Notion, Basecamp |
-| **AI writing** | Jasper, Copy.ai, Writesonic |
-| **Indian ed-tech** | Scaler, Internshala, Unstop |
-| **AI dev tools** | Cursor, Replit, GitHub Copilot |
-| **CRM** | HubSpot, Zoho CRM, Freshsales |
+Vector-based intelligence memory:
 
----
+* pgvector
+* Embeddings
+* Historical retrieval
 
-## Tech Stack
+Example:
 
-| Layer | Tool | Why |
-|---|---|---|
-| **AI Brain** | Gemini 2.0 Flash | Fast, cheap, long context window |
-| **Backend API** | FastAPI + uvicorn | Auto-generates Swagger UI, async-native |
-| **HTTP client** | httpx (async) | Concurrent scraping across competitors |
-| **Scraping** | Jina AI Reader + BeautifulSoup | Clean markdown first, HTML fallback |
-| **Frontend** | Streamlit | Rapid UI with progress tracking |
-| **Validation** | Pydantic v2 | Request/response schema enforcement |
-| **Settings** | pydantic-settings | Type-safe env var loading |
+```text
+Show all AI-related launches
+from HubSpot during the last year.
+```
 
 ---
 
-## Known Behaviours
+# Vision (v3.0) – Competitive Intelligence Copilot
 
-- **Rate limits** — Gemini free tier has per-minute quotas. The analyzer reads the `retry_delay` from 429 errors and waits exactly that long before retrying. Running 3+ competitors sequentially takes 40–90 seconds.
-- **Domain resolution** — When you enter a company name (not a URL), the scraper probes `.com → .io → .co → .ai` and uses the first that responds with HTTP < 400.
-- **Jina fallback** — If Jina AI fails, the scraper fetches raw HTML and cleans it with BeautifulSoup. Content quality may be slightly lower but the pipeline never silently drops pages.
-- **JSON recovery** — If Gemini returns malformed JSON (e.g. unescaped backslashes), the parser attempts two recovery passes before falling back to an empty analysis.
+The ultimate vision for CIM.
+
+Move from:
+
+```text
+What happened?
+```
+
+to:
+
+```text
+What should we do?
+```
 
 ---
 
-## License
+## Multi-Agent Architecture
 
-MIT — use it, fork it, ship it.
+Planned Agents:
+
+### Research Agent
+
+Collects strategic signals.
+
+### Evidence Agent
+
+Validates evidence quality.
+
+### Fact Check Agent
+
+Reduces hallucinations.
+
+### Threat Agent
+
+Assesses competitive risk.
+
+### Recommendation Agent
+
+Generates actionable recommendations.
+
+---
+
+## Future Workflow
+
+```mermaid
+flowchart TD
+    A[Research Agent] --> B[Evidence Agent]
+    B --> C[Fact Check Agent]
+    C --> D[Threat Agent]
+    D --> E[Recommendation Agent]
+    E --> F[Executive Briefing]
+```
+
+---
+
+# Long-Term Vision
+
+```mermaid
+flowchart LR
+    A["What is happening?"] --> B["What changed?"]
+    B --> C["Why did it change?"]
+    C --> D["What should we do?"]
+```
+
+CIM evolves through three stages:
+
+### Stage 1 (v1.0)
+**Competitor Analysis**
+> What is happening?
+
+### Stage 2 (v2.0)
+**Continuous Monitoring**
+> What changed?
+
+### Stage 3 (v3.0)
+**Competitive Intelligence Copilot**
+> What should we do about it?
+
+The final goal is to build an AI-powered competitive intelligence analyst capable of continuously monitoring competitors, identifying strategic movements, assessing threats, and generating actionable recommendations for decision makers.
+
+---
+
+# License
+
+MIT License
+
+---
+
+# Author
+
+Ayush Kumar
+
+Machine Learning Engineer | AI Systems Builder | MLOps Enthusiast
+
+LinkedIn: https://www.linkedin.com/in/ayushkumar15/
+
+GitHub: https://github.com/ayushk1233
