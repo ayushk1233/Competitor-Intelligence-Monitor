@@ -53,7 +53,47 @@ Startup Indicators:
 - fast-moving, building, founders, small team, careers, shipping, innovation
 
 Technical Indicators:
-- developer, api, sdk, infrastructure, engineering, platform
+- developer
+- developers
+- engineering
+- engineer
+- engineering teams
+- code
+- coding
+- IDE
+- editor
+- developer tooling
+- coding assistant
+- infrastructure
+- platform
+- API
+- SDK
+- automation
+- repository
+- git
+- CI/CD
+- debugging
+- terminal
+- software development
+- software creation
+- agentic development
+
+HIGH PRIORITY RULE:
+
+If the company's primary product is a developer tool,
+coding assistant,
+IDE,
+AI coding platform,
+developer infrastructure platform,
+or engineering productivity tool,
+
+and technical indicators appear repeatedly,
+
+classify as:
+
+"technical"
+
+even if startup indicators are present.
 
 Enterprise Indicators:
 - compliance, governance, security, large organizations, enterprise customers
@@ -64,8 +104,10 @@ If the company is a developer tool, coding assistant, or AI coding platform:
 - Default to "technical" or "startup" UNLESS enterprise compliance/governance language is EXPLICITLY dominant.
 - "AI", "developers", "code", "editor", "IDE" alone do NOT indicate enterprise.
 
-If messaging uses casual, fast-moving, opinionated language:
-- Classify as "startup" even if they mention enterprise customers.
+If messaging uses casual, fast-moving, opinionated language
+AND technical indicators are weak:
+
+ classify as startup.
 
 If messaging is formal, compliance-heavy, governance-focused, Fortune-500 oriented:
 - Classify as "enterprise".
@@ -75,6 +117,34 @@ If evidence does NOT clearly favor one category:
 
 Do NOT default to "enterprise" when uncertain.
 If uncertain → return "hybrid".
+
+Priority Order:
+
+1. enterprise
+2. technical
+3. visionary
+4. startup
+5. hybrid
+
+Technical should outrank startup when both are present.
+
+Example:
+
+Messaging:
+
+- coding agent
+- engineering teams
+- developers
+- IDE
+- automation
+- repositories
+- CI/CD
+
+Classification:
+
+technical
+
+even if messaging is casual and startup-like.
 
 IMPORTANT:
 - preserve messaging evidence
