@@ -10,9 +10,23 @@ def split_into_sentences(text: str) -> list:
     return [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n', text) if s.strip()]
 
 def is_low_quality(sentence: str) -> bool:
-    if len(sentence.split()) < 5 and not re.search(r'Published 20\d\d', sentence, re.IGNORECASE):
-        return True
     lower = sentence.lower()
+    if len(sentence.split()) < 5:
+        strategic_terms = (
+            ENTERPRISE_KEYWORDS
+            + TECHNICAL_KEYWORDS
+            + HIRING_REQUIRED_TERMS
+            + ["partnership", "announced", "launch", "released"]
+        )
+
+        if any(term in lower for term in strategic_terms):
+            return False
+
+        if re.search(r'Published 20\d\d', sentence, re.IGNORECASE):
+            return False
+
+        return True
+
     BAD = ["read more", "press inquiries", "contact", "media@", "learn more", "story"]
     return any(b in lower for b in BAD)
 
@@ -278,7 +292,8 @@ AI_INITIATIVE_KEYWORDS = [
 
 AI_ACTION_VERBS = [
     "announce", "launch", "commit", "release", "introduce",
-    "unveil", "expand", "partner", "invest", "acquire"
+    "unveil", "expand", "partner", "invest", "acquire",
+    "build", "building"
 ]
 
 TECHNICAL_KEYWORDS = [
@@ -552,37 +567,20 @@ def _dedup_launch_signals(items: list) -> list:
 
 
 def deduplicate_signals(extracted: dict) -> dict:
-    seen_hashes = set()
     deduped = defaultdict(list)
 
-    priority = [
-        "launch_signals",
-        "adoption_signals",
-        "partnership_signals",
-        "shipping_velocity_signals",
-        "hiring_signals",
-        "technical_signals",
-        "enterprise_signals",
-        "ai_initiatives"
-    ]
-
-    for category in priority:
-        if category in extracted:
-            for chunk in extracted[category]:
-                normalized = normalize(chunk)
-                chunk_hash = hashlib.md5(normalized.encode()).hexdigest()
-                if chunk_hash not in seen_hashes:
-                    seen_hashes.add(chunk_hash)
-                    deduped[category].append(chunk)
-
     for category, chunks in extracted.items():
-        if category not in priority:
-            for chunk in chunks:
-                normalized = normalize(chunk)
-                chunk_hash = hashlib.md5(normalized.encode()).hexdigest()
-                if chunk_hash not in seen_hashes:
-                    seen_hashes.add(chunk_hash)
-                    deduped[category].append(chunk)
+        seen_hashes = set()
+
+        for chunk in chunks:
+            normalized = normalize(chunk)
+            chunk_hash = hashlib.md5(
+                normalized.encode()
+            ).hexdigest()
+
+            if chunk_hash not in seen_hashes:
+                seen_hashes.add(chunk_hash)
+                deduped[category].append(chunk)
 
     return dict(deduped)
 
@@ -609,6 +607,10 @@ def extract_signals(text: str) -> dict:
 
         # Skip noise
         if is_pricing_or_package_description(sentence) or is_newsletter_description(sentence):
+            continue
+
+        # Skip historical references
+        if has_historical_context(sentence) and not has_recent_context(sentence):
             continue
 
         sentence_lower = sentence.lower()
@@ -706,12 +708,24 @@ def extract_signals(text: str) -> dict:
             print(f"[signal accepted]\n[hiring]\n[{item[:80]}]\n")
 
         # ---- AI INITIATIVES ----
-        match_count = sum(sentence_lower.count(kw) for kw in AI_INITIATIVE_KEYWORDS)
-        has_action_verb = any(v in sentence_lower for v in AI_ACTION_VERBS)
-        if match_count >= 2 and has_action_verb:
+        has_action_verb = any(
+            v in sentence_lower
+            for v in AI_ACTION_VERBS
+        )
+
+        has_ai_keyword = any(
+            kw in sentence_lower
+            for kw in AI_INITIATIVE_KEYWORDS
+        )
+
+        if has_ai_keyword and has_action_verb:
             sig = format_signal(sentence, "ai_initiative")
             extracted["ai_initiatives"].append(sig)
-            print(f"[signal accepted]\n[ai_initiative]\n[{sentence[:40]}]\n")
+            print(
+                f"[signal accepted]\n"
+                f"[ai_initiative]\n"
+                f"[{sentence[:40]}]\n"
+            )
 
         # ---- TECHNICAL ----
         if any(kw in sentence_lower for kw in TECHNICAL_KEYWORDS):

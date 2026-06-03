@@ -106,10 +106,38 @@ def clean_page_content(text: str) -> str:
     original_length = len(text)
     
     # Remove Jina metadata pollution
-    cleaned = re.sub(r"Title:.*?(?=URL Source:|$)", "", text, flags=re.IGNORECASE|re.DOTALL)
-    cleaned = re.sub(r"URL Source:.*?(?=Published Time:|Markdown Content:|$)", "", cleaned, flags=re.IGNORECASE|re.DOTALL)
-    cleaned = re.sub(r"Published Time:.*?(?=Markdown Content:|$)", "", cleaned, flags=re.IGNORECASE|re.DOTALL)
-    cleaned = re.sub(r"Markdown Content:\s*", "", cleaned, flags=re.IGNORECASE)
+    #cleaned = re.sub(r"Title:.*?(?=URL Source:|$)", "", text, flags=re.IGNORECASE|re.DOTALL)
+    #cleaned = re.sub(r"^Title:\s*[^\n]+\n?", "", text,flags=re.IGNORECASE | re.MULTILINE)
+    if "URL Source:" in text or "Markdown Content:" in text:
+        cleaned = re.sub(
+            r"Title:.*?(?=URL Source:|Markdown Content:)",
+            "",
+            text,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+    else:
+        cleaned = text
+
+    cleaned = re.sub(
+        r"URL Source:.*?(?=Published Time:|Markdown Content:|$)",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL
+    )
+
+    cleaned = re.sub(
+        r"Published Time:.*?(?=Markdown Content:|$)",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL
+    )
+
+    cleaned = re.sub(
+        r"Markdown Content:\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE
+    )
     
     # Remove image markdown: ![alt](url)
     cleaned = re.sub(r'!\[[^\]]*\]\([^)]+\)', '', cleaned)
