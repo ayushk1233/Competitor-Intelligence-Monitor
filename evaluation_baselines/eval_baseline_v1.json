@@ -1,6 +1,6 @@
 {
   "baseline_name": "eval_baseline_v1",
-  "overall_score": 0.518,
+  "overall_score": 0.792,
   "model": "deepseek/deepseek-chat",
   "temperature": 0.0,
   "analysis_prompt_version": "analysis_prompt_v1",
@@ -14,9 +14,11 @@
   ],
   "timestamp": "2026-05-28",
   "notes": [
-    "First stable evaluation checkpoint",
-    "Post schema normalization",
-    "Post momentum calibration",
-    "Post ontology stabilization"
+  "First stable evaluation checkpoint",
+  "Post schema normalization",
+  "Post momentum calibration",
+  "Post ontology stabilization",
+  "Latest validated benchmark run",
+  "17 tests passing"
   ]
 }

@@ -19,6 +19,11 @@ from backend.eval.storage import (
     save_evaluation_snapshot
 )
 
+from backend.eval.regression import (
+    load_baseline_score,
+    calculate_regression,
+)
+
 MODEL_NAME = "deepseek/deepseek-chat"
 TEMPERATURE = 0.0
 
@@ -154,6 +159,42 @@ async def run_evaluation_suite():
         saved_path = save_evaluation_snapshot(
             snapshot
         )
+
+        baseline_score = load_baseline_score()
+
+        regression_report = calculate_regression(
+            latest_score=average_score,
+            baseline_score=baseline_score,
+        )
+
+        print("\n")
+        print("=" * 50)
+        print("REGRESSION REPORT")
+        print("=" * 50)
+
+        print(
+            f"Latest Score   : "
+            f"{regression_report['latest_score']:.3f}"
+        )
+
+        print(
+            f"Baseline Score : "
+            f"{regression_report['baseline_score']:.3f}"
+        )
+
+        print(
+            f"Delta          : "
+            f"{regression_report['delta']:.3f}"
+        )
+
+        if regression_report["improved"]:
+            print("Status         : IMPROVED")
+
+        elif regression_report["regressed"]:
+            print("Status         : REGRESSED")
+
+        else:
+            print("Status         : NO CHANGE")
 
         print(
             f"\nSaved evaluation snapshot:"
