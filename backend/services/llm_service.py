@@ -22,8 +22,6 @@ from backend.metrics import (
     llm_errors_total,
 )
 
-settings = get_settings()
-
 DEFAULT_MODEL = "anthropic/claude-3-haiku"
 ANALYSIS_MODEL = "deepseek/deepseek-chat"
 COMPARISON_MODEL = "deepseek/deepseek-reasoner"
@@ -37,6 +35,7 @@ def _get_client() -> OpenAI:
     Build an OpenAI client pointed at OpenRouter.
     Reads OPENROUTER_API_KEY from environment (K8s Secret / .env).
     """
+    settings = get_settings()
     api_key = os.getenv("OPENROUTER_API_KEY", settings.openrouter_api_key)
     if not api_key:
         raise RuntimeError(
@@ -64,7 +63,13 @@ async def call_openrouter(
 
     Returns None only after all retries are exhausted.
     """
-    resolved_model = model or settings.default_model or DEFAULT_MODEL
+    settings = get_settings()
+
+    resolved_model = (
+        model
+        or settings.default_model
+        or DEFAULT_MODEL
+    )
 
     messages = []
     if system_prompt:
