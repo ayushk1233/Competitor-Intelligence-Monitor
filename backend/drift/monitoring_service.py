@@ -1,5 +1,5 @@
 from typing import Any
-from datetime import datetime
+from datetime import datetime, UTC
 
 from backend.models.schemas import CompetitorAnalysis
 from backend.drift.diff_service import compare_analysis
@@ -50,7 +50,7 @@ class MonitoringService:
             company_name=alert_data["company_name"],
             severity=alert_data["severity"],
             reasons=alert_data["reasons"],
-            created_at=datetime.utcnow().strftime(
+            created_at=datetime.now(UTC).strftime(
                 "%Y-%m-%d %H:%M:%S"
             ),
         )
