@@ -17,6 +17,7 @@ from backend.database.db_service import DatabaseService
 from backend.database.models import Run, CompetitorAnalysisRecord, ComparisonRecord
 from backend.models.schemas import CompetitorAnalysis, ComparisonResult
 from backend.metrics import active_pipeline_runs
+from backend.drift.diff_service import compare_analysis
 
 app = FastAPI(
     title="Competitor Intelligence Monitor",
@@ -249,6 +250,153 @@ async def get_competitor_history(
     db_service = DatabaseService(db)
     history = await db_service.get_momentum_history(competitor_name)
     return {"competitor": competitor_name, "history": history}
+
+
+@app.get("/api/alerts")
+async def get_alerts(
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+
+    alerts = await db_service.get_alerts()
+
+    return [
+        {
+            "company_name": a.company_name,
+            "severity": a.severity,
+            "reasons": a.reasons,
+            "created_at": (
+                a.created_at.isoformat()
+                if a.created_at else None
+            ),
+        }
+        for a in alerts
+    ]
+
+
+@app.get("/api/alerts/latest")
+async def get_latest_alerts(
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+
+    alerts = await db_service.get_latest_alerts(limit=10)
+
+    return [
+        {
+            "company_name": a.company_name,
+            "severity": a.severity,
+            "reasons": a.reasons,
+            "created_at": (
+                a.created_at.isoformat()
+                if a.created_at else None
+            ),
+        }
+        for a in alerts
+    ]
+
+
+@app.get("/api/alerts/{company_name}")
+async def get_company_alerts(
+    company_name: str,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+
+    alerts = await db_service.get_alerts_for_company(
+        company_name
+    )
+
+    return [
+        {
+            "company_name": a.company_name,
+            "severity": a.severity,
+            "reasons": a.reasons,
+            "created_at": (
+                a.created_at.isoformat()
+                if a.created_at else None
+            ),
+        }
+        for a in alerts
+    ]
+
+
+@app.get("/api/competitors/{competitor_name}/latest")
+async def get_competitor_latest(
+    competitor_name: str,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+
+    record = await db_service.get_latest_analysis(
+        competitor_name
+    )
+
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Competitor not found"
+        )
+
+    return record.full_analysis
+
+
+@app.get("/api/competitors/{competitor_name}/history")
+async def get_competitor_analysis_history(
+    competitor_name: str,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+
+    history = await db_service.get_competitor_history(
+        competitor_name,
+        limit=50,
+    )
+
+    return [
+        {
+            "created_at": (
+                h.created_at.isoformat()
+                if h.created_at else None
+            ),
+            "momentum_score": h.momentum_score,
+            "messaging_tone": h.messaging_tone,
+        }
+        for h in history
+    ]
+
+
+@app.get("/api/competitors/{competitor_name}/drift")
+async def get_competitor_drift(
+    competitor_name: str,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+
+    history = await db_service.get_latest_two_analyses(
+        competitor_name
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=404,
+            detail="Not enough history for drift detection"
+        )
+
+    newest = CompetitorAnalysis(
+        **history[0].full_analysis
+    )
+
+    previous = CompetitorAnalysis(
+        **history[1].full_analysis
+    )
+
+    drift = compare_analysis(
+        previous,
+        newest,
+    )
+
+    return drift.model_dump()
 
 
 # ── Streamlit still uses this directly ───────────────────────────────────────

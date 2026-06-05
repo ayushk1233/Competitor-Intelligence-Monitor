@@ -158,6 +158,66 @@ class DatabaseService:
         )
         return list(result.scalars().all())
 
+    async def get_alerts(
+        self,
+        limit: int = 100,
+    ):
+        result = await self.session.execute(
+            select(AlertHistory)
+            .order_by(desc(AlertHistory.created_at))
+            .limit(limit)
+        )
+
+        return list(result.scalars().all())
+
+    async def get_alerts_for_company(
+        self,
+        company_name: str,
+        limit: int = 50,
+    ):
+        result = await self.session.execute(
+            select(AlertHistory)
+            .where(AlertHistory.company_name == company_name)
+            .order_by(desc(AlertHistory.created_at))
+            .limit(limit)
+        )
+
+        return list(result.scalars().all())
+
+    async def get_latest_alerts(
+        self,
+        limit: int = 10,
+    ):
+        return await self.get_alerts(limit)
+
+    async def get_latest_analysis(
+        self,
+        competitor_name: str,
+    ):
+        history = await self.get_competitor_history(
+            competitor_name,
+            limit=1,
+        )
+
+        if not history:
+            return None
+
+        return history[0]
+
+    async def get_latest_two_analyses(
+        self,
+        competitor_name: str,
+    ):
+        history = await self.get_competitor_history(
+            competitor_name,
+            limit=2,
+        )
+
+        if len(history) < 2:
+            return None
+
+        return history
+
     async def get_momentum_history(
         self, competitor_name: str, limit: int = 10
     ) -> list[dict]:
