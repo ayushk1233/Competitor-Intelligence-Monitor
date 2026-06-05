@@ -4,7 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # OpenRouter API
-    openrouter_api_key: str
+    openrouter_api_key: str = ""
 
     # Optional services
     jina_api_key: str = ""
