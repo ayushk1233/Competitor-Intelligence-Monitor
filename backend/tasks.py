@@ -89,26 +89,12 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
         async with SessionLocal() as session:
             db = DatabaseService(session)
             
-            from backend.database.models import Run
-            run_record = Run(
-                id=run_id,
-                competitor_names=competitors,
-                status="running"
+            await db.update_run_status(
+                run_id,
+                "running"
             )
-            session.add(run_record)
-            await session.flush()
 
-            print("RUN CREATED:", run_id)
-
-            result = await session.get(Run, run_id)
-            print("SESSION GET:", result)
-
-            from sqlalchemy import select
-            rows = await session.execute(
-                select(Run)
-            )
-            print("RUN COUNT IN SESSION:", len(rows.scalars().all()))
-            print("TABLENAME:", Run.__tablename__)
+            await session.commit()
 
             scraper = ScraperService()
             analyzer = AnalysisService()

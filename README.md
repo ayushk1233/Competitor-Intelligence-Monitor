@@ -1,5 +1,11 @@
 # Competitor Intelligence Monitor (CIM)
 
+Status: **Monitoring MVP Complete**  
+Current Version: **v0.8.0-monitoring-mvp**  
+Next Milestone: **v0.9.0-intelligence-quality**
+
+![CIM Cover](images/cim.png)
+
 > AI-Powered Competitive Intelligence Platform for Monitoring Competitors, Detecting Strategic Shifts, and Generating Actionable Business Intelligence.
 
 ---
@@ -42,44 +48,30 @@ v1.0-benchmark-0.80
 
 ## Benchmark Performance
 
-```mermaid
-xychart-beta
-    title "CIM Evaluation Benchmark Results"
-    x-axis ["Basecamp","Stripe","IBM","Cursor","HubSpot"]
-    y-axis "Score" 0 --> 1
-    bar [0.76, 0.82, 0.801, 0.815, 0.805]
-```
-
-### Overall Benchmark Score
-
-```text
-0.800
-```
+| Metric | Score |
+|----------|---------|
+| Tone Classification | 0.89 |
+| Momentum Detection | 0.81 |
+| ICP Recall | 0.77 |
+| Strategic Keyword Recall | 0.73 |
+| Overall | 0.80 |
 
 ## Project Progress
 
-```mermaid
-pie showData
-    title Roadmap Progress
-    "Phase 1 - Core Intelligence Engine" : 100
-    "Phase 2 - Production Foundation" : 100
-    "Phase 3 - LLMOps & Evaluation" : 85
-    "Phase 4 - Cloud Infrastructure" : 0
-    "Phase 5 - Intelligence Copilot" : 0
-```
-
-Evaluation measures:
-
-* Tone Classification Accuracy
-* Momentum Detection Accuracy
-* ICP Recall
-* Strategic Keyword Recall
+- Phase 1 - Core Intelligence Engine: ✅
+- Phase 2 - Production Foundation: ✅
+- Phase 3 - LLMOps & Evaluation: ✅
+- Phase 4 - Monitoring & Drift Detection: ✅
+- Phase 5 - Cloud Deployment: ⏳
+- Phase 6 - Intelligence Copilot: ⏳
 
 ---
 
 # Core Features
 
 ## Competitor Analysis
+
+![Intelligence Report](images/report.png)
 
 Analyze any competitor website and extract:
 
@@ -160,6 +152,8 @@ Examples:
 
 ## Competitor Comparison
 
+![Run History](images/run_his.png)
+
 Compare multiple competitors and generate:
 
 * Market Leader Identification
@@ -168,6 +162,49 @@ Compare multiple competitors and generate:
 * Messaging Gap Analysis
 * Threat Ranking
 * Executive Briefings
+
+---
+
+## Continuous Monitoring
+
+CIM now supports historical intelligence and continuous monitoring.
+
+![Monitoring Dashboard](images/monitoring.png)
+
+Features:
+
+- Momentum tracking
+- Competitor history
+- Drift detection
+- Alert generation
+- Alert timelines
+- Strategic keyword changes
+- Historical trend analysis
+
+---
+
+## Alert Engine
+
+![Alert Engine](images/monitor.png)
+
+The platform automatically generates alerts when:
+
+- Momentum changes significantly
+- New strategic keywords appear
+- Messaging tone changes
+- Competitor positioning shifts
+
+Example:
+
+Render:
+- Momentum: 8 → 6
+- Added keywords: autoscaling, infrastructure
+- Removed keywords: enterprise, automation
+
+Alert Severity:
+- LOW
+- MEDIUM
+- HIGH
 
 ---
 
@@ -187,6 +224,33 @@ The evaluation framework acts as a quality gate for future deployments.
 ---
 
 # Architecture
+
+## Monitoring Architecture
+
+```mermaid
+flowchart LR
+
+A[Scheduled Run]
+--> B[Historical Storage]
+
+B --> C[Drift Detection]
+
+C --> D[Alert Engine]
+
+D --> E[Monitoring Dashboard]
+```
+
+## Database Schema
+
+```mermaid
+erDiagram
+
+RUNS ||--o{ COMPETITOR_ANALYSES : contains
+RUNS ||--o{ PAGE_SNAPSHOTS : stores
+RUNS ||--o{ COMPARISON_RESULTS : generates
+
+COMPETITOR_ANALYSES ||--o{ ALERT_HISTORY : triggers
+```
 
 ## High-Level Flow
 
@@ -257,12 +321,50 @@ flowchart LR
 
 ---
 
+# Known Limitations
+
+Current intelligence quality challenges:
+
+- Navigation/menu content occasionally classified as launches
+- Strategic keyword extraction can contain noise
+- Momentum scoring requires calibration
+- Drift detection can be influenced by extraction variance
+
+Planned Improvements:
+
+- Signal confidence scoring
+- Noise filtering
+- Evidence-backed launch extraction
+- Momentum calibration
+- Multi-model validation
+
+---
+
+# Why This Is Different
+
+Traditional competitor tools:
+
+- Aggregate information
+- Surface news
+- Require manual interpretation
+
+CIM:
+
+- Extracts strategic signals
+- Scores momentum
+- Detects drift
+- Generates executive briefings
+- Produces actionable recommendations
+
+---
+
 # Current Repository Structure
 
 ```text
 .
 ├── backend/
 │   ├── database/
+│   ├── drift/
 │   ├── eval/
 │   ├── models/
 │   ├── prompts/
@@ -272,10 +374,7 @@ flowchart LR
 │   └── utils/
 ├── frontend/
 ├── monitoring/
-│   ├── grafana/
-│   └── prometheus/
 ├── tests/
-├── k8s/
 ├── docker-compose.yml
 ├── Dockerfile
 └── Dockerfile.worker
