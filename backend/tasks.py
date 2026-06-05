@@ -226,3 +226,24 @@ async def _mark_failed(run_id: str, error: str):
             await session.commit()
     finally:
         await engine.dispose()
+
+
+@celery_app.task(
+    bind=True,
+    name="scheduled_monitoring"
+)
+def scheduled_monitoring_task(self):
+    competitors = [
+        "Stripe",
+        "HubSpot",
+        "Cursor",
+        "IBM",
+        "Basecamp",
+    ]
+
+    run_id = f"scheduled_{int(time.time())}"
+
+    return run_analysis_task.delay(
+        run_id,
+        competitors,
+    )
