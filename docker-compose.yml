@@ -52,6 +52,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
+      - ./tests:/app/tests
       - prometheus_multiproc:/tmp/prometheus
     restart: unless-stopped
 
@@ -74,6 +75,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
+      - ./tests:/app/tests
       - prometheus_multiproc:/tmp/prometheus
     restart: unless-stopped
 
