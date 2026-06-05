@@ -3,6 +3,7 @@ import requests
 import time
 import sys
 import os
+import pandas as pd
 
 # ── Page config ───────────────────────────────────────────────────────────────
 
@@ -254,6 +255,85 @@ def fetch_recent_runs() -> list:
     except Exception:
         return []
 
+def fetch_latest_alerts():
+    try:
+        response = requests.get(
+            f"{API_BASE}/api/alerts/latest",
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            return response.json()
+
+        return []
+
+    except Exception:
+        return []
+
+
+def fetch_company_alerts(company_name: str):
+    try:
+        response = requests.get(
+            f"{API_BASE}/api/alerts/{company_name}",
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            return response.json()
+
+        return []
+
+    except Exception:
+        return []
+
+
+def fetch_competitor_latest(name: str):
+    try:
+        response = requests.get(
+            f"{API_BASE}/api/competitors/{name}/latest",
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            return response.json()
+
+        return None
+
+    except Exception:
+        return None
+
+
+def fetch_competitor_drift(name: str):
+    try:
+        response = requests.get(
+            f"{API_BASE}/api/competitors/{name}/drift",
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            return response.json()
+
+        return None
+
+    except Exception:
+        return None
+
+
+def fetch_competitor_history_api(name: str):
+    try:
+        response = requests.get(
+            f"{API_BASE}/api/competitors/{name}/history",
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            return response.json()
+
+        return []
+
+    except Exception:
+        return []
+
 def fetch_competitor_history(name: str) -> list:
     """GET /api/history/{name} — returns momentum history."""
     try:
@@ -289,13 +369,22 @@ def main():
     else:
         st.success("✅ Backend API connected — all systems operational")
 
-    tab1, tab2 = st.tabs(["⚡ Run Intelligence", "📊 Run History"])
+    tab1, tab2, tab3 = st.tabs(
+        [
+            "⚡ Run Intelligence",
+            "📊 Run History",
+            "🚨 Monitoring"
+        ]
+    )
 
     with tab1:
         run_intelligence_tab()
 
     with tab2:
         history_tab()
+
+    with tab3:
+        monitoring_tab()
 
     # ── Render report ONCE below tabs — only when loaded from History ──────
     # run_intelligence_tab() handles its own report rendering inline.
@@ -559,6 +648,171 @@ def history_tab():
                     f'</div>',
                     unsafe_allow_html=True
                 )
+
+
+def monitoring_tab():
+
+    st.markdown(
+        '<div class="section-header">🚨 Monitoring Center</div>',
+        unsafe_allow_html=True
+    )
+
+    alerts = fetch_latest_alerts()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Alerts", len(alerts))
+    with col2:
+        st.metric("Companies", 10)
+    with col3:
+        st.metric("Avg Momentum", "7.0")
+    with col4:
+        drift_events = sum(1 for a in alerts if a.get("severity") in ["MEDIUM", "HIGH"])
+        st.metric("Changes", drift_events)
+
+    st.markdown("---")
+
+    render_alert_feed(alerts)
+
+    st.markdown("---")
+
+    render_competitor_monitor()
+
+
+def render_alert_feed(alerts):
+
+    st.subheader("Recent Alerts")
+
+    if not alerts:
+        st.success("No active alerts.")
+        return
+
+    for alert in alerts:
+        severity = alert["severity"]
+        company = alert['company_name']
+        reasons = ', '.join(alert['reasons']) if alert['reasons'] else "No significant changes detected"
+        timestamp = alert.get("created_at", "")[:16].replace("T", " ") if alert.get("created_at") else ""
+
+        if severity == "HIGH":
+            st.error(f"🔴 **{company}** &nbsp;|&nbsp; {reasons} &nbsp;|&nbsp; {timestamp}")
+        elif severity == "MEDIUM":
+            st.warning(f"🟠 **{company}** &nbsp;|&nbsp; {reasons} &nbsp;|&nbsp; {timestamp}")
+        else:
+            st.info(f"🔵 **{company}** &nbsp;|&nbsp; {reasons} &nbsp;|&nbsp; {timestamp}")
+
+
+def render_competitor_monitor():
+
+    st.subheader("Competitor Monitoring")
+
+    competitors_list = [
+        "Cursor", "Stripe", "Hubspot", "Basecamp", "Ibm", 
+        "Linear", "Notion", "Vercel", "Netlify", "Render"
+    ]
+    
+    competitor = st.selectbox(
+        "Competitor Name",
+        options=competitors_list,
+        key="monitor_competitor"
+    )
+
+    if not competitor:
+        return
+
+    latest = fetch_competitor_latest(competitor)
+
+    if not latest:
+        st.info("No monitoring history found.")
+        return
+
+    st.markdown("### Latest Snapshot")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Momentum Score", latest.get("momentum_score", "N/A"))
+    c2.metric("Messaging Tone", str(latest.get("messaging_tone", "N/A")).title())
+    c3.metric("Last Updated", latest.get("created_at", "")[:10] if latest.get("created_at") else "N/A")
+    
+    c4, c5 = st.columns(2)
+    c4.metric("Core Offering", latest.get("core_offering", "N/A"))
+    c5.metric("ICP", latest.get("icp", "N/A"))
+
+    st.markdown("---")
+
+    render_drift_section(competitor)
+
+    st.markdown("---")
+
+    render_history_section(competitor)
+
+    st.markdown("---")
+    
+    render_alert_timeline(competitor)
+
+
+def render_drift_section(competitor: str):
+
+    st.subheader("Drift Analysis")
+
+    drift = fetch_competitor_drift(competitor)
+
+    if not drift:
+        st.info("Not enough history available yet.")
+        return
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric("Old Momentum", drift["old_momentum"])
+    c2.metric("New Momentum", drift["new_momentum"])
+    delta = drift["momentum_delta"]
+    c3.metric("Delta", f"+{delta}" if delta > 0 else delta)
+
+    if drift["added_keywords"]:
+        st.success("Added Keywords: " + ", ".join(drift["added_keywords"]))
+
+    if drift["removed_keywords"]:
+        st.warning("Removed Keywords: " + ", ".join(drift["removed_keywords"]))
+
+    tone_changed = drift.get("tone_changed", False)
+    if tone_changed:
+        st.error("Tone Changed: True")
+    else:
+        st.info("Tone Changed: False")
+
+
+def render_history_section(competitor: str):
+
+    st.subheader("Momentum History")
+
+    history = fetch_competitor_history_api(competitor)
+
+    if not history:
+        st.info("No monitoring history found.")
+        return
+
+    df = pd.DataFrame(history)
+
+    if len(df) == 0:
+        return
+
+    st.line_chart(df.set_index("created_at")["momentum_score"])
+
+
+def render_alert_timeline(competitor: str):
+    st.subheader("Alert Timeline")
+    
+    alerts = fetch_company_alerts(competitor)
+    if not alerts:
+        st.success("No active alerts.")
+        return
+        
+    df = pd.DataFrame(alerts)
+    if len(df) == 0:
+        return
+        
+    df["Timestamp"] = df["created_at"].apply(lambda x: x[:16].replace("T", " ") if pd.notnull(x) else "")
+    df["Severity"] = df["severity"]
+    df["Reason"] = df["reasons"].apply(lambda r: ", ".join(r) if r else "No significant changes detected")
+    
+    st.dataframe(df[["Timestamp", "Severity", "Reason"]], use_container_width=True, hide_index=True)
 
 
 # ── Report rendering (same as before) ────────────────────────────────────────
