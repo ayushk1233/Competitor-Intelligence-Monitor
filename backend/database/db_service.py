@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from backend.database.models import (
     Run, CompetitorAnalysisRecord,
-    ComparisonRecord, PageSnapshot
+    ComparisonRecord, PageSnapshot, AlertHistory
 )
 from backend.models.schemas import IntelligenceReport, CompetitorPages
 
@@ -78,6 +78,28 @@ class DatabaseService:
         self.session.add(record)
         await self.session.flush()
         return record
+
+    async def save_alert(
+        self,
+        company_name: str,
+        severity: str,
+        reasons: list[str],
+    ):
+        """
+        Persist generated monitoring alerts.
+        """
+
+        alert = AlertHistory(
+            company_name=company_name,
+            severity=severity,
+            reasons=reasons,
+        )
+
+        self.session.add(alert)
+
+        await self.session.flush()
+
+        return alert
 
     async def save_page_snapshots(
         self, run_id: str, competitor_pages: CompetitorPages

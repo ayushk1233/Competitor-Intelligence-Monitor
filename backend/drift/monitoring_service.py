@@ -59,6 +59,12 @@ class MonitoringService:
             alert_record
         )
 
+        await self.db.save_alert(
+            company_name=alert_record.company_name,
+            severity=alert_record.severity,
+            reasons=alert_record.reasons,
+        )
+
         return {
             "drift_report": drift_report,
             "alert": alert_record,

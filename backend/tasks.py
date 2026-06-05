@@ -202,6 +202,8 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                             f"for {analysis.name}"
                         )
 
+                await session.commit()
+
                 # ✅ FIX 2c: correct name — pipelines_total not pipeline_runs_total
                 total_pages = sum(len(p.pages) for p in valid_pages)
                 pages_fetched_per_run.observe(total_pages)
