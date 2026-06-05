@@ -7,6 +7,9 @@ from backend.services.analysis_service import AnalysisService
 from backend.services.comparison_service import ComparisonService
 from backend.database.db_service import DatabaseService
 from backend.config import get_settings
+from backend.drift.monitoring_service import (
+    MonitoringService,
+)
 
 
 from backend.metrics import (
@@ -162,6 +165,20 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
 
                 await db.save_full_report(run_id, report)
                 await session.commit()
+
+                monitoring = MonitoringService(db)
+
+                for analysis in report.competitors:
+
+                    result = await monitoring.detect_drift(
+                        analysis.name
+                    )
+
+                    if result:
+                        print(
+                            f"[monitoring] Alert generated "
+                            f"for {analysis.name}"
+                        )
 
                 # ✅ FIX 2c: correct name — pipelines_total not pipeline_runs_total
                 total_pages = sum(len(p.pages) for p in valid_pages)
