@@ -77,6 +77,36 @@ services:
       - prometheus_multiproc:/tmp/prometheus
     restart: unless-stopped
 
+  # ── Celery Beat ───────────────────────────────────────────────────────
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+
+    container_name: cim_beat
+
+    command: >
+      celery -A backend.celery_app.celery_app
+      beat
+      --loglevel=info
+
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - JINA_API_KEY=${JINA_API_KEY}
+      - DATABASE_URL=postgresql+asyncpg://cim_user:cim_password@postgres:5432/competitor_intel
+      - REDIS_URL=redis://redis:6379/0
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    volumes:
+      - ./backend:/app/backend
+
+    restart: unless-stopped
+
   # ── Prometheus ────────────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest

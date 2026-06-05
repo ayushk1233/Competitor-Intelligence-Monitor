@@ -24,7 +24,7 @@ from backend.metrics import (
 
 DEFAULT_MODEL = "anthropic/claude-3-haiku"
 ANALYSIS_MODEL = "deepseek/deepseek-chat"
-COMPARISON_MODEL = "deepseek/deepseek-reasoner"
+COMPARISON_MODEL = "google/gemini-2.5-flash"
 FALLBACK_MODEL = "anthropic/claude-3-haiku"
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 2.0  # seconds

@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 from backend.config import get_settings
 
 settings = get_settings()
@@ -35,4 +36,13 @@ celery_app.conf.update(
     # One task at a time per worker process
     # Prevents memory issues with large scraping jobs
     worker_prefetch_multiplier=1,
+
+    beat_schedule={
+        "nightly-monitoring": {
+            "task": "scheduled_monitoring",
+            "schedule": crontab(hour=2, minute=0),
+        }
+    },
+
+    timezone="UTC",
 )
