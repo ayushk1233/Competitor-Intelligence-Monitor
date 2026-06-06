@@ -1,7 +1,15 @@
 from datetime import datetime
 from sqlalchemy import (
-    String, Integer, Float, Boolean, DateTime,
-    ForeignKey, Text, JSON
+    String,
+    Integer,
+    Float,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Text,
+    JSON,
+    Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -154,4 +162,328 @@ class AlertHistory(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Users
+# ─────────────────────────────────────────────────────────────
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    display_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Watchlists
+# ─────────────────────────────────────────────────────────────
+
+class Watchlist(Base):
+    __tablename__ = "watchlists"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    description: Mapped[str] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    competitors = relationship(
+        "WatchlistCompetitor",
+        back_populates="watchlist",
+        cascade="all, delete-orphan",
+    )
+
+    monitoring_runs = relationship(
+        "MonitoringRun",
+        back_populates="watchlist",
+        cascade="all, delete-orphan",
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Watchlist Competitors
+# ─────────────────────────────────────────────────────────────
+
+class WatchlistCompetitor(Base):
+    __tablename__ = "watchlist_competitors"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    watchlist_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("watchlists.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    company_name: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+    )
+
+    domain: Mapped[str] = mapped_column(
+        String(200),
+        nullable=True,
+    )
+
+    added_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+    )
+
+    watchlist = relationship(
+        "Watchlist",
+        back_populates="competitors",
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "watchlist_id",
+            "company_name",
+            name="uq_watchlist_company",
+        ),
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Notification Channels
+# ─────────────────────────────────────────────────────────────
+
+class NotificationChannel(Base):
+    __tablename__ = "notification_channels"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    channel_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    destination: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+
+    label: Mapped[str] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+    )
+
+    verified: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Monitoring Runs
+# ─────────────────────────────────────────────────────────────
+
+class MonitoringRun(Base):
+    __tablename__ = "monitoring_runs"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    watchlist_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("watchlists.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    trigger_type: Mapped[str] = mapped_column(
+        String(50),
+        default="SCHEDULED",
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(50),
+        default="QUEUED",
+    )
+
+    competitors_checked: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
+    alerts_generated: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
+    notifications_sent: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
+    error_detail: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    completed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    watchlist = relationship(
+        "Watchlist",
+        back_populates="monitoring_runs",
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Alert Suppression
+# ─────────────────────────────────────────────────────────────
+
+class AlertSuppression(Base):
+    __tablename__ = "alert_suppression"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    company_name: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        index=True,
+    )
+
+    alert_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    suppressed_until: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    fired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    alert_id: Mapped[str] = mapped_column(
+        String(36),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_suppression_company_type_until",
+            "company_name",
+            "alert_type",
+            "suppressed_until",
+        ),
     )
