@@ -12,12 +12,15 @@ from backend.database.models import (
     User,
     Watchlist,
     WatchlistCompetitor,
+    MonitoringRun,
 )
 from backend.models.schemas import (
     WatchlistCreateRequest,
     WatchlistResponse,
     CompetitorCreateRequest,
     CompetitorResponse,
+    MonitoringRunCreateRequest,
+    MonitoringRunResponse,
 )
 
 router = APIRouter(
@@ -121,3 +124,40 @@ async def add_competitor(
     await db.refresh(competitor)
 
     return competitor
+
+
+@router.post(
+    "/{watchlist_id}/runs",
+    response_model=MonitoringRunResponse,
+)
+async def create_monitoring_run(
+    watchlist_id: str,
+    request: MonitoringRunCreateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    watchlist = await db.get(
+        Watchlist,
+        watchlist_id,
+    )
+
+    if watchlist is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Watchlist not found",
+        )
+
+    run = MonitoringRun(
+        watchlist_id=watchlist_id,
+        trigger_type=request.trigger_type,
+        status="QUEUED",
+        competitors_checked=0,
+        alerts_generated=0,
+        notifications_sent=0,
+    )
+
+    db.add(run)
+
+    await db.flush()
+    await db.refresh(run)
+
+    return run
