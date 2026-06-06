@@ -105,6 +105,13 @@ class WatchlistResponse(BaseModel):
         from_attributes = True
 
 
+class WatchlistListResponse(BaseModel):
+    items: list[WatchlistResponse]
+
+    class Config:
+        from_attributes = True
+
+
 # ============================================================
 # Watchlist Competitor Schemas
 # ============================================================
@@ -124,6 +131,13 @@ class CompetitorResponse(BaseModel):
     is_active: bool
 
     added_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CompetitorListResponse(BaseModel):
+    items: list[CompetitorResponse]
 
     class Config:
         from_attributes = True

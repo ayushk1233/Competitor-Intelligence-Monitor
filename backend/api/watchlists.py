@@ -17,6 +17,8 @@ from backend.database.models import (
 from backend.models.schemas import (
     WatchlistCreateRequest,
     WatchlistResponse,
+    WatchlistListResponse,
+    CompetitorListResponse,
     CompetitorCreateRequest,
     CompetitorResponse,
     MonitoringRunCreateRequest,
@@ -77,6 +79,32 @@ async def create_watchlist(
     return watchlist
 
 
+@router.get(
+    "",
+    response_model=WatchlistListResponse,
+)
+async def list_watchlists(
+    db: AsyncSession = Depends(get_db),
+):
+    user = await get_default_user(db)
+
+    result = await db.execute(
+        select(Watchlist)
+        .where(
+            Watchlist.user_id == user.id
+        )
+        .order_by(
+            Watchlist.created_at.desc()
+        )
+    )
+
+    watchlists = result.scalars().all()
+
+    return {
+        "items": watchlists,
+    }
+
+
 @router.post(
     "/{watchlist_id}/competitors",
     response_model=CompetitorResponse,
@@ -124,6 +152,42 @@ async def add_competitor(
     await db.refresh(competitor)
 
     return competitor
+
+
+@router.get(
+    "/{watchlist_id}/competitors",
+    response_model=CompetitorListResponse,
+)
+async def list_competitors(
+    watchlist_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    watchlist = await db.get(
+        Watchlist,
+        watchlist_id,
+    )
+
+    if watchlist is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Watchlist not found",
+        )
+
+    result = await db.execute(
+        select(WatchlistCompetitor)
+        .where(
+            WatchlistCompetitor.watchlist_id == watchlist_id
+        )
+        .order_by(
+            WatchlistCompetitor.company_name.asc()
+        )
+    )
+
+    competitors = result.scalars().all()
+
+    return {
+        "items": competitors,
+    }
 
 
 @router.post(
