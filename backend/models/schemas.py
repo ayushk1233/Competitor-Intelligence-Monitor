@@ -172,3 +172,10 @@ class MonitoringRunResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MonitoringRunListResponse(BaseModel):
+    items: list[MonitoringRunResponse]
+
+    class Config:
+        from_attributes = True
