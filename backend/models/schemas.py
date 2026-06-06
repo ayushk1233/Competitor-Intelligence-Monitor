@@ -79,3 +79,27 @@ class IntelligenceReport(BaseModel):
     generated_at: datetime
     total_pages_fetched: int
     run_duration_seconds: float
+
+
+# ============================================================
+# Watchlist Schemas
+# ============================================================
+
+class WatchlistCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class WatchlistResponse(BaseModel):
+    id: str
+    user_id: str
+
+    name: str
+    description: Optional[str]
+
+    is_active: bool
+
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
