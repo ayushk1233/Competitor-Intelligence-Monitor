@@ -259,6 +259,68 @@ def scheduled_monitoring_task(self):
     )
 
 
+async def _run_monitoring_pipeline(run_id: str):
+    from sqlalchemy import select
+    from backend.database.models import MonitoringRun, WatchlistCompetitor
+    from datetime import datetime, timezone
+
+    SessionLocal, engine = _make_session_factory()
+    try:
+        async with SessionLocal() as session:
+            db = DatabaseService(session)
+
+            result = await session.execute(
+                select(MonitoringRun).where(MonitoringRun.id == run_id)
+            )
+            run = result.scalar_one_or_none()
+            if not run:
+                print(f"[monitoring] Run {run_id} not found")
+                return
+
+            run.status = "RUNNING"
+            run.started_at = datetime.now(timezone.utc)
+            await session.commit()
+
+            result = await session.execute(
+                select(WatchlistCompetitor)
+                .where(WatchlistCompetitor.watchlist_id == run.watchlist_id)
+            )
+            competitors = result.scalars().all()
+
+            monitoring = MonitoringService(db)
+
+            for comp in competitors:
+                drift_result = await monitoring.detect_drift(comp.company_name)
+                run.competitors_checked += 1
+                if drift_result and drift_result.get("alert"):
+                    run.alerts_generated += 1
+                    print(f"[monitoring] Alert generated for {comp.company_name}")
+
+            run.status = "COMPLETED"
+            run.completed_at = datetime.now(timezone.utc)
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+
+async def _mark_monitoring_failed(run_id: str, error: str):
+    from sqlalchemy import select
+    from backend.database.models import MonitoringRun
+    SessionLocal, engine = _make_session_factory()
+    try:
+        async with SessionLocal() as session:
+            result = await session.execute(
+                select(MonitoringRun).where(MonitoringRun.id == run_id)
+            )
+            run = result.scalar_one_or_none()
+            if run:
+                run.status = "FAILED"
+                run.error_detail = error
+                await session.commit()
+    finally:
+        await engine.dispose()
+
+
 @celery_app.task(
     bind=True,
     name="monitor_watchlist",
@@ -267,12 +329,27 @@ def monitor_watchlist_task(
     self,
     monitoring_run_id: str,
 ):
-    print(
-        f"[monitoring] Starting run "
-        f"{monitoring_run_id}"
-    )
+    print(f"[monitoring] Starting run {monitoring_run_id}")
 
-    return {
-        "monitoring_run_id": monitoring_run_id,
-        "status": "queued",
-    }
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        loop.run_until_complete(_run_monitoring_pipeline(monitoring_run_id))
+        print(f"[monitoring] Completed run {monitoring_run_id}")
+        return {
+            "monitoring_run_id": monitoring_run_id,
+            "status": "completed",
+        }
+    except Exception as e:
+        print(f"[monitoring] Failed run {monitoring_run_id}: {e}")
+        try:
+            loop.run_until_complete(_mark_monitoring_failed(monitoring_run_id, str(e)))
+        except Exception as e2:
+            print(f"[monitoring] Could not mark run as failed: {e2}")
+        raise
+    finally:
+        try:
+            loop.close()
+        except Exception:
+            pass
