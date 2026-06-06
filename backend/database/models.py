@@ -414,6 +414,12 @@ class MonitoringRun(Base):
         default=0,
     )
 
+    celery_task_id: Mapped[str] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True,
+    )
+
     error_detail: Mapped[str] = mapped_column(
         Text,
         nullable=True,

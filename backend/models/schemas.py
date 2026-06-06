@@ -127,3 +127,34 @@ class CompetitorResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================
+# Monitoring Run Schemas
+# ============================================================
+
+class MonitoringRunCreateRequest(BaseModel):
+    trigger_type: str = "MANUAL"
+
+
+class MonitoringRunResponse(BaseModel):
+    id: str
+
+    watchlist_id: str
+
+    trigger_type: str
+    status: str
+
+    competitors_checked: int
+    alerts_generated: int
+    notifications_sent: int
+
+    celery_task_id: Optional[str]
+
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
+
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
