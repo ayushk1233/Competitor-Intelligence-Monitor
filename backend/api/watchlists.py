@@ -7,6 +7,7 @@ from fastapi import (
     HTTPException,
 )
 
+from backend.tasks import monitor_watchlist_task
 from backend.database.connection import get_db
 from backend.database.models import (
     User,
@@ -221,6 +222,15 @@ async def create_monitoring_run(
     )
 
     db.add(run)
+
+    await db.flush()
+    await db.refresh(run)
+
+    task = monitor_watchlist_task.delay(
+        run.id,
+    )
+
+    run.celery_task_id = task.id
 
     await db.flush()
     await db.refresh(run)

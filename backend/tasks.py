@@ -257,3 +257,22 @@ def scheduled_monitoring_task(self):
         run_id,
         competitors,
     )
+
+
+@celery_app.task(
+    bind=True,
+    name="monitor_watchlist",
+)
+def monitor_watchlist_task(
+    self,
+    monitoring_run_id: str,
+):
+    print(
+        f"[monitoring] Starting run "
+        f"{monitoring_run_id}"
+    )
+
+    return {
+        "monitoring_run_id": monitoring_run_id,
+        "status": "queued",
+    }
