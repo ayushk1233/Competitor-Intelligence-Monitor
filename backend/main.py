@@ -14,7 +14,12 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from backend.models.schemas import AnalysisRequest, IntelligenceReport
 from backend.database.connection import get_db, create_tables
 from backend.database.db_service import DatabaseService
-from backend.database.models import Run, CompetitorAnalysisRecord, ComparisonRecord
+from backend.database.models import (
+    Run,
+    CompetitorAnalysisRecord,
+    ComparisonRecord,
+    MonitoringRun,
+)
 from backend.models.schemas import CompetitorAnalysis, ComparisonResult
 from backend.metrics import active_pipeline_runs
 from backend.drift.diff_service import compare_analysis
@@ -241,6 +246,25 @@ async def get_recent_runs(db: AsyncSession = Depends(get_db)):
         }
         for r in runs
     ]
+
+
+@app.get("/api/runs/{run_id}")
+async def get_run_details(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    run = await db.get(
+        MonitoringRun,
+        run_id,
+    )
+
+    if run is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Monitoring run not found",
+        )
+
+    return run
 
 
 # ── GET /api/history/{competitor_name} ───────────────────────────────────────
