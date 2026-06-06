@@ -103,3 +103,27 @@ class WatchlistResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================
+# Watchlist Competitor Schemas
+# ============================================================
+
+class CompetitorCreateRequest(BaseModel):
+    company_name: str
+    domain: Optional[str] = None
+
+
+class CompetitorResponse(BaseModel):
+    id: str
+    watchlist_id: str
+
+    company_name: str
+    domain: Optional[str]
+
+    is_active: bool
+
+    added_at: datetime
+
+    class Config:
+        from_attributes = True
