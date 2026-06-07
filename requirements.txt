@@ -40,3 +40,4 @@ black==24.8.0
 
 
 psycopg2-binary
+greenlet>=3.0.3
