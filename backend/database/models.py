@@ -368,6 +368,59 @@ class NotificationChannel(Base):
         server_default=func.now(),
     )
 
+# ─────────────────────────────────────────────────────────────
+# Notification Events
+# ─────────────────────────────────────────────────────────────
+
+class NotificationEvent(Base):
+    __tablename__ = "notification_events"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+
+    company_name: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        index=True,
+    )
+
+    severity: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    destination: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+
+    channel_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    delivery_status: Mapped[str] = mapped_column(
+        String(50),
+        default="PENDING",
+    )
+
+    error_message: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    delivered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
 # ─────────────────────────────────────────────────────────────
 # Monitoring Runs
