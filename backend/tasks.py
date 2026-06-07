@@ -292,9 +292,13 @@ async def _run_monitoring_pipeline(run_id: str):
             for comp in competitors:
                 drift_result = await monitoring.detect_drift(comp.company_name)
                 run.competitors_checked += 1
-                if drift_result and drift_result.get("alert"):
-                    run.alerts_generated += 1
-                    print(f"[monitoring] Alert generated for {comp.company_name}")
+                if drift_result:
+                    if drift_result.get("alert_suppressed"):
+                        run.alerts_suppressed += 1
+                        print(f"[monitoring] Alert suppressed for {comp.company_name}")
+                    elif drift_result.get("alert"):
+                        run.alerts_generated += 1
+                        print(f"[monitoring] Alert generated for {comp.company_name}")
 
             run.status = "COMPLETED"
             run.completed_at = datetime.now(timezone.utc)

@@ -409,6 +409,11 @@ class MonitoringRun(Base):
         default=0,
     )
 
+    alerts_suppressed: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
     notifications_sent: Mapped[int] = mapped_column(
         Integer,
         default=0,

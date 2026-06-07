@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from backend.database.models import (
     Run, CompetitorAnalysisRecord,
-    ComparisonRecord, PageSnapshot, AlertHistory
+    ComparisonRecord, PageSnapshot, AlertHistory,
+    AlertSuppression
 )
 from backend.models.schemas import IntelligenceReport, CompetitorPages
 
@@ -234,3 +235,29 @@ class DatabaseService:
             }
             for r in records
         ]
+
+    # ── Suppression operations ────────────────────────────────────────────
+
+    async def get_active_suppression(
+        self, company_name: str, alert_type: str
+    ) -> AlertSuppression | None:
+        result = await self.session.execute(
+            select(AlertSuppression)
+            .where(AlertSuppression.company_name == company_name)
+            .where(AlertSuppression.alert_type == alert_type)
+            .where(AlertSuppression.suppressed_until > datetime.utcnow())
+        )
+        return result.scalar_one_or_none()
+
+    async def create_suppression(
+        self, company_name: str, alert_type: str, hours: int = 24
+    ) -> AlertSuppression:
+        from datetime import timedelta
+        suppression = AlertSuppression(
+            company_name=company_name,
+            alert_type=alert_type,
+            suppressed_until=datetime.utcnow() + timedelta(hours=hours)
+        )
+        self.session.add(suppression)
+        await self.session.flush()
+        return suppression
