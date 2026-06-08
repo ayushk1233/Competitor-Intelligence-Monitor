@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, and_
 from backend.database.models import (
     Run, CompetitorAnalysisRecord,
     ComparisonRecord, PageSnapshot, AlertHistory,
-    AlertSuppression
+    AlertSuppression, NotificationEvent, Watchlist,
+    NotificationChannel,
 )
 from backend.models.schemas import IntelligenceReport, CompetitorPages
 
@@ -261,3 +262,72 @@ class DatabaseService:
         self.session.add(suppression)
         await self.session.flush()
         return suppression
+
+    async def get_enabled_notification_channels(
+        self,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(NotificationChannel)
+            .where(
+                NotificationChannel.user_id == user_id,
+                NotificationChannel.enabled == True,
+            )
+        )
+
+        return list(result.scalars().all())
+
+    async def create_notification_event(
+        self,
+        company_name: str,
+        severity: str,
+        destination: str,
+        channel_type: str,
+        delivery_status: str,
+        error_message: str | None = None,
+    ):
+        event = NotificationEvent(
+            company_name=company_name,
+            severity=severity,
+            destination=destination,
+            channel_type=channel_type,
+            delivery_status=delivery_status,
+            error_message=error_message,
+        )
+
+        self.session.add(event)
+
+        await self.session.flush()
+
+        return event
+
+    async def get_due_watchlists(
+        self,
+    ):
+        result = await self.session.execute(
+            select(Watchlist)
+            .where(
+                Watchlist.is_active == True,
+                Watchlist.next_run_at <= datetime.now(UTC),
+            )
+        )
+
+        return list(result.scalars().all())
+
+    async def update_watchlist_schedule(
+        self,
+        watchlist_id: str,
+        next_run_at,
+    ):
+        result = await self.session.execute(
+            select(Watchlist)
+            .where(
+                Watchlist.id == watchlist_id
+            )
+        )
+
+        watchlist = result.scalar_one_or_none()
+
+        if watchlist:
+            watchlist.last_monitored_at = datetime.now(UTC)
+            watchlist.next_run_at = next_run_at

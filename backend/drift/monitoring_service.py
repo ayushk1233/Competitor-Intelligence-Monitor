@@ -7,6 +7,8 @@ from backend.drift.alert_engine import generate_alert
 from backend.drift.alert_models import AlertRecord
 from backend.drift.alert_storage import save_alert
 from backend.drift.suppression_service import is_suppressed, suppress_alert
+from backend.notifications.service import NotificationService
+from backend.notifications.models import NotificationRequest
 
 
 class MonitoringService:
@@ -16,6 +18,7 @@ class MonitoringService:
         db: Any,
     ):
         self.db = db
+        self.notification_service = NotificationService()
 
     async def detect_drift(
         self,
@@ -76,6 +79,33 @@ class MonitoringService:
             company_name=alert_record.company_name,
             severity=alert_record.severity,
             reasons=alert_record.reasons,
+        )
+
+        notification_request = NotificationRequest(
+            company_name=alert_record.company_name,
+            severity=alert_record.severity,
+            message="Competitor drift detected",
+            destination="local-monitor",
+            channel_type="WEBHOOK",
+        )
+
+        notification_result = await (
+            self.notification_service.send(
+                notification_request
+            )
+        )
+
+        await self.db.create_notification_event(
+            company_name=alert_record.company_name,
+            severity=alert_record.severity,
+            destination=notification_request.destination,
+            channel_type=notification_request.channel_type,
+            delivery_status=(
+                "DELIVERED"
+                if notification_result.success
+                else "FAILED"
+            ),
+            error_message=notification_result.error_message,
         )
 
         await suppress_alert(

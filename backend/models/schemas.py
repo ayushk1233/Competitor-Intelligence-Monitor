@@ -88,6 +88,7 @@ class IntelligenceReport(BaseModel):
 class WatchlistCreateRequest(BaseModel):
     name: str
     description: Optional[str] = None
+    monitoring_frequency: str = "DAILY"
 
 
 class WatchlistResponse(BaseModel):
@@ -98,6 +99,9 @@ class WatchlistResponse(BaseModel):
     description: Optional[str]
 
     is_active: bool
+    monitoring_frequency: str
+    last_monitored_at: datetime | None = None
+    next_run_at: datetime | None = None
 
     created_at: datetime
 

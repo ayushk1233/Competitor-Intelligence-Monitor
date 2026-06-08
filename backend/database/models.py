@@ -241,6 +241,22 @@ class Watchlist(Base):
         default=True,
     )
 
+    monitoring_frequency: Mapped[str] = mapped_column(
+        String(20),
+        default="DAILY",
+    )
+
+    last_monitored_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    next_run_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

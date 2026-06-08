@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     max_tokens_per_chunk: int = 6000
     default_model: str = "anthropic/claude-3-haiku"
 
+    # Email
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+
+    # Slack
+    slack_webhook_url: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -10,6 +10,10 @@ from backend.config import get_settings
 from backend.drift.monitoring_service import (
     MonitoringService,
 )
+from backend.monitoring.schedule_service import calculate_next_run
+from backend.database.connection import AsyncSessionLocal
+from backend.database.db_service import DatabaseService
+from backend.database.models import MonitoringRun
 
 
 from backend.metrics import (
@@ -240,23 +244,61 @@ async def _mark_failed(run_id: str, error: str):
 
 @celery_app.task(
     bind=True,
-    name="scheduled_monitoring"
+    name="scheduled_monitoring",
 )
 def scheduled_monitoring_task(self):
-    competitors = [
-        "Stripe",
-        "HubSpot",
-        "Cursor",
-        "IBM",
-        "Basecamp",
-    ]
 
-    run_id = f"scheduled_{int(time.time())}"
+    import asyncio
 
-    return run_analysis_task.delay(
-        run_id,
-        competitors,
+    asyncio.run(
+        _scheduled_monitoring_impl()
     )
+
+    return {
+        "status": "completed"
+    }
+
+async def _scheduled_monitoring_impl():
+
+    async with AsyncSessionLocal() as session:
+
+        db = DatabaseService(session)
+
+        due_watchlists = await db.get_due_watchlists()
+
+        print(
+            f"[scheduler] Found "
+            f"{len(due_watchlists)} due watchlists"
+        )
+
+        for watchlist in due_watchlists:
+
+            run = MonitoringRun(
+                watchlist_id=watchlist.id,
+                trigger_type="SCHEDULED",
+                status="QUEUED",
+            )
+
+            session.add(run)
+
+            await session.flush()
+
+            task = monitor_watchlist_task.delay(
+                run.id
+            )
+
+            run.celery_task_id = task.id
+
+            next_run = calculate_next_run(
+                watchlist.monitoring_frequency
+            )
+
+            await db.update_watchlist_schedule(
+                watchlist.id,
+                next_run,
+            )
+
+        await session.commit()
 
 
 async def _run_monitoring_pipeline(run_id: str):

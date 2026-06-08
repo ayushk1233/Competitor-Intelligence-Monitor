@@ -38,9 +38,9 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
 
     beat_schedule={
-        "nightly-monitoring": {
+        "scheduled-monitoring": {
             "task": "scheduled_monitoring",
-            "schedule": crontab(hour=2, minute=0),
+            "schedule": 300.0,
         }
     },
 
