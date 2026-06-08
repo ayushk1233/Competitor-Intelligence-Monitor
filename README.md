@@ -1,8 +1,28 @@
 # Competitor Intelligence Monitor (CIM)
 
-Status: **Monitoring MVP Complete**  
-Current Version: **v0.8.0-monitoring-mvp**  
-Next Milestone: **v0.9.0-intelligence-quality**
+Status:
+Monitoring Foundation Complete
+
+Current Release:
+v0.9.0-monitoring-foundation
+
+Deployment Status:
+Preparing First Production Release
+
+Current Capabilities:
+
+* Competitor Analysis
+* Strategic Signal Detection
+* Competitor Comparison
+* Historical Tracking
+* Drift Detection
+* Alert Generation
+* Scheduled Monitoring
+* Email Notifications
+* Slack Notifications
+* Webhook Notifications
+* Monitoring Dashboard
+* Observability Stack
 
 ![CIM Cover](images/cim.png)
 
@@ -35,35 +55,6 @@ CIM aims to answer:
 > What should we do next?
 
 The long-term vision is to evolve CIM into a Competitive Intelligence Copilot that acts as an AI-powered competitive analyst for organizations.
-
----
-
-# Current Status
-
-## Version
-
-```text
-v1.0-benchmark-0.80
-```
-
-## Benchmark Performance
-
-| Metric | Score |
-|----------|---------|
-| Tone Classification | 0.89 |
-| Momentum Detection | 0.81 |
-| ICP Recall | 0.77 |
-| Strategic Keyword Recall | 0.73 |
-| Overall | 0.80 |
-
-## Project Progress
-
-- Phase 1 - Core Intelligence Engine: ✅
-- Phase 2 - Production Foundation: ✅
-- Phase 3 - LLMOps & Evaluation: ✅
-- Phase 4 - Monitoring & Drift Detection: ✅
-- Phase 5 - Cloud Deployment: ⏳
-- Phase 6 - Intelligence Copilot: ⏳
 
 ---
 
@@ -208,82 +199,6 @@ Alert Severity:
 
 ---
 
-## Evaluation Framework
-
-The platform includes a dedicated evaluation framework that measures intelligence quality before deployment.
-
-This allows:
-
-* Prompt experimentation
-* Model comparison
-* Regression testing
-* Quality assurance
-
-The evaluation framework acts as a quality gate for future deployments.
-
----
-
-# Architecture
-
-## Monitoring Architecture
-
-```mermaid
-flowchart LR
-
-A[Scheduled Run]
---> B[Historical Storage]
-
-B --> C[Drift Detection]
-
-C --> D[Alert Engine]
-
-D --> E[Monitoring Dashboard]
-```
-
-## Database Schema
-
-```mermaid
-erDiagram
-
-RUNS ||--o{ COMPETITOR_ANALYSES : contains
-RUNS ||--o{ PAGE_SNAPSHOTS : stores
-RUNS ||--o{ COMPARISON_RESULTS : generates
-
-COMPETITOR_ANALYSES ||--o{ ALERT_HISTORY : triggers
-```
-
-## High-Level Flow
-
-```mermaid
-flowchart TD
-    A[Competitor Website] --> B[Page Discovery]
-    B --> C[Scraper]
-    C --> D[Content Cleaning]
-    D --> E[Chunking]
-    E --> F[Retrieval & Ranking]
-    F --> G[Evidence Routing]
-    G --> H[Signal Extraction]
-    H --> I[Context Builder]
-    I --> J[LLM Analysis]
-    J --> K[Comparison Engine]
-    K --> L[Final Intelligence Report]
-```
-
----
-
-## Quality Layer
-
-```mermaid
-flowchart LR
-    A[Code Change] --> B[Unit Tests]
-    B --> C[Evaluation Suite]
-    C --> D{Score >= 0.80?}
-    D -->|Yes| E[Deploy]
-    D -->|No| F[Reject]
-```
-
----
-
 # Tech Stack
 
 ## Backend
@@ -313,30 +228,6 @@ flowchart LR
 
 * Prometheus
 * Grafana
-
-## Evaluation
-
-* Custom Benchmark Suite
-* Regression Testing Framework
-
----
-
-# Known Limitations
-
-Current intelligence quality challenges:
-
-- Navigation/menu content occasionally classified as launches
-- Strategic keyword extraction can contain noise
-- Momentum scoring requires calibration
-- Drift detection can be influenced by extraction variance
-
-Planned Improvements:
-
-- Signal confidence scoring
-- Noise filtering
-- Evidence-backed launch extraction
-- Momentum calibration
-- Multi-model validation
 
 ---
 
@@ -487,22 +378,6 @@ streamlit run frontend/app.py
 
 ---
 
-# Running Evaluations
-
-Run the benchmark suite:
-
-```bash
-python -m backend.eval.runner
-```
-
-Example Output:
-
-```text
-Overall Suite Score: 0.800
-```
-
----
-
 # Benefits
 
 ## Founders
@@ -560,176 +435,53 @@ before they become obvious.
 
 ---
 
-# Future Roadmap
+# Product Roadmap
 
-```mermaid
-flowchart LR
-    A[v1.0<br>Analysis Engine] --> B[v1.1<br>CI/CD + Eval Gates]
-    B --> C[v1.2<br>Drift Detection]
-    C --> D[v1.3<br>Monitoring Platform]
-    D --> E[v2.0<br>Historical Intelligence]
-    E --> F[v3.0<br>Competitive Intelligence Copilot]
-```
+Phase 1 — Monitoring Platform
+Status: Complete
 
----
+Features:
 
-# Current (v1.0) – LLMOps Completion
+* Competitor tracking
+* Strategic signal extraction
+* Continuous monitoring
+* Alerting system
+* Historical intelligence
 
-## Planned
+Phase 2 — Intelligence Platform
+Status: In Progress
 
-### GitHub Actions
+Focus:
 
-```text
-Push
- ↓
-Tests
- ↓
-Eval Suite
- ↓
-Deploy
-```
+* Better business intelligence
+* Strategic trend detection
+* Competitive positioning insights
+* Executive-level reporting
+* Faster decision support
 
-### CI/CD Quality Gates
+Phase 3 — Intelligence Copilot
+Status: Planned
 
-Prevent deployments that reduce intelligence quality.
+Vision:
+An AI-powered competitive intelligence assistant capable of helping teams understand market movements, competitive threats, opportunities, and strategic decisions.
 
 ---
 
-### Drift Detection
+# Vision
 
-Detect:
+From:
 
-* Messaging changes
-* Product pivots
-* AI adoption shifts
-* Strategic movements
+"What happened?"
 
-Example:
+To:
 
-```text
-HubSpot:
-CRM → CRM + AI Agents
-```
+"Why does it matter?"
 
----
+And ultimately:
 
-# Next (v1.1) – Production Deployment
+"What should we do next?"
 
-## Planned Infrastructure
-
-* Terraform
-* AWS ECS
-* PostgreSQL RDS
-* ElastiCache Redis
-* Application Load Balancer
-* GitHub Actions Deployment
-
-Goal:
-
-Production-ready cloud deployment.
-
----
-
-# Future (v2.0) – Historical Intelligence Platform
-
-## Planned
-
-Vector-based intelligence memory:
-
-* pgvector
-* Embeddings
-* Historical retrieval
-
-Example:
-
-```text
-Show all AI-related launches
-from HubSpot during the last year.
-```
-
----
-
-# Vision (v3.0) – Competitive Intelligence Copilot
-
-The ultimate vision for CIM.
-
-Move from:
-
-```text
-What happened?
-```
-
-to:
-
-```text
-What should we do?
-```
-
----
-
-## Multi-Agent Architecture
-
-Planned Agents:
-
-### Research Agent
-
-Collects strategic signals.
-
-### Evidence Agent
-
-Validates evidence quality.
-
-### Fact Check Agent
-
-Reduces hallucinations.
-
-### Threat Agent
-
-Assesses competitive risk.
-
-### Recommendation Agent
-
-Generates actionable recommendations.
-
----
-
-## Future Workflow
-
-```mermaid
-flowchart TD
-    A[Research Agent] --> B[Evidence Agent]
-    B --> C[Fact Check Agent]
-    C --> D[Threat Agent]
-    D --> E[Recommendation Agent]
-    E --> F[Executive Briefing]
-```
-
----
-
-# Long-Term Vision
-
-```mermaid
-flowchart LR
-    A["What is happening?"] --> B["What changed?"]
-    B --> C["Why did it change?"]
-    C --> D["What should we do?"]
-```
-
-CIM evolves through three stages:
-
-### Stage 1 (v1.0)
-**Competitor Analysis**
-> What is happening?
-
-### Stage 2 (v2.0)
-**Continuous Monitoring**
-> What changed?
-
-### Stage 3 (v3.0)
-**Competitive Intelligence Copilot**
-> What should we do about it?
-
-The final goal is to build an AI-powered competitive intelligence analyst capable of continuously monitoring competitors, identifying strategic movements, assessing threats, and generating actionable recommendations for decision makers.
+CIM is a strategic intelligence platform designed to transform competitive signals into actionable insights and decision support.
 
 ---
 
