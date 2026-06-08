@@ -7,25 +7,27 @@ from backend.notifications.models import (
     NotificationResult,
 )
 
+settings = get_settings()
+
 
 async def send_slack(
     request: NotificationRequest,
 ) -> NotificationResult:
 
-    settings = get_settings()
-
     try:
+
+        payload = {
+            "text": (
+                f"🚨 CIM Alert\n\n"
+                f"Company: {request.company_name}\n"
+                f"Severity: {request.severity}\n"
+                f"Message: {request.message}"
+            )
+        }
 
         response = requests.post(
             settings.slack_webhook_url,
-            json={
-                "text":
-                (
-                    f"🚨 [{request.severity}] "
-                    f"{request.company_name}\n\n"
-                    f"{request.message}"
-                )
-            },
+            json=payload,
             timeout=10,
         )
 
@@ -34,7 +36,7 @@ async def send_slack(
         return NotificationResult(
             success=True,
             channel_type="SLACK",
-            destination=request.destination,
+            destination="slack",
         )
 
     except Exception as e:
@@ -42,6 +44,6 @@ async def send_slack(
         return NotificationResult(
             success=False,
             channel_type="SLACK",
-            destination=request.destination,
+            destination="slack",
             error_message=str(e),
         )

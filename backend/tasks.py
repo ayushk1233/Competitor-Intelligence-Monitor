@@ -339,8 +339,20 @@ async def _run_monitoring_pipeline(run_id: str):
                         run.alerts_suppressed += 1
                         print(f"[monitoring] Alert suppressed for {comp.company_name}")
                     elif drift_result.get("alert"):
+
                         run.alerts_generated += 1
-                        print(f"[monitoring] Alert generated for {comp.company_name}")
+
+                        run.notifications_sent += (
+                            drift_result.get(
+                                "notifications_sent",
+                                0,
+                            )
+                        )
+
+                        print(
+                            f"[monitoring] Alert generated for "
+                            f"{comp.company_name}"
+                        )
 
             run.status = "COMPLETED"
             run.completed_at = datetime.now(timezone.utc)

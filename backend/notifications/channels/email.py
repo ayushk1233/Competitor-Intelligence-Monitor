@@ -1,6 +1,7 @@
 import smtplib
 
-from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from backend.config import get_settings
 
@@ -9,50 +10,56 @@ from backend.notifications.models import (
     NotificationResult,
 )
 
+settings = get_settings()
+
 
 async def send_email(
     request: NotificationRequest,
 ) -> NotificationResult:
 
-    settings = get_settings()
-
     try:
 
-        message = EmailMessage()
+        msg = MIMEMultipart()
 
-        message["Subject"] = (
-            f"[{request.severity}] "
-            f"Competitor Alert - "
+        msg["From"] = settings.smtp_from_email
+        msg["To"] = request.destination
+
+        msg["Subject"] = (
+            f"[CIM] {request.severity} Alert - "
             f"{request.company_name}"
         )
 
-        message["From"] = (
-            settings.smtp_from_email
+        body = f"""
+Company: {request.company_name}
+
+Severity: {request.severity}
+
+Message:
+{request.message}
+"""
+
+        msg.attach(
+            MIMEText(
+                body,
+                "plain",
+            )
         )
 
-        message["To"] = (
-            request.destination
-        )
-
-        message.set_content(
-            request.message
-        )
-
-        with smtplib.SMTP(
+        server = smtplib.SMTP(
             settings.smtp_host,
             settings.smtp_port,
-        ) as smtp:
+        )
 
-            smtp.starttls()
+        server.starttls()
 
-            smtp.login(
-                settings.smtp_username,
-                settings.smtp_password,
-            )
+        server.login(
+            settings.smtp_username,
+            settings.smtp_password,
+        )
 
-            smtp.send_message(
-                message
-            )
+        server.send_message(msg)
+
+        server.quit()
 
         return NotificationResult(
             success=True,

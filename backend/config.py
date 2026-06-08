@@ -26,9 +26,15 @@ class Settings(BaseSettings):
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_from_email: str = ""
+    admin_email: str = ""
 
     # Slack
     slack_webhook_url: str = ""
+
+    # Feature Flags
+    enable_email_notifications: bool = False
+    enable_slack_notifications: bool = False
+    enable_webhook_notifications: bool = True
 
     class Config:
         env_file = ".env"

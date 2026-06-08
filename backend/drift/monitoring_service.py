@@ -9,6 +9,7 @@ from backend.drift.alert_storage import save_alert
 from backend.drift.suppression_service import is_suppressed, suppress_alert
 from backend.notifications.service import NotificationService
 from backend.notifications.models import NotificationRequest
+from backend.config import get_settings
 
 
 class MonitoringService:
@@ -19,6 +20,7 @@ class MonitoringService:
     ):
         self.db = db
         self.notification_service = NotificationService()
+        self.settings = get_settings()
 
     async def detect_drift(
         self,
@@ -81,32 +83,106 @@ class MonitoringService:
             reasons=alert_record.reasons,
         )
 
-        notification_request = NotificationRequest(
-            company_name=alert_record.company_name,
-            severity=alert_record.severity,
-            message="Competitor drift detected",
-            destination="local-monitor",
-            channel_type="WEBHOOK",
-        )
+        notifications_sent = 0
 
-        notification_result = await (
-            self.notification_service.send(
-                notification_request
+        if (
+            self.settings.enable_email_notifications
+            and self.settings.admin_email
+        ):
+
+            email_request = NotificationRequest(
+                company_name=alert_record.company_name,
+                severity=alert_record.severity,
+                message="Competitor drift detected",
+                destination=self.settings.admin_email,
+                channel_type="EMAIL",
             )
-        )
 
-        await self.db.create_notification_event(
-            company_name=alert_record.company_name,
-            severity=alert_record.severity,
-            destination=notification_request.destination,
-            channel_type=notification_request.channel_type,
-            delivery_status=(
-                "DELIVERED"
-                if notification_result.success
-                else "FAILED"
-            ),
-            error_message=notification_result.error_message,
-        )
+            email_result = await (
+                self.notification_service.send(
+                    email_request
+                )
+            )
+
+            await self.db.create_notification_event(
+                company_name=alert_record.company_name,
+                severity=alert_record.severity,
+                destination=email_request.destination,
+                channel_type="EMAIL",
+                delivery_status=(
+                    "DELIVERED"
+                    if email_result.success
+                    else "FAILED"
+                ),
+                error_message=email_result.error_message,
+            )
+
+            if email_result.success:
+                notifications_sent += 1
+
+        if self.settings.enable_slack_notifications:
+
+            slack_request = NotificationRequest(
+                company_name=alert_record.company_name,
+                severity=alert_record.severity,
+                message="Competitor drift detected",
+                destination="slack",
+                channel_type="SLACK",
+            )
+
+            slack_result = await (
+                self.notification_service.send(
+                    slack_request
+                )
+            )
+
+            await self.db.create_notification_event(
+                company_name=alert_record.company_name,
+                severity=alert_record.severity,
+                destination="slack",
+                channel_type="SLACK",
+                delivery_status=(
+                    "DELIVERED"
+                    if slack_result.success
+                    else "FAILED"
+                ),
+                error_message=slack_result.error_message,
+            )
+
+            if slack_result.success:
+                notifications_sent += 1
+
+        if self.settings.enable_webhook_notifications:
+
+            webhook_request = NotificationRequest(
+                company_name=alert_record.company_name,
+                severity=alert_record.severity,
+                message="Competitor drift detected",
+                destination="local-monitor",
+                channel_type="WEBHOOK",
+            )
+
+            webhook_result = await (
+                self.notification_service.send(
+                    webhook_request
+                )
+            )
+
+            await self.db.create_notification_event(
+                company_name=alert_record.company_name,
+                severity=alert_record.severity,
+                destination="local-monitor",
+                channel_type="WEBHOOK",
+                delivery_status=(
+                    "DELIVERED"
+                    if webhook_result.success
+                    else "FAILED"
+                ),
+                error_message=webhook_result.error_message,
+            )
+
+            if webhook_result.success:
+                notifications_sent += 1
 
         await suppress_alert(
             self.db,
@@ -118,4 +194,5 @@ class MonitoringService:
         return {
             "drift_report": drift_report,
             "alert": alert_record,
+            "notifications_sent": notifications_sent,
         }
