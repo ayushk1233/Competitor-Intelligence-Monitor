@@ -7,8 +7,15 @@ from fastapi import (
     HTTPException,
 )
 
+from backend.auth.dependencies import (
+    get_current_user,
+)
+
 from backend.tasks import monitor_watchlist_task
 from backend.database.connection import get_db
+from backend.database.db_service import (
+    DatabaseService,
+)
 from backend.database.models import (
     User,
     Watchlist,
@@ -32,29 +39,7 @@ router = APIRouter(
     tags=["Watchlists"],
 )
 
-DEFAULT_USER_EMAIL = "local@cim.dev"
 
-async def get_default_user(
-    db: AsyncSession,
-) -> User:
-    result = await db.execute(
-        select(User).where(
-            User.email == DEFAULT_USER_EMAIL
-        )
-    )
-
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        user = User(
-            email=DEFAULT_USER_EMAIL,
-            display_name="Local User",
-        )
-
-        db.add(user)
-        await db.flush()
-
-    return user
 
 
 @router.post(
@@ -63,12 +48,13 @@ async def get_default_user(
 )
 async def create_watchlist(
     request: WatchlistCreateRequest,
+    current_user: User = Depends(
+        get_current_user
+    ),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await get_default_user(db)
-
     watchlist = Watchlist(
-        user_id=user.id,
+        user_id=current_user.id,
         name=request.name,
         description=request.description,
     )
@@ -86,14 +72,15 @@ async def create_watchlist(
     response_model=WatchlistListResponse,
 )
 async def list_watchlists(
+    current_user: User = Depends(
+        get_current_user
+    ),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await get_default_user(db)
-
     result = await db.execute(
         select(Watchlist)
         .where(
-            Watchlist.user_id == user.id
+            Watchlist.user_id == current_user.id
         )
         .order_by(
             Watchlist.created_at.desc()
@@ -114,11 +101,16 @@ async def list_watchlists(
 async def add_competitor(
     watchlist_id: str,
     request: CompetitorCreateRequest,
+    current_user: User = Depends(
+        get_current_user
+    ),
     db: AsyncSession = Depends(get_db),
 ):
-    watchlist = await db.get(
-        Watchlist,
+    service = DatabaseService(db)
+
+    watchlist = await service.get_watchlist_for_user(
         watchlist_id,
+        current_user.id,
     )
 
     if watchlist is None:
@@ -162,11 +154,16 @@ async def add_competitor(
 )
 async def list_competitors(
     watchlist_id: str,
+    current_user: User = Depends(
+        get_current_user
+    ),
     db: AsyncSession = Depends(get_db),
 ):
-    watchlist = await db.get(
-        Watchlist,
+    service = DatabaseService(db)
+
+    watchlist = await service.get_watchlist_for_user(
         watchlist_id,
+        current_user.id,
     )
 
     if watchlist is None:
@@ -199,11 +196,16 @@ async def list_competitors(
 async def create_monitoring_run(
     watchlist_id: str,
     request: MonitoringRunCreateRequest,
+    current_user: User = Depends(
+        get_current_user
+    ),
     db: AsyncSession = Depends(get_db),
 ):
-    watchlist = await db.get(
-        Watchlist,
+    service = DatabaseService(db)
+
+    watchlist = await service.get_watchlist_for_user(
         watchlist_id,
+        current_user.id,
     )
 
     if watchlist is None:
@@ -244,11 +246,16 @@ async def create_monitoring_run(
 )
 async def list_monitoring_runs(
     watchlist_id: str,
+    current_user: User = Depends(
+        get_current_user
+    ),
     db: AsyncSession = Depends(get_db),
 ):
-    watchlist = await db.get(
-        Watchlist,
+    service = DatabaseService(db)
+
+    watchlist = await service.get_watchlist_for_user(
         watchlist_id,
+        current_user.id,
     )
 
     if watchlist is None:

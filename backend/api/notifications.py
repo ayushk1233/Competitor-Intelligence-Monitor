@@ -16,8 +16,12 @@ from backend.models.schemas import (
     NotificationChannelListResponse,
 )
 
-from backend.api.watchlists import (
-    get_default_user,
+from backend.auth.dependencies import (
+    get_current_user,
+)
+
+from backend.database.models import (
+    User,
 )
 
 router = APIRouter(
@@ -33,13 +37,13 @@ router = APIRouter(
 async def create_notification_channel(
     request: NotificationChannelCreateRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    user = await get_default_user(db)
 
     service = DatabaseService(db)
 
     channel = await service.create_notification_channel(
-        user_id=user.id,
+        user_id=current_user.id,
         channel_type=request.channel_type,
         destination=request.destination,
         label=request.label,
@@ -57,13 +61,13 @@ async def create_notification_channel(
 )
 async def list_notification_channels(
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    user = await get_default_user(db)
 
     service = DatabaseService(db)
 
     channels = await service.get_notification_channels(
-        user.id,
+        current_user.id,
     )
 
     return {
@@ -79,8 +83,22 @@ async def update_notification_channel(
     channel_id: str,
     request: NotificationChannelUpdateRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = DatabaseService(db)
+
+    owned_channel = await (
+        service.get_notification_channel_for_user(
+            channel_id,
+            current_user.id,
+        )
+    )
+
+    if owned_channel is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Notification channel not found",
+        )
 
     channel = await service.update_notification_channel(
         channel_id,
@@ -105,8 +123,22 @@ async def update_notification_channel(
 async def delete_notification_channel(
     channel_id: str,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     service = DatabaseService(db)
+
+    owned_channel = await (
+        service.get_notification_channel_for_user(
+            channel_id,
+            current_user.id,
+        )
+    )
+
+    if owned_channel is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Notification channel not found",
+        )
 
     channel = await service.delete_notification_channel(
         channel_id,

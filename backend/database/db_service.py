@@ -433,6 +433,34 @@ class DatabaseService:
 
         return channel
 
+    async def get_watchlist_for_user(
+        self,
+        watchlist_id: str,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(Watchlist).where(
+                Watchlist.id == watchlist_id,
+                Watchlist.user_id == user_id,
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_notification_channel_for_user(
+        self,
+        channel_id: str,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(NotificationChannel).where(
+                NotificationChannel.id == channel_id,
+                NotificationChannel.user_id == user_id,
+            )
+        )
+
+        return result.scalar_one_or_none()
+
     async def get_due_watchlists(
         self,
     ):
