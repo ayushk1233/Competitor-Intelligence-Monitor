@@ -263,7 +263,7 @@ class DatabaseService:
         await self.session.flush()
         return suppression
 
-    async def get_enabled_notification_channels(
+    async def get_user_notification_channels(
         self,
         user_id: str,
     ):
@@ -300,6 +300,93 @@ class DatabaseService:
         await self.session.flush()
 
         return event
+
+    async def create_notification_channel(
+        self,
+        user_id: str,
+        channel_type: str,
+        destination: str,
+        label: str | None = None,
+    ):
+        channel = NotificationChannel(
+            user_id=user_id,
+            channel_type=channel_type.upper(),
+            destination=destination,
+            label=label,
+            enabled=True,
+            verified=False,
+        )
+
+        self.session.add(channel)
+
+        await self.session.flush()
+
+        return channel
+
+    async def get_notification_channels(
+        self,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(NotificationChannel)
+            .where(
+                NotificationChannel.user_id == user_id
+            )
+            .order_by(
+                NotificationChannel.created_at.desc()
+            )
+        )
+
+        return list(result.scalars().all())
+
+    async def get_enabled_notification_channels(
+        self,
+    ):
+        result = await self.session.execute(
+            select(NotificationChannel)
+            .where(
+                NotificationChannel.enabled == True
+            )
+        )
+
+        return list(result.scalars().all())
+
+    async def update_notification_channel(
+        self,
+        channel_id: str,
+        enabled: bool,
+    ):
+        result = await self.session.execute(
+            select(NotificationChannel)
+            .where(
+                NotificationChannel.id == channel_id
+            )
+        )
+
+        channel = result.scalar_one_or_none()
+
+        if channel:
+            channel.enabled = enabled
+
+        return channel
+
+    async def delete_notification_channel(
+        self,
+        channel_id: str,
+    ):
+        result = await self.session.execute(
+            select(NotificationChannel)
+            .where(
+                NotificationChannel.id == channel_id
+            )
+        )
+
+        channel = result.scalar_one_or_none()
+
+        if channel:
+            await self.session.delete(channel)
+
+        return channel
 
     async def get_due_watchlists(
         self,

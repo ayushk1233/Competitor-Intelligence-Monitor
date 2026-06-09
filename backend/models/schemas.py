@@ -183,3 +183,42 @@ class MonitoringRunListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================
+# Notification Channel Schemas
+# ============================================================
+
+class NotificationChannelCreateRequest(BaseModel):
+    channel_type: str
+    destination: str
+    label: str | None = None
+
+
+class NotificationChannelUpdateRequest(BaseModel):
+    enabled: bool
+
+
+class NotificationChannelResponse(BaseModel):
+    id: str
+    user_id: str
+
+    channel_type: str
+    destination: str
+
+    label: str | None
+
+    enabled: bool
+    verified: bool
+
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class NotificationChannelListResponse(BaseModel):
+    items: list[NotificationChannelResponse]
+
+    class Config:
+        from_attributes = True

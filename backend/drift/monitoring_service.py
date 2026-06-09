@@ -85,103 +85,40 @@ class MonitoringService:
 
         notifications_sent = 0
 
-        if (
-            self.settings.enable_email_notifications
-            and self.settings.admin_email
-        ):
+        channels = await (
+            self.db.get_enabled_notification_channels()
+        )
 
-            email_request = NotificationRequest(
+        for channel in channels:
+
+            notification_request = NotificationRequest(
                 company_name=alert_record.company_name,
                 severity=alert_record.severity,
                 message="Competitor drift detected",
-                destination=self.settings.admin_email,
-                channel_type="EMAIL",
+                destination=channel.destination,
+                channel_type=channel.channel_type,
             )
 
-            email_result = await (
+            notification_result = await (
                 self.notification_service.send(
-                    email_request
+                    notification_request
                 )
             )
 
             await self.db.create_notification_event(
                 company_name=alert_record.company_name,
                 severity=alert_record.severity,
-                destination=email_request.destination,
-                channel_type="EMAIL",
+                destination=channel.destination,
+                channel_type=channel.channel_type,
                 delivery_status=(
                     "DELIVERED"
-                    if email_result.success
+                    if notification_result.success
                     else "FAILED"
                 ),
-                error_message=email_result.error_message,
+                error_message=notification_result.error_message,
             )
 
-            if email_result.success:
-                notifications_sent += 1
-
-        if self.settings.enable_slack_notifications:
-
-            slack_request = NotificationRequest(
-                company_name=alert_record.company_name,
-                severity=alert_record.severity,
-                message="Competitor drift detected",
-                destination="slack",
-                channel_type="SLACK",
-            )
-
-            slack_result = await (
-                self.notification_service.send(
-                    slack_request
-                )
-            )
-
-            await self.db.create_notification_event(
-                company_name=alert_record.company_name,
-                severity=alert_record.severity,
-                destination="slack",
-                channel_type="SLACK",
-                delivery_status=(
-                    "DELIVERED"
-                    if slack_result.success
-                    else "FAILED"
-                ),
-                error_message=slack_result.error_message,
-            )
-
-            if slack_result.success:
-                notifications_sent += 1
-
-        if self.settings.enable_webhook_notifications:
-
-            webhook_request = NotificationRequest(
-                company_name=alert_record.company_name,
-                severity=alert_record.severity,
-                message="Competitor drift detected",
-                destination="local-monitor",
-                channel_type="WEBHOOK",
-            )
-
-            webhook_result = await (
-                self.notification_service.send(
-                    webhook_request
-                )
-            )
-
-            await self.db.create_notification_event(
-                company_name=alert_record.company_name,
-                severity=alert_record.severity,
-                destination="local-monitor",
-                channel_type="WEBHOOK",
-                delivery_status=(
-                    "DELIVERED"
-                    if webhook_result.success
-                    else "FAILED"
-                ),
-                error_message=webhook_result.error_message,
-            )
-
-            if webhook_result.success:
+            if notification_result.success:
                 notifications_sent += 1
 
         await suppress_alert(

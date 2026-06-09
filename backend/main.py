@@ -24,6 +24,9 @@ from backend.models.schemas import CompetitorAnalysis, ComparisonResult
 from backend.metrics import active_pipeline_runs
 from backend.drift.diff_service import compare_analysis
 from backend.api.watchlists import router as watchlist_router
+from backend.api.notifications import (
+    router as notification_router,
+)
 
 app = FastAPI(
     title="Competitor Intelligence Monitor",
@@ -39,6 +42,7 @@ app.add_middleware(
 )
 
 app.include_router(watchlist_router)
+app.include_router(notification_router)
 # ── Prometheus instrumentation ────────────────────────────────────────────────
 # Auto-instruments all HTTP endpoints with request count and latency metrics
 # Exposes them at GET /metrics — this is what Prometheus scrapes
