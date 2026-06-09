@@ -5,15 +5,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.connection import get_db
 from backend.database.db_service import DatabaseService
+from backend.database.models import User
 from backend.models.schemas import (
     SignupRequest,
     LoginRequest,
     AuthResponse,
+    CurrentUserResponse,
 )
 from backend.auth.service import (
     hash_password,
     verify_password,
     create_access_token,
+)
+from backend.auth.dependencies import (
+    get_current_user,
 )
 
 router = APIRouter(
@@ -104,4 +109,20 @@ async def login(
         user_id=user.id,
         email=user.email,
         display_name=user.display_name,
+    )
+
+
+@router.get(
+    "/me",
+    response_model=CurrentUserResponse,
+)
+async def get_me(
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    return CurrentUserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        display_name=current_user.display_name,
     )

@@ -3,10 +3,15 @@ from datetime import datetime, timedelta, UTC
 from jose import jwt
 from passlib.context import CryptContext
 
+from backend.config import get_settings
 
-SECRET_KEY = "CHANGE_THIS_IN_ENV_LATER"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 24
+settings = get_settings()
+
+SECRET_KEY = settings.jwt_secret_key
+ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_HOURS = (
+    settings.jwt_expire_hours
+)
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],

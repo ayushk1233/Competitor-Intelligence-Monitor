@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     enable_slack_notifications: bool = False
     enable_webhook_notifications: bool = True
 
+    # JWT
+    jwt_secret_key: str = "CHANGE_THIS_IN_PRODUCTION"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_hours: int = 24
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

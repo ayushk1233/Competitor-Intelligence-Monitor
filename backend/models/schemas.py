@@ -242,3 +242,12 @@ class AuthResponse(BaseModel):
     user_id: str
     email: str
     display_name: str | None = None
+
+
+class CurrentUserResponse(BaseModel):
+    id: str
+    email: str
+    display_name: str | None = None
+
+    class Config:
+        from_attributes = True
