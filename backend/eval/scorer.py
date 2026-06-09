@@ -5,6 +5,8 @@ from backend.eval.models import (
     EvalResult
 )
 
+from unittest.mock import MagicMock
+
 try:
     from sentence_transformers import SentenceTransformer, util
     _model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -12,7 +14,7 @@ except Exception as e:
     print(f"Warning: Could not load sentence-transformers: {e}")
 
     _model = None
-    util = None
+    util = MagicMock()
 
 def semantic_similarity(expected: set, actual: set, is_recall: bool = False) -> float:
     if not expected or not actual:
