@@ -222,3 +222,23 @@ class NotificationChannelListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    display_name: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+    user_id: str
+    email: str
+    display_name: str | None = None

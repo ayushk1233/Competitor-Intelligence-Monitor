@@ -5,7 +5,7 @@ from backend.database.models import (
     Run, CompetitorAnalysisRecord,
     ComparisonRecord, PageSnapshot, AlertHistory,
     AlertSuppression, NotificationEvent, Watchlist,
-    NotificationChannel,
+    NotificationChannel, User,
 )
 from backend.models.schemas import IntelligenceReport, CompetitorPages
 
@@ -14,6 +14,39 @@ class DatabaseService:
 
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    # ── User operations ───────────────────────────────────────────────────
+
+    async def get_user_by_email(
+        self,
+        email: str,
+    ):
+        result = await self.session.execute(
+            select(User).where(
+                User.email == email
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    async def create_user(
+        self,
+        email: str,
+        password_hash: str,
+        display_name: str | None = None,
+    ):
+        user = User(
+            email=email,
+            password_hash=password_hash,
+            display_name=display_name,
+            is_active=True,
+        )
+
+        self.session.add(user)
+
+        await self.session.flush()
+
+        return user
 
     # ── Run operations ────────────────────────────────────────────────────
 

@@ -11,6 +11,20 @@ __pycache__/
 
 # Not needed inside container
 frontend/
-monitoring/
-frontend/
 k8s/
+
+alembic/
+tests/
+docs/
+
+*.log
+*.sqlite
+*.db
+
+.git
+.gitignore
+
+.vscode
+.idea
+
+backend/eval/

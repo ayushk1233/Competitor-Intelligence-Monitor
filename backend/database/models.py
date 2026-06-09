@@ -205,6 +205,16 @@ class User(Base):
         nullable=True,
     )
 
+    password_hash: Mapped[str] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    last_login_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
 
 # ─────────────────────────────────────────────────────────────
 # Watchlists
