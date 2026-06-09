@@ -10,13 +10,15 @@ try:
     _model = SentenceTransformer('all-MiniLM-L6-v2')
 except Exception as e:
     print(f"Warning: Could not load sentence-transformers: {e}")
+
     _model = None
+    util = None
 
 def semantic_similarity(expected: set, actual: set, is_recall: bool = False) -> float:
     if not expected or not actual:
         return 0.0
 
-    if _model is None:
+    if _model is None or util is None:
         if is_recall:
             return len(expected & actual) / len(expected)
         else:
