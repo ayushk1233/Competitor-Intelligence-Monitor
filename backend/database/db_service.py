@@ -399,16 +399,13 @@ class DatabaseService:
     async def update_notification_channel(
         self,
         channel_id: str,
+        user_id: str,
         enabled: bool,
     ):
-        result = await self.session.execute(
-            select(NotificationChannel)
-            .where(
-                NotificationChannel.id == channel_id
-            )
+        channel = await self.get_notification_channel_for_user(
+            channel_id,
+            user_id,
         )
-
-        channel = result.scalar_one_or_none()
 
         if channel:
             channel.enabled = enabled
@@ -418,15 +415,12 @@ class DatabaseService:
     async def delete_notification_channel(
         self,
         channel_id: str,
+        user_id: str,
     ):
-        result = await self.session.execute(
-            select(NotificationChannel)
-            .where(
-                NotificationChannel.id == channel_id
-            )
+        channel = await self.get_notification_channel_for_user(
+            channel_id,
+            user_id,
         )
-
-        channel = result.scalar_one_or_none()
 
         if channel:
             await self.session.delete(channel)

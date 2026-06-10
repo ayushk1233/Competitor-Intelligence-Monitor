@@ -102,6 +102,7 @@ async def update_notification_channel(
 
     channel = await service.update_notification_channel(
         channel_id,
+        current_user.id,
         request.enabled,
     )
 
@@ -142,6 +143,7 @@ async def delete_notification_channel(
 
     channel = await service.delete_notification_channel(
         channel_id,
+        current_user.id,
     )
 
     if channel is None:
