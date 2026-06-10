@@ -30,6 +30,12 @@ router = APIRouter(
 @router.post(
     "/signup",
     response_model=AuthResponse,
+    summary="Create user account",
+    description="Register a new CIM user and return a JWT access token.",
+    responses={
+        200: {"description": "Account created successfully"},
+        400: {"description": "Email already registered"},
+    },
 )
 async def signup(
     request: SignupRequest,
@@ -70,6 +76,12 @@ async def signup(
 @router.post(
     "/login",
     response_model=AuthResponse,
+    summary="Authenticate user",
+    description="Authenticate a user and return a JWT access token.",
+    responses={
+        200: {"description": "Authentication successful"},
+        401: {"description": "Invalid credentials"},
+    },
 )
 async def login(
     request: LoginRequest,
@@ -115,6 +127,12 @@ async def login(
 @router.get(
     "/me",
     response_model=CurrentUserResponse,
+    summary="Get current user",
+    description="Return the authenticated user's profile.",
+    responses={
+        200: {"description": "User profile returned"},
+        401: {"description": "Unauthorized"},
+    },
 )
 async def get_me(
     current_user: User = Depends(

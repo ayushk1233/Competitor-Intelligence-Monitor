@@ -1,5 +1,8 @@
 import asyncio
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from backend.celery_app import celery_app
 from backend.services.scraper_service import ScraperService
@@ -53,7 +56,10 @@ def run_analysis_task(self, run_id: str, competitors: list[str]):
     Background task — creates its own event loop and its own
     database engine to avoid asyncpg cross-loop conflicts.
     """
-    print(f"[task] Starting run {run_id} for {competitors}")
+    logger.info(
+        "Starting run %s",
+        run_id,
+    )
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -64,7 +70,10 @@ def run_analysis_task(self, run_id: str, competitors: list[str]):
         return {"status": "completed", "run_id": run_id}
 
     except Exception as e:
-        print(f"[task] Failed run {run_id}: {e}")
+        logger.exception(
+            "Run %s failed",
+            run_id,
+        )
         try:
             loop.run_until_complete(_mark_failed(run_id, str(e)))
         except Exception as e2:
@@ -187,9 +196,9 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                     )
 
                     if result:
-                        print(
-                            f"[monitoring] Alert generated "
-                            f"for {analysis.name}"
+                        logger.info(
+                            "Alert generated for %s",
+                            analysis.name,
                         )
 
                 await session.commit()

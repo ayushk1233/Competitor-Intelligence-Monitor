@@ -2,7 +2,9 @@
 import time
 import os, glob 
 import shutil
-from fastapi import FastAPI, HTTPException, Depends, Response
+import logging
+from fastapi import FastAPI, HTTPException, Depends, Response, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -32,11 +34,30 @@ from backend.api.dashboard import (
     router as dashboard_router
 )
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
     title="Competitor Intelligence Monitor",
     description="Strategic intelligence extraction powered by OpenRouter LLM.",
     version="2.3.0"
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(
+    request: Request,
+    exc: Exception,
+):
+    logger.exception(
+        "Unhandled exception: %s",
+        str(exc),
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error"
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,6 +84,13 @@ def metrics():
 # ── Startup ───────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
+    logging.basicConfig(
+        level=logging.INFO,
+        format=(
+            "%(asctime)s - %(name)s - "
+            "%(levelname)s - %(message)s"
+        ),
+    )
     PROM_DIR = "/tmp/prometheus"
 
     # ✅ Clean multiprocess metric files (NOT the directory)
@@ -139,7 +167,11 @@ async def analyze(
     active_pipeline_runs.inc()
     run_analysis_task.delay(run_id, request.competitors)
 
-    print(f"[api] Enqueued run {run_id} for {request.competitors}")
+    logger.info(
+        "Enqueued run %s for %s",
+        run_id,
+        request.competitors,
+    )
 
     # Return run_id to client — they will poll for status
     return {

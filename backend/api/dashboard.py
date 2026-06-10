@@ -24,6 +24,9 @@ from backend.database.models import (
 from backend.models.schemas import (
     DashboardSummaryResponse,
     DashboardRecentRunsResponse,
+    DashboardRecentAlertsResponse,
+    DashboardActivityResponse,
+    DashboardActivityItem,
 )
 
 router = APIRouter(
@@ -35,6 +38,8 @@ router = APIRouter(
 @router.get(
     "/summary",
     response_model=DashboardSummaryResponse,
+    summary="Dashboard summary",
+    description="Return aggregate dashboard metrics for the authenticated user.",
 )
 async def get_dashboard_summary(
     current_user: User = Depends(
@@ -65,6 +70,8 @@ async def get_dashboard_summary(
 @router.get(
     "/recent-runs",
     response_model=DashboardRecentRunsResponse,
+    summary="Recent monitoring runs",
+    description="Return recent monitoring runs for the authenticated user.",
 )
 async def get_recent_runs(
     current_user: User = Depends(
@@ -82,4 +89,70 @@ async def get_recent_runs(
 
     return {
         "items": runs
+    }
+
+
+@router.get(
+    "/recent-alerts",
+    response_model=DashboardRecentAlertsResponse,
+    summary="Recent alerts",
+    description="Return latest generated alerts.",
+)
+async def get_recent_alerts(
+    current_user: User = Depends(
+        get_current_user
+    ),
+    db: AsyncSession = Depends(
+        get_db
+    ),
+):
+    service = DatabaseService(db)
+
+    alerts = await service.get_recent_alerts(
+        limit=10
+    )
+
+    return {
+        "items": alerts
+    }
+
+
+@router.get(
+    "/activity",
+    response_model=DashboardActivityResponse,
+    summary="Recent activity",
+    description="Return recent user activity shown on the dashboard.",
+)
+async def get_activity(
+    current_user: User = Depends(
+        get_current_user
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DatabaseService(db)
+
+    watchlists = await service.get_watchlists(
+        current_user.id,
+        limit=5,
+        offset=0,
+    )
+
+    activities = []
+
+    for watchlist in watchlists:
+        activities.append(
+            {
+                "activity_type": "WATCHLIST_CREATED",
+                "title": watchlist.name,
+                "timestamp": watchlist.created_at,
+            }
+        )
+
+    activities.sort(
+        key=lambda x: x["timestamp"],
+        reverse=True,
+    )
+
+    return {
+        "items": activities[:20]
     }

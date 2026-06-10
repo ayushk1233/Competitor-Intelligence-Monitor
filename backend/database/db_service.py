@@ -584,3 +584,39 @@ class DatabaseService:
         )
 
         return result.scalar() or 0
+
+    async def get_recent_alerts(
+        self,
+        limit: int = 10,
+    ):
+        result = await self.session.execute(
+            select(AlertHistory)
+            .order_by(
+                AlertHistory.created_at.desc()
+            )
+            .limit(limit)
+        )
+
+        return list(
+            result.scalars().all()
+        )
+
+    async def get_watchlists(
+        self,
+        user_id: str,
+        limit: int = 10,
+        offset: int = 0,
+    ):
+        result = await self.session.execute(
+            select(Watchlist)
+            .where(
+                Watchlist.user_id == user_id
+            )
+            .order_by(
+                Watchlist.created_at.desc()
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
+        return list(result.scalars().all())

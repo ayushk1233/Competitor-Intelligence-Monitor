@@ -45,6 +45,12 @@ router = APIRouter(
 @router.post(
     "",
     response_model=WatchlistResponse,
+    summary="Create watchlist",
+    description="Create a new competitor monitoring watchlist.",
+    responses={
+        200: {"description": "Watchlist created"},
+        401: {"description": "Unauthorized"},
+    },
 )
 async def create_watchlist(
     request: WatchlistCreateRequest,
@@ -70,8 +76,16 @@ async def create_watchlist(
 @router.get(
     "",
     response_model=WatchlistListResponse,
+    summary="List watchlists",
+    description="Return paginated watchlists belonging to the authenticated user.",
+    responses={
+        200: {"description": "Watchlists returned"},
+        401: {"description": "Unauthorized"},
+    },
 )
 async def list_watchlists(
+    limit: int = 20,
+    offset: int = 0,
     current_user: User = Depends(
         get_current_user
     ),
@@ -85,6 +99,8 @@ async def list_watchlists(
         .order_by(
             Watchlist.created_at.desc()
         )
+        .offset(offset)
+        .limit(limit)
     )
 
     watchlists = result.scalars().all()
@@ -97,6 +113,13 @@ async def list_watchlists(
 @router.post(
     "/{watchlist_id}/competitors",
     response_model=CompetitorResponse,
+    summary="Add competitor",
+    description="Add a competitor to a watchlist.",
+    responses={
+        200: {"description": "Competitor added"},
+        404: {"description": "Watchlist not found"},
+        409: {"description": "Competitor already exists"},
+    },
 )
 async def add_competitor(
     watchlist_id: str,
@@ -151,9 +174,17 @@ async def add_competitor(
 @router.get(
     "/{watchlist_id}/competitors",
     response_model=CompetitorListResponse,
+    summary="List competitors",
+    description="Return competitors belonging to a watchlist.",
+    responses={
+        200: {"description": "Competitors returned"},
+        404: {"description": "Watchlist not found"},
+    },
 )
 async def list_competitors(
     watchlist_id: str,
+    limit: int = 20,
+    offset: int = 0,
     current_user: User = Depends(
         get_current_user
     ),
@@ -180,6 +211,8 @@ async def list_competitors(
         .order_by(
             WatchlistCompetitor.company_name.asc()
         )
+        .offset(offset)
+        .limit(limit)
     )
 
     competitors = result.scalars().all()
@@ -192,6 +225,12 @@ async def list_competitors(
 @router.post(
     "/{watchlist_id}/runs",
     response_model=MonitoringRunResponse,
+    summary="Start monitoring run",
+    description="Queue a monitoring run for the selected watchlist.",
+    responses={
+        200: {"description": "Monitoring run queued"},
+        404: {"description": "Watchlist not found"},
+    },
 )
 async def create_monitoring_run(
     watchlist_id: str,
@@ -243,9 +282,17 @@ async def create_monitoring_run(
 @router.get(
     "/{watchlist_id}/runs",
     response_model=MonitoringRunListResponse,
+    summary="List monitoring runs",
+    description="Return monitoring run history for a watchlist.",
+    responses={
+        200: {"description": "Runs returned"},
+        404: {"description": "Watchlist not found"},
+    },
 )
 async def list_monitoring_runs(
     watchlist_id: str,
+    limit: int = 20,
+    offset: int = 0,
     current_user: User = Depends(
         get_current_user
     ),
@@ -272,6 +319,8 @@ async def list_monitoring_runs(
         .order_by(
             MonitoringRun.created_at.desc()
         )
+        .offset(offset)
+        .limit(limit)
     )
 
     runs = result.scalars().all()

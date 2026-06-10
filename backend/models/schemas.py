@@ -266,3 +266,30 @@ class DashboardSummaryResponse(BaseModel):
 
 class DashboardRecentRunsResponse(BaseModel):
     items: list[MonitoringRunResponse]
+
+
+class DashboardAlertResponse(BaseModel):
+    company_name: str
+    severity: str
+    reasons: list[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardRecentAlertsResponse(BaseModel):
+    items: list[DashboardAlertResponse]
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardActivityItem(BaseModel):
+    activity_type: str
+    title: str
+    timestamp: datetime
+
+
+class DashboardActivityResponse(BaseModel):
+    items: list[DashboardActivityItem]

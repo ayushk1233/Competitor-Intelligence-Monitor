@@ -33,6 +33,13 @@ router = APIRouter(
 @router.post(
     "/channels",
     response_model=NotificationChannelResponse,
+    summary="Create notification channel",
+    description="Register a new notification destination.",
+    responses={
+        200: {"description": "Operation successful"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Resource not found"},
+    },
 )
 async def create_notification_channel(
     request: NotificationChannelCreateRequest,
@@ -58,6 +65,13 @@ async def create_notification_channel(
 @router.get(
     "/channels",
     response_model=NotificationChannelListResponse,
+    summary="List notification channels",
+    description="Return notification channels owned by the authenticated user.",
+    responses={
+        200: {"description": "Operation successful"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Resource not found"},
+    },
 )
 async def list_notification_channels(
     db: AsyncSession = Depends(get_db),
@@ -78,6 +92,13 @@ async def list_notification_channels(
 @router.put(
     "/channels/{channel_id}",
     response_model=NotificationChannelResponse,
+    summary="Update notification channel",
+    description="Enable or disable a notification channel.",
+    responses={
+        200: {"description": "Operation successful"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Resource not found"},
+    },
 )
 async def update_notification_channel(
     channel_id: str,
@@ -120,6 +141,13 @@ async def update_notification_channel(
 
 @router.delete(
     "/channels/{channel_id}",
+    summary="Delete notification channel",
+    description="Remove a notification channel.",
+    responses={
+        200: {"description": "Operation successful"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Resource not found"},
+    },
 )
 async def delete_notification_channel(
     channel_id: str,
