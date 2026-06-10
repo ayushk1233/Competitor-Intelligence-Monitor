@@ -251,3 +251,18 @@ class CurrentUserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================
+# Dashboard
+# ============================================================
+
+class DashboardSummaryResponse(BaseModel):
+    watchlists: int
+    competitors: int
+    monitoring_runs_today: int
+    notification_channels: int
+
+
+class DashboardRecentRunsResponse(BaseModel):
+    items: list[MonitoringRunResponse]

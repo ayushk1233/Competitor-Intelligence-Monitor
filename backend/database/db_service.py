@@ -1,11 +1,12 @@
 from datetime import datetime, UTC
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_
+from sqlalchemy import select, desc, and_, func
 from backend.database.models import (
     Run, CompetitorAnalysisRecord,
     ComparisonRecord, PageSnapshot, AlertHistory,
     AlertSuppression, NotificationEvent, Watchlist,
-    NotificationChannel, User,
+    NotificationChannel, User, WatchlistCompetitor,
+    MonitoringRun,
 )
 from backend.models.schemas import IntelligenceReport, CompetitorPages
 
@@ -485,3 +486,101 @@ class DatabaseService:
         if watchlist:
             watchlist.last_monitored_at = datetime.now(UTC)
             watchlist.next_run_at = next_run_at
+
+    async def get_watchlist_count(
+        self,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(Watchlist)
+            .where(
+                Watchlist.user_id == user_id
+            )
+        )
+
+        return result.scalar() or 0
+
+    async def get_competitor_count(
+        self,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(WatchlistCompetitor)
+            .join(
+                Watchlist,
+                Watchlist.id
+                == WatchlistCompetitor.watchlist_id
+            )
+            .where(
+                Watchlist.user_id == user_id
+            )
+        )
+
+        return result.scalar() or 0
+
+    async def get_notification_channel_count(
+        self,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(NotificationChannel)
+            .where(
+                NotificationChannel.user_id == user_id
+            )
+        )
+
+        return result.scalar() or 0
+
+    async def get_recent_runs_for_user(
+        self,
+        user_id: str,
+        limit: int = 10,
+    ):
+        result = await self.session.execute(
+            select(MonitoringRun)
+            .join(
+                Watchlist,
+                Watchlist.id
+                == MonitoringRun.watchlist_id
+            )
+            .where(
+                Watchlist.user_id == user_id
+            )
+            .order_by(
+                MonitoringRun.created_at.desc()
+            )
+            .limit(limit)
+        )
+
+        return list(
+            result.scalars().all()
+        )
+
+    async def get_monitoring_runs_today(
+        self,
+        user_id: str,
+    ):
+        today = datetime.now(
+            UTC
+        ).date()
+
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(MonitoringRun)
+            .join(
+                Watchlist,
+                Watchlist.id
+                == MonitoringRun.watchlist_id
+            )
+            .where(
+                Watchlist.user_id == user_id,
+                func.date(
+                    MonitoringRun.created_at
+                ) == today,
+            )
+        )
+
+        return result.scalar() or 0
