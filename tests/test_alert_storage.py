@@ -3,10 +3,10 @@ from backend.drift.alert_storage import save_alert
 
 
 def test_alert_storage():
-
     alert = AlertRecord(
         company_name="Cursor",
         severity="HIGH",
+        headline="Momentum change detected",
         reasons=["Momentum changed by 2"],
         created_at="2026-06-04 12:00:00",
     )
