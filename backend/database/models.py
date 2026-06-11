@@ -14,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from backend.database.connection import Base
+from typing import Optional
 import uuid
 
 
@@ -144,24 +145,81 @@ class AlertHistory(Base):
         autoincrement=True,
     )
 
+    watchlist_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("watchlists.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     company_name: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
+        index=True,
     )
 
     severity: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
+        default="MEDIUM",
     )
 
-    reasons: Mapped[list] = mapped_column(
+    headline: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False,
+    )
+
+    summary: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    reasons: Mapped[Optional[list]] = mapped_column(
         JSON,
         default=list,
+        nullable=True,
+    )
+
+    evidence: Mapped[Optional[list]] = mapped_column(
+        JSON,
+        default=list,
+        nullable=True,
+    )
+
+    confidence: Mapped[int] = mapped_column(
+        Integer,
+        default=90,
+    )
+
+    business_impact: Mapped[str] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
+    recommended_action: Mapped[str] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="new",
+    )
+
+    fingerprint_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
 
@@ -256,6 +314,24 @@ class Watchlist(Base):
         default="DAILY",
     )
 
+    monitoring_config: Mapped[Optional[dict]] = mapped_column(
+        JSON,
+        nullable=True,
+        default=dict,
+    )
+
+    alert_rules: Mapped[Optional[dict]] = mapped_column(
+        JSON,
+        nullable=True,
+        default=dict,
+    )
+
+    notification_channels: Mapped[Optional[list]] = mapped_column(
+        JSON,
+        nullable=True,
+        default=list,
+    )
+
     last_monitored_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -326,6 +402,16 @@ class WatchlistCompetitor(Base):
     )
 
     is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+    )
+
+    priority: Mapped[str] = mapped_column(
+        String(10),
+        default="medium",
+    )
+
+    monitoring_enabled: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
     )

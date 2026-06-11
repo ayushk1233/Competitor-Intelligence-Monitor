@@ -203,26 +203,24 @@ Alert Severity:
 
 ## Backend
 
-* FastAPI
-* Python
-* SQLAlchemy
-* Alembic
+* FastAPI (Python)
+* SQLAlchemy / Alembic
+* Celery (async task processing)
+* PostgreSQL + Redis
+
+## Frontend
+
+* Next.js 16 (App Router, TypeScript strict)
+* Tailwind CSS v4 + shadcn/v4 UI
+* TanStack Query (data fetching)
+* React Hook Form + Zod (forms)
+* Axios (HTTP client)
 
 ## AI Layer
 
 * OpenRouter
-* DeepSeek
-* Claude
+* DeepSeek / Claude
 * Structured Prompt Engineering
-
-## Data Layer
-
-* PostgreSQL
-* Redis
-
-## Async Processing
-
-* Celery
 
 ## Monitoring
 
@@ -264,11 +262,23 @@ CIM:
 │   ├── services/
 │   └── utils/
 ├── frontend/
-├── monitoring/
+│   ├── src/
+│   │   ├── app/          # Next.js App Router pages
+│   │   ├── components/   # UI + feature components
+│   │   ├── hooks/        # TanStack Query hooks
+│   │   ├── services/     # API client functions
+│   │   ├── providers/    # Auth + Query providers
+│   │   ├── lib/          # Utilities, API client, schemas
+│   │   ├── types/        # TypeScript interfaces
+│   │   └── constants/    # Routes, query keys
+│   ├── Dockerfile
+│   └── package.json
+├── monitoring/            # Prometheus / Grafana
 ├── tests/
+├── k8s/                   # Kubernetes manifests
 ├── docker-compose.yml
-├── Dockerfile
-└── Dockerfile.worker
+├── Dockerfile             # Backend
+└── Dockerfile.worker      # Celery worker
 ```
 
 ---
@@ -338,42 +348,58 @@ A final competitive intelligence report is generated.
 
 # Running Locally
 
-## Clone Repository
+## Prerequisites
+
+- Docker 24+ and Docker Compose v2 (for full stack)
+- Python 3.11+ (for manual backend)
+- Node.js 20+ (for manual frontend)
+
+## Option 1: Full Stack with Docker (Recommended)
 
 ```bash
+# 1. Clone & configure
 git clone <repo-url>
 cd competitor-intelligence-monitor
+cp .env.example .env
+# Edit .env — set OPENROUTER_API_KEY
+
+# 2. Start everything
+docker compose up -d
+
+# 3. Open the app
+open http://localhost:3000
 ```
 
-## Create Environment
+## Option 2: Manual Setup
+
+### Backend
 
 ```bash
 python -m venv venv
 source venv/bin/activate
-```
-
-## Install Dependencies
-
-```bash
 pip install -r requirements.txt
-```
 
-## Start Services
+# Start infrastructure
+docker compose up -d postgres redis
 
-```bash
-docker compose up -d
-```
-
-## Run Backend
-
-```bash
 uvicorn backend.main:app --reload
 ```
 
-## Run Frontend
+### Celery (optional, for scheduled monitoring)
 
 ```bash
-streamlit run frontend/app.py
+celery -A backend.celery_app worker --loglevel=info
+celery -A backend.celery_app beat --loglevel=info
+```
+
+### Frontend
+
+```bash
+cd frontend
+cp .env.local.example .env.local  # create if needed
+npm install
+npm run dev
+# → http://localhost:3000
 ```
 
 ---

@@ -229,11 +229,6 @@ class AnalysisService:
         """
         print(f"  [analysis] Analyzing {competitor_pages.name}...")
 
-        print("\n=== SCRAPED PAGES ===")
-        for p in competitor_pages.pages:
-            if p.fetch_success and p.content:
-                print(p.page_type, p.url)
-
         pages_as_dicts = [
             {
                 "url": p.url,
@@ -253,10 +248,6 @@ class AnalysisService:
 
         merged_chunks = build_ranked_context(pages_as_dicts)
         merged_content_str = "\n\n".join(merged_chunks)
-
-        print("\n=== CONTEXT STATS ===")
-        print(f"Context chars: {len(merged_content_str)}")
-        print(merged_content_str[:1000])
 
         raw_signals = extract_signals(
             merged_content_str
@@ -313,16 +304,10 @@ class AnalysisService:
             "[analysis] Running multi-agent orchestration..."
         )
 
-        # Pause before each call to avoid per-minute quota bursting
-        await asyncio.sleep(self.inter_call_delay)
-
         agent_result = await run_intelligence_pipeline(
             final_chunks_for_pipeline,
             compressed_signals
         )
-
-        print("\n=== FINAL ANALYSIS ===")
-        pprint.pprint(agent_result)
 
         print(
             "[analysis] Multi-agent synthesis complete"

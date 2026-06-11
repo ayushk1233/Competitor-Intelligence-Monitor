@@ -72,9 +72,6 @@ class ComparisonService:
     ) -> IntelligenceReport:
         print(f"  [comparison] Running cross-competitor synthesis...")
 
-        # Pause before comparison call — analyses just ran
-        await asyncio.sleep(5)
-
         comparison = await self._run_comparison(analyses)
 
         duration = round(time.time() - start_time, 2)

@@ -84,12 +84,6 @@ async def run_intelligence_pipeline(
     signals: dict = None
 ):
 
-    print(f"[orchestrator] Type received: {type(chunks)}")
-    if isinstance(chunks, list) and chunks:
-        print(f"[orchestrator] First chunk preview: {repr(chunks[0][:200])}")
-    elif isinstance(chunks, str):
-        print(f"[orchestrator] String preview: {repr(chunks[:200])}")
-
     # -----------------------------------
     # Run specialist agents concurrently
     # -----------------------------------
@@ -195,25 +189,6 @@ async def run_intelligence_pipeline(
 
         icp_analysis=icp_result
     )
-
-    import os
-    import time
-
-    def log_agent_output(agent_name: str, output: str):
-        log_dir = "logs/agent_outputs"
-        os.makedirs(log_dir, exist_ok=True)
-        timestamp = int(time.time())
-        file_path = os.path.join(log_dir, f"{agent_name}_{timestamp}.txt")
-        try:
-            with open(file_path, "w") as f:
-                f.write(str(output))
-        except Exception as e:
-            print(f"Failed to write agent log: {e}")
-
-    log_agent_output("momentum", momentum_result)
-    log_agent_output("tone", tone_result)
-    log_agent_output("icp", icp_result)
-    log_agent_output("synthesis", final_result)
 
     return {
 

@@ -147,6 +147,10 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                     await db.save_page_snapshots(run_id, pages)
                 await session.commit()
 
+                total_pages = sum(len(p.pages) for p in valid_pages)
+                await db.update_run_pages_fetched(run_id, total_pages)
+                await session.commit()
+
                 # ── Stage 2: Analyzing ────────────────────────────────────
                 print(f"[task] Stage 2: Analyzing {len(valid_pages)} competitors...")
                 await db.update_run_status(run_id, "analyzing")
@@ -154,14 +158,12 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
 
                 stage_start = time.time()
 
-                analyses = []
-                for pages in valid_pages:
-                    analysis = await analyzer.analyze_competitor(pages)
-                    analyses.append(analysis)
+                analyses = await asyncio.gather(
+                    *(analyzer.analyze_competitor(pages) for pages in valid_pages)
+                )
 
-                    # ✅ FIX 2b: correct name — llm_momentum_score not momentum_score_distribution
+                for analysis in analyses:
                     llm_momentum_score.observe(analysis.momentum_score or 0)
-
                     print(
                         f"[task] ✓ {analysis.name} "
                         f"— momentum: {analysis.momentum_score}/10"
@@ -185,22 +187,6 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                 )
 
                 await db.save_full_report(run_id, report)
-                await session.commit()
-
-                monitoring = MonitoringService(db)
-
-                for analysis in report.competitors:
-
-                    result = await monitoring.detect_drift(
-                        analysis.name
-                    )
-
-                    if result:
-                        logger.info(
-                            "Alert generated for %s",
-                            analysis.name,
-                        )
-
                 await session.commit()
 
                 # ✅ FIX 2c: correct name — pipelines_total not pipeline_runs_total
@@ -312,7 +298,12 @@ async def _scheduled_monitoring_impl():
 
 async def _run_monitoring_pipeline(run_id: str):
     from sqlalchemy import select
-    from backend.database.models import MonitoringRun, WatchlistCompetitor
+    from backend.database.models import (
+        MonitoringRun, WatchlistCompetitor, Run,
+    )
+    from backend.services.scraper_service import ScraperService
+    from backend.services.analysis_service import AnalysisService
+    from backend.services.comparison_service import ComparisonService
     from datetime import datetime, timezone
 
     SessionLocal, engine = _make_session_factory()
@@ -337,31 +328,90 @@ async def _run_monitoring_pipeline(run_id: str):
                 .where(WatchlistCompetitor.watchlist_id == run.watchlist_id)
             )
             competitors = result.scalars().all()
+            competitor_names = [c.company_name for c in competitors]
 
+            # ── Create a Run entry for run history ──
+            analysis_run = Run(
+                status="running",
+                competitor_names=competitor_names,
+            )
+            session.add(analysis_run)
+            await session.flush()
+            analysis_run_id = analysis_run.id
+
+            # ── Run full analysis pipeline ──
+            start_time = time.time()
+            scraper = ScraperService()
+            analyzer = AnalysisService()
+            comparator = ComparisonService()
+
+            try:
+                # Scraping
+                scrape_tasks = [scraper.fetch_competitor(name) for name in competitor_names]
+                all_pages = await asyncio.gather(*scrape_tasks, return_exceptions=True)
+
+                valid_pages = []
+                for i, result in enumerate(all_pages):
+                    if isinstance(result, Exception):
+                        print(f"[monitoring] Scrape failed for {competitor_names[i]}: {result}")
+                    else:
+                        valid_pages.append(result)
+
+                if not valid_pages:
+                    raise RuntimeError("All competitor scrapes failed")
+
+                for pages in valid_pages:
+                    await db.save_page_snapshots(analysis_run_id, pages)
+                await session.commit()
+
+                total_pages = sum(len(p.pages) for p in valid_pages)
+                await db.update_run_pages_fetched(analysis_run_id, total_pages)
+                await session.commit()
+
+                # Analyzing
+                analyses = await asyncio.gather(
+                    *(analyzer.analyze_competitor(pages) for pages in valid_pages)
+                )
+
+                for analysis in analyses:
+                    print(f"[monitoring] ✓ {analysis.name} — momentum: {analysis.momentum_score}/10")
+
+                # Comparing
+                report = await comparator.generate_report(analyses, start_time)
+                await db.save_full_report(analysis_run_id, report)
+                await session.commit()
+
+            except Exception:
+                await db.update_run_status(analysis_run_id, "failed")
+                await session.commit()
+                raise
+            finally:
+                await scraper.close()
+
+            # Mark analysis run as completed
+            await db.update_run_status(analysis_run_id, "completed")
+            await session.commit()
+
+            # ── Drift detection ──
             monitoring = MonitoringService(db)
 
             for comp in competitors:
-                drift_result = await monitoring.detect_drift(comp.company_name)
+                drift_result = await monitoring.detect_drift(
+                    comp.company_name,
+                    watchlist_id=run.watchlist_id,
+                    skip_suppression=(run.trigger_type == "MANUAL"),
+                )
                 run.competitors_checked += 1
                 if drift_result:
                     if drift_result.get("alert_suppressed"):
                         run.alerts_suppressed += 1
                         print(f"[monitoring] Alert suppressed for {comp.company_name}")
                     elif drift_result.get("alert"):
-
                         run.alerts_generated += 1
-
                         run.notifications_sent += (
-                            drift_result.get(
-                                "notifications_sent",
-                                0,
-                            )
+                            drift_result.get("notifications_sent", 0)
                         )
-
-                        print(
-                            f"[monitoring] Alert generated for "
-                            f"{comp.company_name}"
-                        )
+                        print(f"[monitoring] Alert generated for {comp.company_name}")
 
             run.status = "COMPLETED"
             run.completed_at = datetime.now(timezone.utc)

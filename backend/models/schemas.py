@@ -89,6 +89,18 @@ class WatchlistCreateRequest(BaseModel):
     name: str
     description: Optional[str] = None
     monitoring_frequency: str = "DAILY"
+    monitoring_config: Optional[dict] = None
+    alert_rules: Optional[dict] = None
+    notification_channels: Optional[list] = None
+
+
+class WatchlistUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    monitoring_config: Optional[dict] = None
+    alert_rules: Optional[dict] = None
+    notification_channels: Optional[list] = None
+    is_active: Optional[bool] = None
 
 
 class WatchlistResponse(BaseModel):
@@ -100,6 +112,9 @@ class WatchlistResponse(BaseModel):
 
     is_active: bool
     monitoring_frequency: str
+    monitoring_config: Optional[dict] = None
+    alert_rules: Optional[dict] = None
+    notification_channels: Optional[list] = None
     last_monitored_at: datetime | None = None
     next_run_at: datetime | None = None
 
@@ -123,6 +138,15 @@ class WatchlistListResponse(BaseModel):
 class CompetitorCreateRequest(BaseModel):
     company_name: str
     domain: Optional[str] = None
+    priority: str = "medium"
+    monitoring_enabled: bool = True
+
+
+class CompetitorUpdateRequest(BaseModel):
+    company_name: Optional[str] = None
+    domain: Optional[str] = None
+    priority: Optional[str] = None
+    monitoring_enabled: Optional[bool] = None
 
 
 class CompetitorResponse(BaseModel):
@@ -133,8 +157,17 @@ class CompetitorResponse(BaseModel):
     domain: Optional[str]
 
     is_active: bool
+    priority: str = "medium"
+    monitoring_enabled: bool = True
 
     added_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CompetitorListResponse(BaseModel):
+    items: list[CompetitorResponse]
 
     class Config:
         from_attributes = True
@@ -262,6 +295,16 @@ class DashboardSummaryResponse(BaseModel):
     competitors: int
     monitoring_runs_today: int
     notification_channels: int
+    critical_alerts: int = 0
+    high_alerts: int = 0
+    medium_alerts: int = 0
+    low_alerts: int = 0
+    competitors_requiring_review: int = 0
+    last_run_at: datetime | None = None
+    total_alerts: int = 0
+    has_active_run: bool = False
+    active_run_status: str | None = None
+    active_run_id: str | None = None
 
 
 class DashboardRecentRunsResponse(BaseModel):
@@ -271,8 +314,14 @@ class DashboardRecentRunsResponse(BaseModel):
 class DashboardAlertResponse(BaseModel):
     company_name: str
     severity: str
-    reasons: list[str]
-    created_at: datetime
+    headline: str
+    summary: str | None = None
+    evidence: list = []
+    confidence: int = 90
+    business_impact: str | None = None
+    recommended_action: str | None = None
+    status: str = "new"
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -289,6 +338,44 @@ class DashboardActivityItem(BaseModel):
     activity_type: str
     title: str
     timestamp: datetime
+
+
+class DashboardCompetitorResponse(BaseModel):
+    company_name: str
+    domain: str | None = None
+    messaging_tone: str | None = None
+    momentum_score: int | None = None
+    last_analyzed_at: datetime | None = None
+    alert_count: int = 0
+    has_active_alerts: bool = False
+    analyst_note: str | None = None
+    core_offering: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardCompetitorsResponse(BaseModel):
+    items: list[DashboardCompetitorResponse]
+
+
+class DashboardIntelligenceResponse(BaseModel):
+    run_id: str | None = None
+    generated_at: datetime | None = None
+    market_leader: str | None = None
+    fastest_mover: str | None = None
+    executive_briefing: str | None = None
+    threat_ranking: list[str] = []
+    total_competitors_analyzed: int = 0
+
+
+class DashboardLastRunResponse(BaseModel):
+    run_id: str
+    status: str
+    created_at: datetime | None = None
+    completed_at: datetime | None = None
+    competitors_analyzed: list[str] = []
+    intelligence: DashboardIntelligenceResponse | None = None
 
 
 class DashboardActivityResponse(BaseModel):

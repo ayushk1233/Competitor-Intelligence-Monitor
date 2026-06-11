@@ -16,11 +16,13 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from backend.models.schemas import AnalysisRequest, IntelligenceReport
 from backend.database.connection import get_db, create_tables
 from backend.database.db_service import DatabaseService
+from backend.auth.dependencies import get_current_user
 from backend.database.models import (
     Run,
     CompetitorAnalysisRecord,
     ComparisonRecord,
     MonitoringRun,
+    User,
 )
 from backend.models.schemas import CompetitorAnalysis, ComparisonResult
 from backend.metrics import active_pipeline_runs
@@ -290,6 +292,19 @@ async def get_recent_runs(db: AsyncSession = Depends(get_db)):
     ]
 
 
+@app.delete("/api/runs/{run_id}")
+async def delete_run(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete an ad-hoc analysis run and its cascade."""
+    db_service = DatabaseService(db)
+    deleted = await db_service.delete_run(run_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return {"deleted": True, "run_id": run_id}
+
+
 @app.get("/api/runs/{run_id}")
 async def get_run_details(
     run_id: str,
@@ -323,17 +338,25 @@ async def get_competitor_history(
 
 @app.get("/api/alerts")
 async def get_alerts(
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     db_service = DatabaseService(db)
 
-    alerts = await db_service.get_alerts()
+    alerts = await db_service.get_alerts_for_user(current_user.id)
 
     return [
         {
+            "id": a.id,
             "company_name": a.company_name,
             "severity": a.severity,
-            "reasons": a.reasons,
+            "headline": a.headline,
+            "summary": a.summary,
+            "evidence": a.evidence,
+            "confidence": a.confidence,
+            "business_impact": a.business_impact,
+            "recommended_action": a.recommended_action,
+            "status": a.status,
             "created_at": (
                 a.created_at.isoformat()
                 if a.created_at else None
@@ -345,17 +368,25 @@ async def get_alerts(
 
 @app.get("/api/alerts/latest")
 async def get_latest_alerts(
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     db_service = DatabaseService(db)
 
-    alerts = await db_service.get_latest_alerts(limit=10)
+    alerts = await db_service.get_alerts_for_user(current_user.id, limit=10)
 
     return [
         {
+            "id": a.id,
             "company_name": a.company_name,
             "severity": a.severity,
-            "reasons": a.reasons,
+            "headline": a.headline,
+            "summary": a.summary,
+            "evidence": a.evidence,
+            "confidence": a.confidence,
+            "business_impact": a.business_impact,
+            "recommended_action": a.recommended_action,
+            "status": a.status,
             "created_at": (
                 a.created_at.isoformat()
                 if a.created_at else None
@@ -378,15 +409,111 @@ async def get_company_alerts(
 
     return [
         {
+            "id": a.id,
             "company_name": a.company_name,
             "severity": a.severity,
-            "reasons": a.reasons,
+            "headline": a.headline,
+            "summary": a.summary,
+            "evidence": a.evidence,
+            "confidence": a.confidence,
+            "business_impact": a.business_impact,
+            "recommended_action": a.recommended_action,
+            "status": a.status,
             "created_at": (
                 a.created_at.isoformat()
                 if a.created_at else None
             ),
         }
         for a in alerts
+    ]
+
+
+@app.get("/api/alerts/counts")
+async def get_alert_counts(
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+    return await db_service.get_alert_counts_by_severity()
+
+
+@app.get("/api/alerts/detail/{alert_id}")
+async def get_alert_detail(
+    alert_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+    alert = await db_service.get_alert_by_id(alert_id)
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {
+        "id": alert.id,
+        "company_name": alert.company_name,
+        "severity": alert.severity,
+        "headline": alert.headline,
+        "summary": alert.summary,
+        "evidence": alert.evidence,
+        "confidence": alert.confidence,
+        "business_impact": alert.business_impact,
+        "recommended_action": alert.recommended_action,
+        "status": alert.status,
+        "created_at": alert.created_at.isoformat() if alert.created_at else None,
+    }
+
+
+@app.post("/api/alerts/{alert_id}/acknowledge")
+async def acknowledge_alert(
+    alert_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+    alert = await db_service.update_alert_status(alert_id, "acknowledged")
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"status": "acknowledged"}
+
+
+@app.post("/api/alerts/{alert_id}/resolve")
+async def resolve_alert(
+    alert_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+    alert = await db_service.update_alert_status(alert_id, "resolved")
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"status": "resolved"}
+
+
+@app.post("/api/suppress/{company_name}/{severity}")
+async def suppress_alert(
+    company_name: str,
+    severity: str,
+    db: AsyncSession = Depends(get_db)
+):
+    from backend.drift.suppression_service import suppress_alert as do_suppress
+    db_service = DatabaseService(db)
+    await do_suppress(db_service, company_name, severity, hours=24)
+    return {"status": "suppressed", "company_name": company_name, "severity": severity}
+
+
+@app.get("/api/notification-events")
+async def get_notification_events(
+    channel_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    db_service = DatabaseService(db)
+    events = await db_service.get_notification_events(channel_id)
+    return [
+        {
+            "id": e.id,
+            "company_name": e.company_name,
+            "severity": e.severity,
+            "delivery_status": e.delivery_status,
+            "error_message": e.error_message,
+            "delivered_at": e.delivered_at.isoformat() if e.delivered_at else None,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        }
+        for e in events
     ]
 
 

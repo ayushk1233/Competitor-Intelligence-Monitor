@@ -66,6 +66,22 @@ services:
       - prometheus_multiproc:/tmp/prometheus
     restart: unless-stopped
 
+  # ── Next.js Frontend ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: cim_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   # ── Celery Worker ─────────────────────────────────────────────────────
   worker:
     build:
@@ -160,7 +176,7 @@ services:
     image: grafana/grafana:latest
     container_name: cim_grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=competitor_intel

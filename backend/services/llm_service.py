@@ -45,6 +45,7 @@ def _get_client() -> OpenAI:
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
+        timeout=60.0,
     )
 
 
@@ -89,17 +90,20 @@ async def call_openrouter(
 
             # The OpenAI SDK call is synchronous, so we run it in a
             # thread to keep the async event loop free.
-            completion = await asyncio.to_thread(
-                client.chat.completions.create,
-                extra_headers={
-                    "HTTP-Referer": "http://localhost",
-                    "X-OpenRouter-Title": "Competitor Intelligence Monitor",
-                },
-                model=resolved_model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                response_format={"type": "json_object"}
+            completion = await asyncio.wait_for(
+                asyncio.to_thread(
+                    client.chat.completions.create,
+                    extra_headers={
+                        "HTTP-Referer": "http://localhost",
+                        "X-OpenRouter-Title": "Competitor Intelligence Monitor",
+                    },
+                    model=resolved_model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format={"type": "json_object"}
+                ),
+                timeout=90.0
             )
 
             duration = time.time() - start
