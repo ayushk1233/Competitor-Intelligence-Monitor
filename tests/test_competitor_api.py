@@ -1,10 +1,19 @@
 from datetime import datetime
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.main import app
+from backend.auth.dependencies import get_current_user
 
 client = TestClient(app)
+
+
+mock_user = MagicMock()
+mock_user.id = "test-user-id"
+
+
+def override_get_current_user():
+    return mock_user
 
 
 class MockHistoryRecord:
@@ -51,9 +60,11 @@ class MockRecord:
 
 @patch("backend.main.DatabaseService")
 def test_get_latest_competitor(mock_db_service):
+    app.dependency_overrides[get_current_user] = override_get_current_user
 
     mock_instance = mock_db_service.return_value
 
+    mock_instance.get_user_competitor_names = AsyncMock(return_value=["Cursor"])
     mock_instance.get_latest_analysis = AsyncMock(
         return_value=MockRecord([])
     )
@@ -64,6 +75,8 @@ def test_get_latest_competitor(mock_db_service):
 
     assert response.status_code == 200
 
+    app.dependency_overrides.pop(get_current_user, None)
+
     data = response.json()
 
     assert data["name"] == "Cursor"
@@ -73,9 +86,11 @@ def test_get_latest_competitor(mock_db_service):
 
 @patch("backend.main.DatabaseService")
 def test_get_history(mock_db_service):
+    app.dependency_overrides[get_current_user] = override_get_current_user
 
     mock_instance = mock_db_service.return_value
 
+    mock_instance.get_user_competitor_names = AsyncMock(return_value=["Cursor"])
     mock_instance.get_competitor_history = AsyncMock(
         return_value=[MockHistoryRecord()]
     )
@@ -85,6 +100,8 @@ def test_get_history(mock_db_service):
     )
 
     assert response.status_code == 200
+
+    app.dependency_overrides.pop(get_current_user, None)
 
     data = response.json()
 
@@ -97,6 +114,7 @@ def test_get_history(mock_db_service):
 
 @patch("backend.main.DatabaseService")
 def test_get_drift(mock_db_service):
+    app.dependency_overrides[get_current_user] = override_get_current_user
 
     mock_instance = mock_db_service.return_value
 
@@ -108,6 +126,7 @@ def test_get_drift(mock_db_service):
         ["enterprise", "ai"]
     )
 
+    mock_instance.get_user_competitor_names = AsyncMock(return_value=["Cursor"])
     mock_instance.get_latest_two_analyses = AsyncMock(
         return_value=[
             new_record,
@@ -120,6 +139,8 @@ def test_get_drift(mock_db_service):
     )
 
     assert response.status_code == 200
+
+    app.dependency_overrides.pop(get_current_user, None)
 
     data = response.json()
 

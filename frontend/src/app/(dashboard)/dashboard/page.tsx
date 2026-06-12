@@ -32,26 +32,35 @@ function relativeTime(dateStr: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+const severityBorder: Record<string, string> = {
+  CRITICAL: "border-red-500/70",
+  HIGH: "border-red-500/70",
+  MEDIUM: "border-amber-500/70",
+  LOW: "border-emerald-500/70",
+};
+
+const severityDot: Record<string, string> = {
+  CRITICAL: "bg-red-500",
+  HIGH: "bg-red-500",
+  MEDIUM: "bg-amber-500",
+  LOW: "bg-emerald-500",
+};
+
 function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
   const hasAlerts = competitor.has_active_alerts;
-  const initials = competitor.company_name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const sev = competitor.max_severity || "";
+  const borderClass = hasAlerts
+    ? `border ${severityBorder[sev] || "border-red-500/70"}`
+    : "border border-neutral-800";
+  const dotClass = hasAlerts ? severityDot[sev] || "bg-red-500" : "";
 
   return (
-    <div
-      className={`rounded-xl bg-card p-4 flex flex-col gap-4 ${
-        hasAlerts ? "border border-red-500/50" : "border border-neutral-800"
-      }`}
-    >
+    <div className={`rounded-xl bg-card p-4 flex flex-col gap-4 ${borderClass}`}>
       <div className="flex items-start justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-base font-bold text-white">{competitor.company_name}</span>
-            {hasAlerts && <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />}
+            {hasAlerts && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
           </div>
           {competitor.domain && (
             <p className="text-xs text-neutral-500 truncate mt-0.5">{competitor.domain}</p>
@@ -168,11 +177,23 @@ export default function DashboardPage() {
         .slice(0, 3)
     : [];
 
+  const distinctFromRuns = new Set<string>();
+  for (const run of completedRuns) {
+    for (const name of run.competitors ?? []) {
+      distinctFromRuns.add(name);
+    }
+    if (distinctFromRuns.size >= 6) break;
+  }
+  const gridCompetitors = competitors?.items
+    ? competitors.items
+        .filter((c) => distinctFromRuns.has(c.company_name))
+        .sort((a, b) => (b.momentum_score ?? 0) - (a.momentum_score ?? 0))
+    : [];
+
   return (
     <div className="p-8">
       {/* Top Action Bar */}
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
         <div className="flex items-center gap-3">
           <button className="inline-flex items-center gap-2 rounded-lg border border-[#BC6C50]/40 bg-transparent px-4 py-2 text-sm text-terracotta transition-colors hover:bg-[#140A07]/30">
             <Clock className="h-4 w-4" />
@@ -237,8 +258,13 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {topCompetitors.map((comp) => (
-              <div key={comp.company_name} className="rounded-xl border border-neutral-800 bg-card p-4">
+            {topCompetitors.map((comp) => {
+              const s = comp.max_severity || "";
+              const topBorder = comp.has_active_alerts
+                ? `border ${severityBorder[s] || "border-red-500/70"}`
+                : "border border-neutral-800";
+              return (
+              <div key={comp.company_name} className={`rounded-xl bg-card p-4 ${topBorder}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -259,7 +285,8 @@ export default function DashboardPage() {
                   </p>
                 )}
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       )}
@@ -268,7 +295,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">Competitors</h2>
-          <Link href="/watchlists" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors">
+          <Link href="/run-history" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors">
             View all &rarr;
           </Link>
         </div>
@@ -278,7 +305,7 @@ export default function DashboardPage() {
               <Skeleton key={i} className="h-40 rounded-xl bg-neutral-900" />
             ))}
           </div>
-        ) : !competitors?.items || competitors.items.length === 0 ? (
+        ) : gridCompetitors.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-neutral-800 bg-card py-12 text-center">
             <AlertTriangle className="h-8 w-8 text-neutral-500" />
             <p className="text-sm text-neutral-400">No competitors yet</p>
@@ -286,7 +313,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {competitors.items.map((comp) => (
+            {gridCompetitors.map((comp) => (
               <CompetitorCard key={comp.company_name} competitor={comp} />
             ))}
           </div>

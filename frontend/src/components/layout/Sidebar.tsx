@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardSummary } from "@/hooks/use-dashboard";
+import { useTheme } from "@/providers/ThemeProvider";
 import { ROUTES } from "@/constants";
 import {
   LayoutDashboard,
@@ -15,6 +16,8 @@ import {
   Search,
   LogOut,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -46,6 +49,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { data: summary } = useDashboardSummary();
+  const { theme, toggle } = useTheme();
 
   const handleNav = (href: string) => {
     router.push(href);
@@ -66,7 +70,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-800 bg-background transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-800 bg-neutral-900 transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -153,13 +157,22 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           <p className="truncate text-xs text-neutral-500">
             {user?.email || user?.display_name}
           </p>
-          <button
-            onClick={logout}
-            className="mt-1 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-500 transition-colors hover:text-red-500"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Logout
-          </button>
+          <div className="mt-1 flex items-center gap-1">
+            <button
+              onClick={toggle}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-500 transition-colors hover:text-white"
+            >
+              {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              {theme === "dark" ? "Light" : "Dark"}
+            </button>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-500 transition-colors hover:text-red-500"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
     </>

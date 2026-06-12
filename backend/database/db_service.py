@@ -63,9 +63,9 @@ class DatabaseService:
 
     # ── Run operations ────────────────────────────────────────────────────
 
-    async def create_run(self, competitor_names: list[str]) -> str:
+    async def create_run(self, competitor_names: list[str], user_id: str | None = None) -> str:
         """Create a new run record. Returns the run_id."""
-        run = Run(competitor_names=competitor_names, status="queued")
+        run = Run(competitor_names=competitor_names, status="queued", user_id=user_id)
         self.session.add(run)
         await self.session.flush()  # Gets the ID without committing
         return run.id
@@ -84,16 +84,28 @@ class DatabaseService:
         result = await self.session.execute(select(Run).where(Run.id == run_id))
         return result.scalar_one_or_none()
 
-    async def get_recent_runs(self, limit: int = 10) -> list[Run]:
-        """Get the most recent runs ordered by creation time."""
-        result = await self.session.execute(
-            select(Run).order_by(desc(Run.created_at)).limit(limit)
-        )
+    async def get_recent_runs(self, limit: int = 10, user_id: str | None = None) -> list[Run]:
+        """Get the most recent runs, optionally filtered by user."""
+        query = select(Run)
+        if user_id:
+            query = query.where(Run.user_id == user_id)
+        query = query.order_by(desc(Run.created_at)).limit(limit)
+        result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def delete_run(self, run_id: str) -> bool:
-        """Delete an ad-hoc analysis run and its cascade (analyses, comparison, snapshots)."""
-        run = await self.session.get(Run, run_id)
+    async def get_run_for_user(self, run_id: str, user_id: str) -> Run | None:
+        """Fetch a run by ID and verify ownership."""
+        result = await self.session.execute(
+            select(Run).where(Run.id == run_id, Run.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def delete_run(self, run_id: str, user_id: str | None = None) -> bool:
+        """Delete an ad-hoc analysis run. If user_id is provided, checks ownership."""
+        if user_id:
+            run = await self.get_run_for_user(run_id, user_id)
+        else:
+            run = await self.session.get(Run, run_id)
         if not run:
             return False
         await self.session.delete(run)
@@ -116,6 +128,28 @@ class DatabaseService:
         await self.session.delete(run)
         await self.session.commit()
         return True
+
+    async def get_monitoring_run_for_user(self, run_id: str, user_id: str) -> MonitoringRun | None:
+        """Get a monitoring run by ID and verify ownership via watchlist."""
+        result = await self.session.execute(
+            select(MonitoringRun)
+            .join(Watchlist, Watchlist.id == MonitoringRun.watchlist_id)
+            .where(MonitoringRun.id == run_id, Watchlist.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_run_competitor_names(self, user_id: str) -> list[str]:
+        """Get unique competitor names from runs owned by the user."""
+        result = await self.session.execute(
+            select(Run.competitor_names)
+            .where(Run.user_id == user_id)
+            .order_by(Run.created_at.desc())
+        )
+        names: set[str] = set()
+        for row in result.all():
+            if row[0]:
+                names.update(row[0])
+        return list(names)
 
     # ── Analysis operations ───────────────────────────────────────────────
 
@@ -257,14 +291,34 @@ class DatabaseService:
             counts[severity] = result.scalar() or 0
         return counts
 
-    async def get_alert_count_for_company(self, company_name: str) -> int:
-        result = await self.session.execute(
+    async def get_alert_count_for_company(self, company_name: str, watchlist_ids: list[str] | None = None) -> int:
+        query = (
             select(func.count())
             .select_from(AlertHistory)
             .where(AlertHistory.company_name == company_name)
             .where(AlertHistory.status.in_(["new", "acknowledged"]))
         )
+        if watchlist_ids:
+            query = query.where(AlertHistory.watchlist_id.in_(watchlist_ids))
+        result = await self.session.execute(query)
         return result.scalar() or 0
+
+    async def get_highest_severity_for_company(self, company_name: str, watchlist_ids: list[str] | None = None) -> str | None:
+        severity_order = {
+            "CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3,
+        }
+        query = (
+            select(AlertHistory.severity)
+            .where(AlertHistory.company_name == company_name)
+            .where(AlertHistory.status.in_(["new", "acknowledged"]))
+        )
+        if watchlist_ids:
+            query = query.where(AlertHistory.watchlist_id.in_(watchlist_ids))
+        result = await self.session.execute(query)
+        severities = result.scalars().all()
+        if not severities:
+            return None
+        return min(severities, key=lambda s: severity_order.get(s, 99))
 
     async def update_run_pages_fetched(self, run_id: str, total_pages: int):
         result = await self.session.execute(select(Run).where(Run.id == run_id))
@@ -903,19 +957,19 @@ class DatabaseService:
         await self.session.flush()
         return True
 
-    async def get_all_latest_analyses(self) -> list[CompetitorAnalysisRecord]:
+    async def get_all_latest_analyses(self, competitor_names: list[str] | None = None) -> list[CompetitorAnalysisRecord]:
         """
         Get the latest analysis for every unique competitor.
-        Returns the full CompetitorAnalysisRecord objects.
+        Optionally filter by a list of competitor names.
         """
-        latest_per_competitor = (
-            select(
-                CompetitorAnalysisRecord.competitor_name,
-                func.max(CompetitorAnalysisRecord.created_at).label("max_created_at"),
-            )
-            .group_by(CompetitorAnalysisRecord.competitor_name)
-            .subquery()
+        latest_q = select(
+            CompetitorAnalysisRecord.competitor_name,
+            func.max(CompetitorAnalysisRecord.created_at).label("max_created_at"),
         )
+        if competitor_names:
+            latest_q = latest_q.where(CompetitorAnalysisRecord.competitor_name.in_(competitor_names))
+        latest_q = latest_q.group_by(CompetitorAnalysisRecord.competitor_name)
+        latest_per_competitor = latest_q.subquery()
 
         result = await self.session.execute(
             select(CompetitorAnalysisRecord)

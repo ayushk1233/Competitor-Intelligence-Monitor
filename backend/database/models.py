@@ -31,6 +31,9 @@ class Run(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=generate_uuid
     )
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), default="queued"
         # Values: queued | scraping | analyzing | comparing | completed | failed

@@ -47,8 +47,8 @@ export default function SignupPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-white">Create your account</h1>
-      <p className="mt-1 text-sm text-[#A3A3A3]">Start monitoring your competitive landscape</p>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Start monitoring your competitive landscape</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
         {serverError && (
@@ -58,27 +58,27 @@ export default function SignupPage() {
         )}
 
         <div className="space-y-2">
-          <label htmlFor="display_name" className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]">
+          <label htmlFor="display_name" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Display name <span className="text-neutral-500">(optional)</span>
           </label>
           <Input
             id="display_name"
             type="text"
             placeholder="Your name"
-            className="w-full rounded-lg border border-border bg-card p-3 text-sm text-white placeholder:text-neutral-500 focus:border-[#BC6C50] focus:outline-none focus:ring-0"
+            className="w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--orange)] focus:outline-none focus:ring-0"
             {...register("display_name")}
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]">
+          <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Email
           </label>
           <Input
             id="email"
             type="email"
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-border bg-card p-3 text-sm text-white placeholder:text-neutral-500 focus:border-[#BC6C50] focus:outline-none focus:ring-0"
+            className="w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--orange)] focus:outline-none focus:ring-0"
             {...register("email")}
           />
           {errors.email && (
@@ -87,7 +87,7 @@ export default function SignupPage() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-[#A3A3A3]">
+          <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Password
           </label>
           <div className="relative">
@@ -95,13 +95,13 @@ export default function SignupPage() {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="At least 6 characters"
-              className="w-full rounded-lg border border-border bg-card p-3 pr-10 text-sm text-white placeholder:text-neutral-500 focus:border-[#BC6C50] focus:outline-none focus:ring-0"
+              className="w-full rounded-lg border border-border bg-card p-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--orange)] focus:outline-none focus:ring-0"
               {...register("password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A3A3A3] hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -114,7 +114,7 @@ export default function SignupPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg border border-[#BC6C50] bg-transparent text-sm font-medium text-[#BC6C50] transition-all hover:bg-[#BC6C50]/10"
+          className="w-full rounded-lg border border-[var(--orange)] bg-transparent text-sm font-medium text-[var(--orange)] transition-all hover:bg-[var(--orange)]/10"
         >
           {isSubmitting ? (
             <>
@@ -127,9 +127,9 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[#A3A3A3]">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href={ROUTES.login} className="font-medium text-[#BC6C50] hover:underline">
+        <Link href={ROUTES.login} className="font-medium text-[var(--orange)] hover:underline">
           Sign in
         </Link>
       </p>

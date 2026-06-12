@@ -140,6 +140,7 @@ async def metrics_raw():
 @app.post("/api/analyze")
 async def analyze(
     request: AnalysisRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -161,7 +162,7 @@ async def analyze(
     db_service = DatabaseService(db)
 
     # Create run record in database with status = queued
-    run_id = await db_service.create_run(request.competitors)
+    run_id = await db_service.create_run(request.competitors, user_id=str(current_user.id))
     await db.commit()
 
     
@@ -186,13 +187,17 @@ async def analyze(
 
 # ── GET /api/status/{run_id} — poll this for progress ────────────────────────
 @app.get("/api/status/{run_id}")
-async def get_status(run_id: str, db: AsyncSession = Depends(get_db)):
+async def get_status(
+    run_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
     Returns current status of an analysis run.
     Status values: queued | scraping | analyzing | comparing | completed | failed
     """
     db_service = DatabaseService(db)
-    run = await db_service.get_run(run_id)
+    run = await db_service.get_run_for_user(run_id, str(current_user.id))
 
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -222,13 +227,17 @@ async def get_status(run_id: str, db: AsyncSession = Depends(get_db)):
 
 # ── GET /api/report/{run_id} — fetch completed report ────────────────────────
 @app.get("/api/report/{run_id}")
-async def get_report(run_id: str, db: AsyncSession = Depends(get_db)):
+async def get_report(
+    run_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
     Returns the full intelligence report for a completed run.
     Only works when status = completed.
     """
     db_service = DatabaseService(db)
-    run = await db_service.get_run(run_id)
+    run = await db_service.get_run_for_user(run_id, str(current_user.id))
 
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -275,10 +284,13 @@ async def get_report(run_id: str, db: AsyncSession = Depends(get_db)):
 
 # ── GET /api/runs — recent run history ───────────────────────────────────────
 @app.get("/api/runs")
-async def get_recent_runs(db: AsyncSession = Depends(get_db)):
-    """Get the 10 most recent analysis runs."""
+async def get_recent_runs(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the 10 most recent analysis runs for the authenticated user."""
     db_service = DatabaseService(db)
-    runs = await db_service.get_recent_runs(limit=10)
+    runs = await db_service.get_recent_runs(limit=10, user_id=str(current_user.id))
     return [
         {
             "run_id": r.id,
@@ -295,11 +307,12 @@ async def get_recent_runs(db: AsyncSession = Depends(get_db)):
 @app.delete("/api/runs/{run_id}")
 async def delete_run(
     run_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete an ad-hoc analysis run and its cascade."""
     db_service = DatabaseService(db)
-    deleted = await db_service.delete_run(run_id)
+    deleted = await db_service.delete_run(run_id, user_id=str(current_user.id))
     if not deleted:
         raise HTTPException(status_code=404, detail="Run not found")
     return {"deleted": True, "run_id": run_id}
@@ -308,12 +321,11 @@ async def delete_run(
 @app.get("/api/runs/{run_id}")
 async def get_run_details(
     run_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    run = await db.get(
-        MonitoringRun,
-        run_id,
-    )
+    db_service = DatabaseService(db)
+    run = await db_service.get_monitoring_run_for_user(run_id, str(current_user.id))
 
     if run is None:
         raise HTTPException(
@@ -328,10 +340,14 @@ async def get_run_details(
 @app.get("/api/history/{competitor_name}")
 async def get_competitor_history(
     competitor_name: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Get momentum score history for a specific competitor."""
     db_service = DatabaseService(db)
+    user_competitor_names = await db_service.get_user_competitor_names(str(current_user.id))
+    if competitor_name not in user_competitor_names:
+        raise HTTPException(status_code=404, detail="Competitor not found")
     history = await db_service.get_momentum_history(competitor_name)
     return {"competitor": competitor_name, "history": history}
 
@@ -399,14 +415,15 @@ async def get_latest_alerts(
 @app.get("/api/alerts/{company_name}")
 async def get_company_alerts(
     company_name: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-
-    alerts = await db_service.get_alerts_for_company(
-        company_name
-    )
-
+    user_watchlist_ids = await db_service.get_user_watchlist_ids(str(current_user.id))
+    if not user_watchlist_ids:
+        return []
+    alerts = await db_service.get_alerts_for_company(company_name)
+    alerts = [a for a in alerts if a.watchlist_id in user_watchlist_ids]
     return [
         {
             "id": a.id,
@@ -430,20 +447,25 @@ async def get_company_alerts(
 
 @app.get("/api/alerts/counts")
 async def get_alert_counts(
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-    return await db_service.get_alert_counts_by_severity()
+    return await db_service.get_alert_counts_by_severity_for_user(str(current_user.id))
 
 
 @app.get("/api/alerts/detail/{alert_id}")
 async def get_alert_detail(
     alert_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
     alert = await db_service.get_alert_by_id(alert_id)
     if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    user_watchlist_ids = await db_service.get_user_watchlist_ids(str(current_user.id))
+    if alert.watchlist_id not in user_watchlist_ids:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {
         "id": alert.id,
@@ -463,24 +485,34 @@ async def get_alert_detail(
 @app.post("/api/alerts/{alert_id}/acknowledge")
 async def acknowledge_alert(
     alert_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-    alert = await db_service.update_alert_status(alert_id, "acknowledged")
+    alert = await db_service.get_alert_by_id(alert_id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    user_watchlist_ids = await db_service.get_user_watchlist_ids(str(current_user.id))
+    if alert.watchlist_id not in user_watchlist_ids:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    alert = await db_service.update_alert_status(alert_id, "acknowledged")
     return {"status": "acknowledged"}
 
 
 @app.post("/api/alerts/{alert_id}/resolve")
 async def resolve_alert(
     alert_id: int,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-    alert = await db_service.update_alert_status(alert_id, "resolved")
+    alert = await db_service.get_alert_by_id(alert_id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
+    user_watchlist_ids = await db_service.get_user_watchlist_ids(str(current_user.id))
+    if alert.watchlist_id not in user_watchlist_ids:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    alert = await db_service.update_alert_status(alert_id, "resolved")
     return {"status": "resolved"}
 
 
@@ -488,10 +520,14 @@ async def resolve_alert(
 async def suppress_alert(
     company_name: str,
     severity: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     from backend.drift.suppression_service import suppress_alert as do_suppress
     db_service = DatabaseService(db)
+    user_watchlist_ids = await db_service.get_user_watchlist_ids(str(current_user.id))
+    if not user_watchlist_ids:
+        raise HTTPException(status_code=404, detail="No watchlists found")
     await do_suppress(db_service, company_name, severity, hours=24)
     return {"status": "suppressed", "company_name": company_name, "severity": severity}
 
@@ -499,9 +535,13 @@ async def suppress_alert(
 @app.get("/api/notification-events")
 async def get_notification_events(
     channel_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
+    channel = await db_service.get_notification_channel_for_user(channel_id, str(current_user.id))
+    if not channel:
+        raise HTTPException(status_code=404, detail="Notification channel not found")
     events = await db_service.get_notification_events(channel_id)
     return [
         {
@@ -520,35 +560,33 @@ async def get_notification_events(
 @app.get("/api/competitors/{competitor_name}/latest")
 async def get_competitor_latest(
     competitor_name: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-
-    record = await db_service.get_latest_analysis(
-        competitor_name
-    )
-
+    user_competitor_names = await db_service.get_user_competitor_names(str(current_user.id))
+    if competitor_name not in user_competitor_names:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    record = await db_service.get_latest_analysis(competitor_name)
     if not record:
         raise HTTPException(
             status_code=404,
             detail="Competitor not found"
         )
-
     return record.full_analysis
 
 
 @app.get("/api/competitors/{competitor_name}/history")
 async def get_competitor_analysis_history(
     competitor_name: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-
-    history = await db_service.get_competitor_history(
-        competitor_name,
-        limit=50,
-    )
-
+    user_competitor_names = await db_service.get_user_competitor_names(str(current_user.id))
+    if competitor_name not in user_competitor_names:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    history = await db_service.get_competitor_history(competitor_name, limit=50)
     return [
         {
             "created_at": (
@@ -565,33 +603,22 @@ async def get_competitor_analysis_history(
 @app.get("/api/competitors/{competitor_name}/drift")
 async def get_competitor_drift(
     competitor_name: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     db_service = DatabaseService(db)
-
-    history = await db_service.get_latest_two_analyses(
-        competitor_name
-    )
-
+    user_competitor_names = await db_service.get_user_competitor_names(str(current_user.id))
+    if competitor_name not in user_competitor_names:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    history = await db_service.get_latest_two_analyses(competitor_name)
     if not history:
         raise HTTPException(
             status_code=404,
             detail="Not enough history for drift detection"
         )
-
-    newest = CompetitorAnalysis(
-        **history[0].full_analysis
-    )
-
-    previous = CompetitorAnalysis(
-        **history[1].full_analysis
-    )
-
-    drift = compare_analysis(
-        previous,
-        newest,
-    )
-
+    newest = CompetitorAnalysis(**history[0].full_analysis)
+    previous = CompetitorAnalysis(**history[1].full_analysis)
+    drift = compare_analysis(previous, newest)
     return drift.model_dump()
 
 

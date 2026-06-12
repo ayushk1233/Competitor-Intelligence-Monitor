@@ -195,11 +195,21 @@ async def get_dashboard_competitors(
 ):
     service = DatabaseService(db)
 
-    records = await service.get_all_latest_analyses()
+    names_from_watchlists = await service.get_user_competitor_names(current_user.id)
+    names_from_runs = await service.get_run_competitor_names(str(current_user.id))
+
+    user_competitor_names = list(set(names_from_watchlists) | set(names_from_runs))
+    if not user_competitor_names:
+        return DashboardCompetitorsResponse(items=[])
+
+    records = await service.get_all_latest_analyses(competitor_names=user_competitor_names)
+
+    user_watchlist_ids = await service.get_user_watchlist_ids(current_user.id)
 
     items = []
     for r in records:
-        count = await service.get_alert_count_for_company(r.competitor_name)
+        count = await service.get_alert_count_for_company(r.competitor_name, watchlist_ids=user_watchlist_ids)
+        max_severity = await service.get_highest_severity_for_company(r.competitor_name, watchlist_ids=user_watchlist_ids)
         fa = r.full_analysis or {}
         items.append(
             DashboardCompetitorResponse(
@@ -210,6 +220,7 @@ async def get_dashboard_competitors(
                 last_analyzed_at=r.created_at,
                 alert_count=count,
                 has_active_alerts=count > 0,
+                max_severity=max_severity,
                 analyst_note=fa.get("analyst_note"),
                 core_offering=fa.get("core_offering"),
             )

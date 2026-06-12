@@ -111,6 +111,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ── Black background override (keep panels/cards/sidebar as-is) ──────────────
+st.markdown("""
+<style>
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    .main,
+    .block-container {
+        background: #000000 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # ── Tone badge colors ─────────────────────────────────────────────────────────
 
 TONE_COLORS = {

@@ -70,6 +70,8 @@ async def create_tables():
             "ALTER TABLE watchlists ADD COLUMN IF NOT EXISTS monitoring_config JSON DEFAULT '{}'::json",
             "ALTER TABLE watchlists ADD COLUMN IF NOT EXISTS alert_rules JSON DEFAULT '{}'::json",
             "ALTER TABLE watchlists ADD COLUMN IF NOT EXISTS notification_channels JSON DEFAULT '[]'::json",
+            "ALTER TABLE runs ADD COLUMN IF NOT EXISTS user_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL",
+            "CREATE INDEX IF NOT EXISTS ix_runs_user_id ON runs(user_id)",
             "CREATE INDEX IF NOT EXISTS ix_alert_history_company_name ON alert_history(company_name)",
             "CREATE INDEX IF NOT EXISTS ix_alert_history_watchlist_id ON alert_history(watchlist_id)",
             "CREATE INDEX IF NOT EXISTS ix_alert_history_fingerprint_hash ON alert_history(fingerprint_hash)",

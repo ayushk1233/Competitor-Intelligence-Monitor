@@ -85,18 +85,24 @@ def test_get_latest_alerts(mock_db_service):
 
 @patch("backend.main.DatabaseService")
 def test_get_company_alerts(mock_db_service):
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
     mock_instance = mock_db_service.return_value
 
     alert = MockAlert()
     alert.created_at = datetime.utcnow()
 
+    mock_instance.get_user_watchlist_ids = AsyncMock(return_value=[1])
     mock_instance.get_alerts_for_company = AsyncMock(
         return_value=[alert]
     )
+    alert.watchlist_id = 1
 
     response = client.get("/api/alerts/Cursor")
 
     assert response.status_code == 200
+
+    app.dependency_overrides.pop(get_current_user, None)
 
     data = response.json()
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { Inter } from "next/font/google";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
@@ -236,6 +237,8 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
   );
 }
 
+const inter = Inter({ subsets: ["latin"] });
+
 export default function ReportPage({ params }: ReportPageProps) {
   const { runId } = use(params);
   const router = useRouter();
@@ -261,7 +264,7 @@ export default function ReportPage({ params }: ReportPageProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className={`${inter.className} space-y-6 p-6`}>
         <div className="flex items-center gap-4">
           <Skeleton className="h-8 w-8 rounded-lg bg-[#2A2A2A]" />
           <Skeleton className="h-6 w-48 bg-[#2A2A2A]" />
@@ -275,7 +278,7 @@ export default function ReportPage({ params }: ReportPageProps) {
 
   if (error || !report) {
     return (
-      <div className="flex flex-col items-center gap-4 p-6 py-24 text-center">
+      <div className={`${inter.className} flex flex-col items-center gap-4 p-6 py-24 text-center`}>
         <AlertTriangle className="h-10 w-10 text-[#A0A0A0]" />
         <p className="text-sm text-[#A0A0A0]">Report not available</p>
         <p className="text-xs text-[#6B7280]">The analysis may still be running or the report was deleted</p>
@@ -292,7 +295,7 @@ export default function ReportPage({ params }: ReportPageProps) {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className={`${inter.className} space-y-8 p-6`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button

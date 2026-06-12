@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <DetailPanelProvider>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex h-screen overflow-hidden">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex flex-1 flex-col min-w-0">
           <Topbar onMenuToggle={() => setSidebarOpen(true)} />

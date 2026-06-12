@@ -87,7 +87,7 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
                     next[i] = e.target.value;
                     setCompetitors(next);
                   }}
-                  placeholder="e.g. Cursor"
+                  placeholder={["e.g. Anthropic", "e.g. Vercel", "e.g. Databricks"][i]}
                   className="border border-[rgba(255,255,255,0.1)] bg-[#222222] text-white placeholder:text-[#A0A0A0] focus:border-[#BC6C50] focus:ring-0"
                 />
               </div>

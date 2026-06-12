@@ -348,6 +348,7 @@ class DashboardCompetitorResponse(BaseModel):
     last_analyzed_at: datetime | None = None
     alert_count: int = 0
     has_active_alerts: bool = False
+    max_severity: str | None = None
     analyst_note: str | None = None
     core_offering: str | None = None
 

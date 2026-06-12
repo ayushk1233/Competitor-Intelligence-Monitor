@@ -35,6 +35,7 @@ export interface DashboardCompetitor {
   last_analyzed_at?: string;
   alert_count: number;
   has_active_alerts: boolean;
+  max_severity?: string;
   analyst_note?: string;
   core_offering?: string;
 }
