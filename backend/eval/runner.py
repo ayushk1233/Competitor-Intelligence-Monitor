@@ -1,28 +1,21 @@
 import asyncio
 import time
 
-from backend.eval.test_cases import TEST_CASES
-from backend.eval.scorer import score_analysis
+from backend.eval.regression import (
+    calculate_regression,
+    load_baseline_score,
+)
 from backend.eval.report import generate_report
-
-from backend.services.scraper_service import ScraperService
-from backend.services.analysis_service import AnalysisService
+from backend.eval.scorer import score_analysis
+from backend.eval.snapshot import EvaluationSnapshot
+from backend.eval.storage import save_evaluation_snapshot
+from backend.eval.test_cases import TEST_CASES
 from backend.prompts.metadata.prompt_versions import (
     ANALYSIS_PROMPT_VERSION,
-    COMPARISON_PROMPT_VERSION
+    COMPARISON_PROMPT_VERSION,
 )
-from backend.eval.snapshot import (
-    EvaluationSnapshot
-)
-
-from backend.eval.storage import (
-    save_evaluation_snapshot
-)
-
-from backend.eval.regression import (
-    load_baseline_score,
-    calculate_regression,
-)
+from backend.services.analysis_service import AnalysisService
+from backend.services.scraper_service import ScraperService
 
 MODEL_NAME = "deepseek/deepseek-chat"
 TEMPERATURE = 0.0

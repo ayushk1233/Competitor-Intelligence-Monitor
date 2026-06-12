@@ -1,10 +1,8 @@
 import smtplib
-
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from backend.config import get_settings
-
 from backend.notifications.models import (
     NotificationRequest,
     NotificationResult,

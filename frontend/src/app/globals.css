@@ -34,8 +34,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
@@ -82,7 +82,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   position: relative;
 }
 

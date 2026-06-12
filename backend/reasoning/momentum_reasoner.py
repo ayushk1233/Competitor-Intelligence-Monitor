@@ -25,6 +25,8 @@ Schema:
     "hiring_signals": [],
     "partnership_signals": []
   },
+  "momentum_negative_factors": ["No hiring activity detected", "No recent product launches"],
+  "momentum_reasoning": "Brief explanation of what drove this score up or down",
   "reasoning": ""
 }
 
@@ -33,6 +35,12 @@ Return []
 Do NOT infer evidence.
 Do NOT rewrite evidence.
 Evidence must be copied verbatim from context.
+
+ALWAYS populate momentum_negative_factors when you find absent signals.
+Examples: "No hiring activity detected", "No recent product launches", "No partnership signals", "No adoption metrics found", "No AI initiative signals".
+
+ALWAYS populate momentum_reasoning with a brief explanation of what drove the score up or down.
+Do NOT leave these empty — even a score of 1 needs a reason.
 
 Focus ONLY on:
 - hiring velocity
@@ -179,10 +187,9 @@ Do NOT analyze:
 Return JSON ONLY.
 """
 
-from backend.services.llm_service import (
-    call_openrouter
-)
 import asyncio
+
+from backend.services.llm_service import call_openrouter
 
 
 async def analyze_momentum(

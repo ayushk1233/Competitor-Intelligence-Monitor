@@ -43,7 +43,7 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Sign in to CIM</h1>
+      <h1 className="text-2xl font-bold tracking-tight font-mono text-foreground">Sign in to CIM</h1>
       <p className="mt-1 text-sm text-muted-foreground">Monitor your competitive landscape</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
@@ -54,7 +54,7 @@ export default function LoginPage() {
         )}
 
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider font-mono text-muted-foreground">
             Email
           </label>
           <Input
@@ -70,7 +70,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider font-mono text-muted-foreground">
             Password
           </label>
           <div className="relative">
@@ -97,7 +97,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg border border-[var(--orange)] bg-transparent text-sm font-medium text-[var(--orange)] transition-all hover:bg-[var(--orange)]/10"
+          className="w-full rounded-lg border border-[var(--orange)] bg-transparent text-sm font-medium font-mono text-[var(--orange)] transition-all hover:bg-[var(--orange)]/10"
         >
           {isSubmitting ? (
             <>

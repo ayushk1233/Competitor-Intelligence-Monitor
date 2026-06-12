@@ -1,19 +1,11 @@
 import json
 import re
-import asyncio
-from datetime import datetime
 import time
+from datetime import datetime
 
 from backend.config import get_settings
-from backend.models.schemas import (
-    CompetitorAnalysis,
-    ComparisonResult,
-    IntelligenceReport
-)
-from backend.services.llm_service import call_openrouter, COMPARISON_MODEL
-from backend.prompts.metadata.prompt_versions import (
-    COMPARISON_PROMPT_VERSION
-)
+from backend.models.schemas import ComparisonResult, CompetitorAnalysis, IntelligenceReport
+from backend.services.llm_service import COMPARISON_MODEL, call_openrouter
 
 settings = get_settings()
 
@@ -45,13 +37,16 @@ Here are the full intelligence summaries for each competitor:
 Return ONLY a valid JSON object with exactly these fields:
 
 {{
-  "market_leader": "Competitor name + 2-3 sentences explaining dominance: what signals prove it, what advantages they hold, and what makes them hard to displace",
-  "fastest_mover": "Competitor name + 2-3 sentences of specific evidence: which product areas, which hiring patterns, which content signals suggest aggressive forward momentum",
+  "market_leader": "Competitor name only — the single company that leads this market",
+  "market_leader_reason": "2-3 sentences explaining why this company is the market leader: what signals prove it, what advantages they hold, what makes them hard to displace",
+  "fastest_mover": "Competitor name only — the single company showing the most momentum",
+  "fastest_mover_reason": "2-3 sentences with specific evidence: which product areas, which hiring patterns, which content signals suggest aggressive forward momentum",
   "pivot_detected": "Competitor name + 2-3 sentences describing the strategic shift: what they were doing before vs now, and what this signals about their new direction. Write null if none detected.",
   "smb_to_enterprise_shift": ["list of competitor names showing this pattern — empty list if none"],
   "ai_emphasis_ranking": ["ranked list of all competitors from most to least AI-focused based on content signals"],
   "messaging_gaps": "3-4 sentences describing specific positioning territory that NONE of these competitors own. Name the underserved customer segment, the unaddressed pain point, and why this is a real opportunity rather than a gap they ignored intentionally.",
   "threat_ranking": ["ranked from most to least dangerous to a new market entrant — include all competitors"],
+  "threat_ranking_reasons": ["for each competitor in threat_ranking, a 1-sentence explanation of why they are ranked at that position"],
   "executive_briefing": "Write 6-8 sentences as a sharp intelligence briefing a CEO would forward to their product, sales, and strategy teams. Structure it as: (1) who leads and why, (2) who is moving fastest and what that means for the market, (3) what nobody is doing that represents opportunity, (4) what the team should prioritize in the next 90 days based on these signals. Use specific company names, specific signals from the data, and be direct about risk. No hedging, no vague language."
 }}"""
 
@@ -70,7 +65,7 @@ class ComparisonService:
         analyses: list[CompetitorAnalysis],
         start_time: float
     ) -> IntelligenceReport:
-        print(f"  [comparison] Running cross-competitor synthesis...")
+        print("  [comparison] Running cross-competitor synthesis...")
 
         comparison = await self._run_comparison(analyses)
 

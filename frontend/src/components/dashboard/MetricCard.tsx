@@ -17,7 +17,7 @@ export function MetricCard({ title, value, icon, isLoading }: MetricCardProps) {
           {icon}
         </div>
         <div className="flex flex-col">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#A0A0A0]">
+          <span className="text-xs font-medium uppercase tracking-wider text-[#A0A0A0] font-mono">
             {title}
           </span>
           {isLoading ? (

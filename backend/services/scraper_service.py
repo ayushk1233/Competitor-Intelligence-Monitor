@@ -1,19 +1,19 @@
-import httpx
 import asyncio
-from urllib.parse import urlparse, urljoin
+import time
+from urllib.parse import urljoin, urlparse
+
+import httpx
 from bs4 import BeautifulSoup
 
 from backend.config import get_settings
-from backend.models.schemas import PageData, CompetitorPages
-from backend.utils.cleaner import clean_html
-
-import time
 from backend.metrics import (
+    scrape_duration,
+    scrape_failure_total,
     scrape_requests_total,
     scrape_success_total,
-    scrape_failure_total,
-    scrape_duration,
 )
+from backend.models.schemas import CompetitorPages, PageData
+from backend.utils.cleaner import clean_html
 
 settings = get_settings()
 

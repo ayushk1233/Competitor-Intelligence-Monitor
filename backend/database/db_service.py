@@ -1,14 +1,23 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_, or_, func
+
 from backend.database.models import (
-    Run, CompetitorAnalysisRecord,
-    ComparisonRecord, PageSnapshot, AlertHistory,
-    AlertSuppression, NotificationEvent, Watchlist,
-    NotificationChannel, User, WatchlistCompetitor,
+    AlertHistory,
+    AlertSuppression,
+    ComparisonRecord,
+    CompetitorAnalysisRecord,
     MonitoringRun,
+    NotificationChannel,
+    NotificationEvent,
+    PageSnapshot,
+    Run,
+    User,
+    Watchlist,
+    WatchlistCompetitor,
 )
-from backend.models.schemas import IntelligenceReport, CompetitorPages
+from backend.models.schemas import CompetitorPages, IntelligenceReport
 
 
 class DatabaseService:
@@ -292,18 +301,21 @@ class DatabaseService:
         return counts
 
     async def get_alert_count_for_company(self, company_name: str, watchlist_ids: list[str] | None = None) -> int:
+        if not watchlist_ids:
+            return 0
         query = (
             select(func.count())
             .select_from(AlertHistory)
             .where(AlertHistory.company_name == company_name)
             .where(AlertHistory.status.in_(["new", "acknowledged"]))
+            .where(AlertHistory.watchlist_id.in_(watchlist_ids))
         )
-        if watchlist_ids:
-            query = query.where(AlertHistory.watchlist_id.in_(watchlist_ids))
         result = await self.session.execute(query)
         return result.scalar() or 0
 
     async def get_highest_severity_for_company(self, company_name: str, watchlist_ids: list[str] | None = None) -> str | None:
+        if not watchlist_ids:
+            return None
         severity_order = {
             "CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3,
         }
@@ -311,9 +323,8 @@ class DatabaseService:
             select(AlertHistory.severity)
             .where(AlertHistory.company_name == company_name)
             .where(AlertHistory.status.in_(["new", "acknowledged"]))
+            .where(AlertHistory.watchlist_id.in_(watchlist_ids))
         )
-        if watchlist_ids:
-            query = query.where(AlertHistory.watchlist_id.in_(watchlist_ids))
         result = await self.session.execute(query)
         severities = result.scalars().all()
         if not severities:

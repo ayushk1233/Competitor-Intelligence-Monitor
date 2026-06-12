@@ -1,15 +1,15 @@
+from datetime import UTC, datetime
 from typing import Any
-from datetime import datetime, UTC
 
-from backend.models.schemas import CompetitorAnalysis
-from backend.drift.diff_service import compare_analysis
+from backend.config import get_settings
 from backend.drift.alert_engine import generate_alert
 from backend.drift.alert_models import AlertRecord
 from backend.drift.alert_storage import save_alert
+from backend.drift.diff_service import compare_analysis
 from backend.drift.suppression_service import is_suppressed, suppress_alert
-from backend.notifications.service import NotificationService
+from backend.models.schemas import CompetitorAnalysis
 from backend.notifications.models import NotificationRequest
-from backend.config import get_settings
+from backend.notifications.service import NotificationService
 
 
 class MonitoringService:

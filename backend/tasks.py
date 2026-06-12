@@ -1,31 +1,29 @@
 import asyncio
-import time
 import logging
+import time
 
 logger = logging.getLogger(__name__)
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from backend.celery_app import celery_app
-from backend.services.scraper_service import ScraperService
-from backend.services.analysis_service import AnalysisService
-from backend.services.comparison_service import ComparisonService
-from backend.database.db_service import DatabaseService
 from backend.config import get_settings
-from backend.drift.monitoring_service import (
-    MonitoringService,
-)
-from backend.monitoring.schedule_service import calculate_next_run
 from backend.database.connection import AsyncSessionLocal
 from backend.database.db_service import DatabaseService
 from backend.database.models import MonitoringRun
-
-
-from backend.metrics import (
-    pipeline_duration,
-    pipelines_total,
-    pages_fetched_per_run,
-    active_pipeline_runs,
-    pipeline_stage_duration,
+from backend.drift.monitoring_service import (
+    MonitoringService,
 )
+from backend.metrics import (
+    active_pipeline_runs,
+    pages_fetched_per_run,
+    pipeline_duration,
+    pipeline_stage_duration,
+    pipelines_total,
+)
+from backend.monitoring.schedule_service import calculate_next_run
+from backend.services.analysis_service import AnalysisService
+from backend.services.comparison_service import ComparisonService
+from backend.services.scraper_service import ScraperService
 
 settings = get_settings()
 
@@ -51,11 +49,13 @@ def _make_session_factory():
 
 
 @celery_app.task(bind=True, name="run_analysis")
-def run_analysis_task(self, run_id: str, competitors: list[str]):
+def run_analysis_task(self, run_id: str, competitors: list[str], competitor_urls: dict = None):
     """
     Background task — creates its own event loop and its own
     database engine to avoid asyncpg cross-loop conflicts.
     """
+    if competitor_urls is None:
+        competitor_urls = {}
     logger.info(
         "Starting run %s",
         run_id,
@@ -65,7 +65,7 @@ def run_analysis_task(self, run_id: str, competitors: list[str]):
     asyncio.set_event_loop(loop)
 
     try:
-        loop.run_until_complete(_run_pipeline(run_id, competitors))
+        loop.run_until_complete(_run_pipeline(run_id, competitors, competitor_urls))
         print(f"[task] Completed run {run_id}")
         return {"status": "completed", "run_id": run_id}
 
@@ -87,13 +87,15 @@ def run_analysis_task(self, run_id: str, competitors: list[str]):
             pass
 
 
-async def _run_pipeline(run_id: str, competitors: list[str]):
+async def _run_pipeline(run_id: str, competitors: list[str], competitor_urls: dict = None):
     start_time = time.time()
 
     # ✅ FIX 2: correct metric names matching metrics.py exactly
     # Import here to avoid any circular import issues at module load
     from backend.metrics import llm_momentum_score
 
+    if competitor_urls is None:
+        competitor_urls = {}
     active_pipeline_runs.inc()
 
     SessionLocal, engine = _make_session_factory()
@@ -122,7 +124,7 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                 stage_start = time.time()
 
                 scrape_tasks = [
-                    scraper.fetch_competitor(name) for name in competitors
+                    scraper.fetch_competitor(competitor_urls.get(name, name)) for name in competitors
                 ]
                 all_pages = await asyncio.gather(
                     *scrape_tasks, return_exceptions=True
@@ -174,7 +176,7 @@ async def _run_pipeline(run_id: str, competitors: list[str]):
                 )
 
                 # ── Stage 3: Comparing ────────────────────────────────────
-                print(f"[task] Stage 3: Running comparison synthesis...")
+                print("[task] Stage 3: Running comparison synthesis...")
                 await db.update_run_status(run_id, "comparing")
                 await session.commit()
 
@@ -225,6 +227,7 @@ async def _mark_failed(run_id: str, error: str):
             await db.update_run_status(run_id, "failed")
 
             from sqlalchemy import select
+
             from backend.database.models import Run
             result = await session.execute(
                 select(Run).where(Run.id == run_id)
@@ -297,14 +300,18 @@ async def _scheduled_monitoring_impl():
 
 
 async def _run_monitoring_pipeline(run_id: str):
+    from datetime import datetime, timezone
+
     from sqlalchemy import select
+
     from backend.database.models import (
-        MonitoringRun, WatchlistCompetitor, Run,
+        MonitoringRun,
+        Run,
+        WatchlistCompetitor,
     )
-    from backend.services.scraper_service import ScraperService
     from backend.services.analysis_service import AnalysisService
     from backend.services.comparison_service import ComparisonService
-    from datetime import datetime, timezone
+    from backend.services.scraper_service import ScraperService
 
     SessionLocal, engine = _make_session_factory()
     try:
@@ -346,8 +353,8 @@ async def _run_monitoring_pipeline(run_id: str):
             comparator = ComparisonService()
 
             try:
-                # Scraping
-                scrape_tasks = [scraper.fetch_competitor(name) for name in competitor_names]
+                # Scraping — use stored domain if available, fall back to company name
+                scrape_tasks = [scraper.fetch_competitor(c.domain or c.company_name) for c in competitors]
                 all_pages = await asyncio.gather(*scrape_tasks, return_exceptions=True)
 
                 valid_pages = []
@@ -356,6 +363,11 @@ async def _run_monitoring_pipeline(run_id: str):
                         print(f"[monitoring] Scrape failed for {competitor_names[i]}: {result}")
                     else:
                         valid_pages.append(result)
+                        # Persist the resolved domain back to WatchlistCompetitor
+                        comp = competitors[i]
+                        if not comp.domain and result.domain:
+                            comp.domain = result.domain
+                            session.add(comp)
 
                 if not valid_pages:
                     raise RuntimeError("All competitor scrapes failed")
@@ -422,6 +434,7 @@ async def _run_monitoring_pipeline(run_id: str):
 
 async def _mark_monitoring_failed(run_id: str, error: str):
     from sqlalchemy import select
+
     from backend.database.models import MonitoringRun
     SessionLocal, engine = _make_session_factory()
     try:

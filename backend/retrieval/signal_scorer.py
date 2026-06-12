@@ -1,6 +1,5 @@
 import re
 
-
 HIGH_SIGNAL_KEYWORDS = {
 
     # AI / innovation

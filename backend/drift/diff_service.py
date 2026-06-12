@@ -1,5 +1,5 @@
-from backend.models.schemas import CompetitorAnalysis
 from backend.drift.drift_models import DriftReport
+from backend.models.schemas import CompetitorAnalysis
 
 
 def compare_scores(

@@ -3,25 +3,21 @@ from fastapi import (
     Depends,
     HTTPException,
 )
-
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.database.connection import get_db
-from backend.database.db_service import DatabaseService
-
-from backend.models.schemas import (
-    NotificationChannelCreateRequest,
-    NotificationChannelUpdateRequest,
-    NotificationChannelResponse,
-    NotificationChannelListResponse,
-)
 
 from backend.auth.dependencies import (
     get_current_user,
 )
-
+from backend.database.connection import get_db
+from backend.database.db_service import DatabaseService
 from backend.database.models import (
     User,
+)
+from backend.models.schemas import (
+    NotificationChannelCreateRequest,
+    NotificationChannelListResponse,
+    NotificationChannelResponse,
+    NotificationChannelUpdateRequest,
 )
 
 router = APIRouter(

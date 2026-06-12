@@ -11,10 +11,9 @@ export default function WatchlistsPage() {
 
   if (isError) {
     return (
-      <div className="space-y-6 p-6">
+        <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-white">Watchlists</h1>
             <p className="text-sm text-[#A0A0A0]">Manage your competitor monitoring groups</p>
           </div>
         </div>
@@ -33,7 +32,6 @@ export default function WatchlistsPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[#F8FAFC]">Watchlists</h1>
           <p className="text-sm text-[#94A3B8]">Manage your competitor monitoring groups</p>
         </div>
         {!isLoading && watchlists.length > 0 && <CreateWatchlistDialog />}

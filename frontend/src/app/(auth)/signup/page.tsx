@@ -47,7 +47,7 @@ export default function SignupPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
+      <h1 className="text-2xl font-bold tracking-tight font-mono text-foreground">Create your account</h1>
       <p className="mt-1 text-sm text-muted-foreground">Start monitoring your competitive landscape</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
@@ -58,7 +58,7 @@ export default function SignupPage() {
         )}
 
         <div className="space-y-2">
-          <label htmlFor="display_name" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="display_name" className="block text-xs font-semibold uppercase tracking-wider font-mono text-muted-foreground">
             Display name <span className="text-neutral-500">(optional)</span>
           </label>
           <Input
@@ -71,7 +71,7 @@ export default function SignupPage() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider font-mono text-muted-foreground">
             Email
           </label>
           <Input
@@ -87,7 +87,7 @@ export default function SignupPage() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider font-mono text-muted-foreground">
             Password
           </label>
           <div className="relative">
@@ -114,7 +114,7 @@ export default function SignupPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg border border-[var(--orange)] bg-transparent text-sm font-medium text-[var(--orange)] transition-all hover:bg-[var(--orange)]/10"
+          className="w-full rounded-lg border border-[var(--orange)] bg-transparent text-sm font-medium font-mono text-[var(--orange)] transition-all hover:bg-[var(--orange)]/10"
         >
           {isSubmitting ? (
             <>

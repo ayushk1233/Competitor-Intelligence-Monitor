@@ -1,39 +1,39 @@
 # ✅ FIX 1: single clean import block — no duplicates
-import time
-import os, glob 
-import shutil
+import glob
 import logging
-from fastapi import FastAPI, HTTPException, Depends, Response, Request
-from fastapi.responses import JSONResponse
+import os
+import time
+
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response
 
-from prometheus_fastapi_instrumentator import Instrumentator
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-
-from backend.models.schemas import AnalysisRequest, IntelligenceReport
-from backend.database.connection import get_db, create_tables
-from backend.database.db_service import DatabaseService
-from backend.auth.dependencies import get_current_user
-from backend.database.models import (
-    Run,
-    CompetitorAnalysisRecord,
-    ComparisonRecord,
-    MonitoringRun,
-    User,
-)
-from backend.models.schemas import CompetitorAnalysis, ComparisonResult
-from backend.metrics import active_pipeline_runs
-from backend.drift.diff_service import compare_analysis
-from backend.api.watchlists import router as watchlist_router
 from backend.api.auth import router as auth_router
+from backend.api.dashboard import router as dashboard_router
 from backend.api.notifications import (
     router as notification_router,
 )
-from backend.api.dashboard import (
-    router as dashboard_router
+from backend.api.watchlists import router as watchlist_router
+from backend.auth.dependencies import get_current_user
+from backend.database.connection import create_tables, get_db
+from backend.database.db_service import DatabaseService
+from backend.database.models import (
+    ComparisonRecord,
+    CompetitorAnalysisRecord,
+    User,
+)
+from backend.drift.diff_service import compare_analysis
+from backend.metrics import active_pipeline_runs
+from backend.models.schemas import (
+    AnalysisRequest,
+    ComparisonResult,
+    CompetitorAnalysis,
+    IntelligenceReport,
 )
 
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ async def analyze(
     
     # Track active runs
     active_pipeline_runs.inc()
-    run_analysis_task.delay(run_id, request.competitors)
+    run_analysis_task.delay(run_id, request.competitors, request.competitor_urls)
 
     logger.info(
         "Enqueued run %s for %s",
@@ -635,9 +635,10 @@ async def run_intelligence_pipeline(
     since it manages its own progress display.
     """
     import asyncio
-    from backend.services.scraper_service import ScraperService
+
     from backend.services.analysis_service import AnalysisService
     from backend.services.comparison_service import ComparisonService
+    from backend.services.scraper_service import ScraperService
 
     start_time = time.time()
     scraper = ScraperService()

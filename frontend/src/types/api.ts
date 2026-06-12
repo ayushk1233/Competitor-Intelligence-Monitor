@@ -287,16 +287,57 @@ export interface CompetitorAnalysisReport {
   pages_analyzed: string[];
   analysis_success: boolean;
   error?: string;
+
+  // Company Validation
+  validation?: {
+    company_name?: string;
+    company_description?: string;
+    category?: string;
+    product_type?: string;
+    primary_use_case?: string;
+    validation_warning?: boolean;
+    reason?: string;
+  };
+
+  // Per-section Evidence
+  core_offering_evidence?: string[];
+  core_offering_source?: string;
+  core_offering_confidence?: number;
+  pricing_evidence?: string[];
+  pricing_source?: string;
+  pricing_confidence?: number;
+  hiring_evidence?: string[];
+  hiring_source?: string;
+  hiring_confidence?: number;
+  keywords_evidence?: string[];
+  keywords_confidence?: number;
+
+  // Per-section Confidence
+  confidence_scores?: Record<string, number>;
+
+  // Momentum Drivers
+  momentum_negative_factors?: string[];
+  momentum_reasoning?: string;
+
+  // Preserved Evidence
+  icp_keywords?: string[];
+  icp_evidence?: string[];
+  tone_evidence?: string[];
+  momentum_evidence?: string[];
+  agent_outputs?: Record<string, unknown>;
 }
 
 export interface ComparisonResult {
   market_leader: string;
+  market_leader_reason?: string;
   fastest_mover: string;
+  fastest_mover_reason?: string;
   pivot_detected?: string;
   smb_to_enterprise_shift: string[];
   ai_emphasis_ranking: string[];
   messaging_gaps: string;
   threat_ranking: string[];
+  threat_ranking_reasons?: string[];
   executive_briefing: string;
 }
 
@@ -312,6 +353,7 @@ export interface IntelligenceReport {
 
 export interface AnalysisRequest {
   competitors: string[];
+  competitor_urls?: Record<string, string>;
   options?: {
     include_careers?: boolean;
     include_blog?: boolean;

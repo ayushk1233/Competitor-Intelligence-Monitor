@@ -1,5 +1,7 @@
 import re
+
 from backend.utils.cleaner import clean_page_content
+
 
 def semantic_chunk(text):
 

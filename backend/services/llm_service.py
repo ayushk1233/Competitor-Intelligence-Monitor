@@ -7,19 +7,19 @@ by OpenRouter docs. Handles retries with exponential backoff for
 429 / timeout errors.
 """
 
-import os
 import asyncio
-import time
+import os
 import re
+import time
 
 from openai import OpenAI
 
 from backend.config import get_settings
 from backend.metrics import (
+    llm_errors_total,
     llm_request_duration,
     llm_requests_total,
     llm_tokens_used,
-    llm_errors_total,
 )
 
 DEFAULT_MODEL = "anthropic/claude-3-haiku"
@@ -134,7 +134,7 @@ async def call_openrouter(
             is_exhausted = "402" in error_str or "credit" in error_str.lower()
 
             if is_exhausted:
-                print(f"  [llm] OpenRouter credits exhausted! Aborting retries.")
+                print("  [llm] OpenRouter credits exhausted! Aborting retries.")
                 raise Exception("OpenRouter credits exhausted")
 
             if is_rate_limit:

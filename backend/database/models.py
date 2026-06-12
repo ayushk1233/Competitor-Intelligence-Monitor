@@ -1,21 +1,23 @@
+import uuid
 from datetime import datetime
+from typing import Optional
+
 from sqlalchemy import (
-    String,
-    Integer,
-    Float,
+    JSON,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
-    Text,
-    JSON,
     Index,
+    Integer,
+    String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+
 from backend.database.connection import Base
-from typing import Optional
-import uuid
 
 
 def generate_uuid() -> str:

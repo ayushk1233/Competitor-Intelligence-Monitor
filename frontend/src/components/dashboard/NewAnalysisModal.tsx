@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { triggerAnalysis } from "@/services/analysis.service";
-import { X, Play, Loader2, ExternalLink } from "lucide-react";
+import { X, Play, Loader2, ExternalLink, Link } from "lucide-react";
 
 interface NewAnalysisModalProps {
   open: boolean;
@@ -14,6 +14,7 @@ interface NewAnalysisModalProps {
 
 export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
   const [competitors, setCompetitors] = useState(["", "", ""]);
+  const [competitorUrls, setCompetitorUrls] = useState(["", "", ""]);
   const [includeCareers, setIncludeCareers] = useState(true);
   const [includeBlog, setIncludeBlog] = useState(true);
   const [includePricing, setIncludePricing] = useState(true);
@@ -30,10 +31,20 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
       return;
     }
 
+    const urls: Record<string, string> = {};
+    for (let i = 0; i < competitors.length; i++) {
+      const name = competitors[i].trim();
+      const url = competitorUrls[i]?.trim();
+      if (name && url) {
+        urls[name] = url.startsWith("http") ? url : `https://${url}`;
+      }
+    }
+
     setLoading(true);
     try {
       await triggerAnalysis({
         competitors: valid,
+        competitor_urls: Object.keys(urls).length > 0 ? urls : undefined,
         options: {
           include_careers: includeCareers,
           include_blog: includeBlog,
@@ -42,6 +53,7 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
       });
       toast.success("Analysis queued");
       setCompetitors(["", "", ""]);
+      setCompetitorUrls(["", "", ""]);
       onClose();
     } catch (err) {
       toast.error("Failed to start analysis. Check the backend is running.");
@@ -74,9 +86,9 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
             Enter the companies you want to analyze
           </p>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 space-y-4">
             {competitors.map((val, i) => (
-              <div key={i} className="space-y-1">
+              <div key={i} className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#222222] p-3">
                 <label className="text-xs font-medium text-[#A0A0A0]">
                   Competitor {i + 1}
                 </label>
@@ -88,8 +100,21 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
                     setCompetitors(next);
                   }}
                   placeholder={["e.g. Anthropic", "e.g. Vercel", "e.g. Databricks"][i]}
-                  className="border border-[rgba(255,255,255,0.1)] bg-[#222222] text-white placeholder:text-[#A0A0A0] focus:border-[#BC6C50] focus:ring-0"
+                  className="mt-1.5 border border-[rgba(255,255,255,0.1)] bg-[#1A1A1A] text-white placeholder:text-[#A0A0A0] focus:border-[#BC6C50] focus:ring-0"
                 />
+                <div className="mt-2 flex items-center gap-1.5">
+                  <Link className="h-3 w-3 shrink-0 text-[#6B7280]" />
+                  <input
+                    value={competitorUrls[i] || ""}
+                    onChange={(e) => {
+                      const next = [...competitorUrls];
+                      next[i] = e.target.value;
+                      setCompetitorUrls(next);
+                    }}
+                    placeholder="Website URL (optional)"
+                    className="w-full border-0 bg-transparent py-1 text-xs text-[#6B7280] placeholder:text-[#4B5563] focus:outline-none focus:text-[#A0A0A0]"
+                  />
+                </div>
               </div>
             ))}
           </div>

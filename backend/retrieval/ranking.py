@@ -1,16 +1,8 @@
 from typing import List, Tuple
 
-from backend.retrieval.chunker import (
-    semantic_chunk
-)
-
-from backend.retrieval.signal_scorer import (
-    score_text_signal
-)
-
-from backend.retrieval.semantic_router import (
-    detect_page_weight
-)
+from backend.retrieval.chunker import semantic_chunk
+from backend.retrieval.semantic_router import detect_page_weight
+from backend.retrieval.signal_scorer import score_text_signal
 
 
 def is_semantically_similar(

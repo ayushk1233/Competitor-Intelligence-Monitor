@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { QUERY_KEYS, ROUTES } from "@/constants";
 import { getMe, login as loginApi, signup as signupApi } from "@/services/auth.service";
 import type { LoginRequest, SignupRequest, CurrentUserResponse } from "@/types/api";
@@ -27,7 +26,6 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -52,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       localStorage.setItem("access_token", data.access_token);
       setToken(data.access_token);
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.me });
-      router.push(ROUTES.dashboard);
+      queryClient.clear();
+      window.location.href = ROUTES.dashboard;
     },
   });
 
@@ -62,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       localStorage.setItem("access_token", data.access_token);
       setToken(data.access_token);
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.me });
-      router.push(ROUTES.dashboard);
+      queryClient.clear();
+      window.location.href = ROUTES.dashboard;
     },
   });
 
@@ -71,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("access_token");
     setToken(null);
     queryClient.clear();
-    router.push(ROUTES.login);
-  }, [router]);
+    window.location.href = ROUTES.login;
+  }, []);
 
   return (
     <AuthContext.Provider

@@ -1,40 +1,38 @@
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
 )
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.dependencies import (
     get_current_user,
 )
-
-from backend.tasks import monitor_watchlist_task
 from backend.database.connection import get_db
 from backend.database.db_service import (
     DatabaseService,
 )
 from backend.database.models import (
+    MonitoringRun,
     User,
     Watchlist,
     WatchlistCompetitor,
-    MonitoringRun,
 )
 from backend.models.schemas import (
-    WatchlistCreateRequest,
-    WatchlistUpdateRequest,
-    WatchlistResponse,
-    WatchlistListResponse,
     CompetitorCreateRequest,
-    CompetitorUpdateRequest,
-    CompetitorResponse,
     CompetitorListResponse,
+    CompetitorResponse,
+    CompetitorUpdateRequest,
     MonitoringRunCreateRequest,
-    MonitoringRunResponse,
     MonitoringRunListResponse,
+    MonitoringRunResponse,
+    WatchlistCreateRequest,
+    WatchlistListResponse,
+    WatchlistResponse,
+    WatchlistUpdateRequest,
 )
+from backend.tasks import monitor_watchlist_task
 
 router = APIRouter(
     prefix="/api/watchlists",

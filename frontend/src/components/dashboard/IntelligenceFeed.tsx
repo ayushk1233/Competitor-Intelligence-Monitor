@@ -30,7 +30,7 @@ function AlertItem({ alert }: { alert: DashboardAlertResponse }) {
               {config.label}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-white">{alert.headline}</p>
+            <p className="mt-1 text-sm text-white">{alert.headline}</p>
           {alert.summary && (
             <p className="mt-0.5 text-xs text-[#A0A0A0]">{alert.summary}</p>
           )}
@@ -96,7 +96,7 @@ export function IntelligenceFeed({ alerts, isLoading }: IntelligenceFeedProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white">Alerts</h3>
+        <h3 className="text-sm font-semibold text-white font-mono">Alerts</h3>
         <div className="flex gap-1 rounded-lg bg-[#1E1E1E] p-0.5">
           {filters.map((f) => (
             <button

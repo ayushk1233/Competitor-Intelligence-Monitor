@@ -1,6 +1,6 @@
-from prometheus_client import Counter, Histogram, Gauge
 import os
-from prometheus_client import CollectorRegistry, multiprocess
+
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, multiprocess
 
 if "PROMETHEUS_MULTIPROC_DIR" in os.environ:
     registry = CollectorRegistry()

@@ -17,11 +17,11 @@ import { Clock, Play, AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb,
 import type { DashboardAlertResponse, DashboardCompetitor } from "@/types/api";
 
 const toneColors: Record<string, string> = {
-  enterprise: "bg-emerald-950 text-emerald-400",
-  startup: "bg-emerald-950 text-emerald-400",
-  technical: "bg-emerald-950 text-emerald-400",
-  visionary: "bg-amber-950 text-amber-400",
-  hybrid: "bg-purple-950 text-purple-400",
+  enterprise: "bg-indigo-500/10 text-indigo-300",
+  startup: "bg-emerald-500/10 text-emerald-300",
+  technical: "bg-cyan-500/10 text-cyan-300",
+  visionary: "bg-amber-500/10 text-amber-300",
+  hybrid: "bg-purple-500/10 text-purple-300",
 };
 
 function relativeTime(dateStr: string): string {
@@ -62,8 +62,8 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
             <span className="text-base font-bold text-white">{competitor.company_name}</span>
             {hasAlerts && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
           </div>
-          {competitor.domain && (
-            <p className="text-xs text-neutral-500 truncate mt-0.5">{competitor.domain}</p>
+                  {competitor.domain && (
+            <p className="text-xs text-neutral-500 truncate mt-0.5 font-sans">{competitor.domain}</p>
           )}
         </div>
         {competitor.momentum_score !== null && competitor.momentum_score !== undefined && (
@@ -195,14 +195,14 @@ export default function DashboardPage() {
       {/* Top Action Bar */}
       <div className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-[#BC6C50]/40 bg-transparent px-4 py-2 text-sm text-terracotta transition-colors hover:bg-[#140A07]/30">
+          <button className="inline-flex items-center gap-2 rounded-lg border border-[#BC6C50]/40 bg-transparent px-4 py-2 text-sm text-terracotta transition-colors hover:bg-[#140A07]/30 font-mono">
             <Clock className="h-4 w-4" />
             {lastRunLabel}
           </button>
           <button
             onClick={() => setAnalysisOpen(true)}
             disabled={isRunning}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 font-mono"
           >
             {isRunning ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
@@ -247,11 +247,11 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-emerald-500" />
-            <h2 className="text-lg font-bold text-white">Latest Intelligence</h2>
+            <h2 className="text-lg font-bold text-white font-mono">Latest Intelligence</h2>
             {latestCompletedRunId && (
               <Link
                 href={`/reports/${latestCompletedRunId}`}
-                className="ml-auto text-sm text-emerald-500 hover:text-emerald-400 transition-colors"
+                className="ml-auto text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono"
               >
                 View Full Report &rarr;
               </Link>
@@ -275,12 +275,12 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 {comp.core_offering && (
-                  <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2 mb-2">
+                  <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2 mb-2 font-sans">
                     {comp.core_offering}
                   </p>
                 )}
                 {comp.analyst_note && (
-                  <p className="text-xs text-neutral-500 leading-relaxed line-clamp-3 italic">
+                  <p className="text-xs text-neutral-500 leading-relaxed line-clamp-3 italic font-sans">
                     &ldquo;{comp.analyst_note}&rdquo;
                   </p>
                 )}
@@ -294,8 +294,8 @@ export default function DashboardPage() {
       {/* Competitors Grid Section */}
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Competitors</h2>
-          <Link href="/run-history" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors">
+          <h2 className="text-lg font-bold text-white font-mono">Competitors</h2>
+          <Link href="/run-history" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono">
             View all &rarr;
           </Link>
         </div>
@@ -325,7 +325,7 @@ export default function DashboardPage() {
         <RecentRunsTable runs={monitoringRuns?.items?.slice(0, 2)} isLoading={monitoringLoading} />
         {monitoringRuns && monitoringRuns.items.length > 2 && (
           <div className="mt-2 text-right">
-            <Link href="/watchlists" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors">
+            <Link href="/watchlists" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono">
               View all &rarr;
             </Link>
           </div>
@@ -335,8 +335,8 @@ export default function DashboardPage() {
       {/* Recent Alerts Section */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Recent alerts</h2>
-          <Link href="/alerts" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors">
+          <h2 className="text-lg font-bold text-white font-mono">Recent alerts</h2>
+          <Link href="/alerts" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono">
             View all &rarr;
           </Link>
         </div>

@@ -47,15 +47,15 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <div className={`relative hidden w-1/2 flex-col justify-between p-16 lg:flex ${theme === "dark" ? "bg-[#A2C2AB]" : "bg-[#C6DEBA]"}`}>
+      <div className={`relative hidden w-1/2 flex-col justify-between p-16 font-mono lg:flex ${theme === "dark" ? "bg-[#A2C2AB]" : "bg-[#C6DEBA]"}`}>
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${theme === "dark" ? "bg-[#064A2C]" : "bg-[#0D5E3A]"}`}>
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className={`text-lg font-bold tracking-tight ${theme === "dark" ? "text-[#064A2C]" : "text-[#0D5E3A]"}`}>CIM</span>
+            <span className={`text-lg font-bold tracking-tight font-mono ${theme === "dark" ? "text-[#064A2C]" : "text-[#0D5E3A]"}`}>CIM</span>
           </div>
-          <h1 className={`mt-20 text-[2.5rem] font-bold leading-[1.1] tracking-tight ${theme === "dark" ? "text-[#064A2C]" : "text-black"}`}>
+          <h1 className={`mt-20 text-[2.5rem] font-bold leading-[1.1] tracking-tight font-mono ${theme === "dark" ? "text-[#064A2C]" : "text-black"}`}>
             Know everything your<br />competitors are doing.
           </h1>
           <p className={`mt-4 max-w-md text-base ${theme === "dark" ? "text-[#064A2C]/70" : "text-black/60"}`}>
@@ -69,7 +69,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                 <prop.icon className={`h-5 w-5 ${theme === "dark" ? "text-[#064A2C]" : "text-black"}`} />
               </div>
               <div>
-                <p className={`text-sm font-semibold ${theme === "dark" ? "text-[#064A2C]" : "text-black"}`}>{prop.title}</p>
+                <p className={`text-sm font-semibold font-mono ${theme === "dark" ? "text-[#064A2C]" : "text-black"}`}>{prop.title}</p>
                 <p className={`mt-0.5 text-sm ${theme === "dark" ? "text-[#064A2C]/60" : "text-black/60"}`}>{prop.desc}</p>
               </div>
             </div>
@@ -83,7 +83,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="relative w-full max-w-sm">
           <button
             onClick={toggle}
-            className="absolute right-0 top-0 -translate-y-full mb-4 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="absolute right-0 top-0 -translate-y-full mb-4 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-mono text-muted-foreground transition-colors hover:text-foreground"
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             {theme === "dark" ? "Light" : "Dark"}

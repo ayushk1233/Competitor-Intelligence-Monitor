@@ -1,24 +1,11 @@
 import asyncio
 
-from backend.reasoning.momentum_reasoner import (
-    analyze_momentum
-)
+from backend.reasoning.icp_reasoner import analyze_icp
+from backend.reasoning.momentum_reasoner import analyze_momentum
+from backend.reasoning.synthesis_reasoner import synthesize_intelligence
+from backend.reasoning.tone_reasoner import analyze_tone
+from backend.retrieval.evidence_router import route_evidence
 
-from backend.reasoning.tone_reasoner import (
-    analyze_tone
-)
-
-from backend.reasoning.icp_reasoner import (
-    analyze_icp
-)
-
-from backend.reasoning.synthesis_reasoner import (
-    synthesize_intelligence
-)
-
-from backend.retrieval.evidence_router import (
-    route_evidence
-)
 
 def is_real_momentum_signal(text: str) -> bool:
     """Accepts launches, shipping velocity, adoption, partnerships, hiring, and funding."""
@@ -81,7 +68,8 @@ def sanitize_momentum_evidence(signals_dict: dict) -> dict:
 
 async def run_intelligence_pipeline(
     chunks: list[str],
-    signals: dict = None
+    signals: dict = None,
+    validation: dict = None
 ):
 
     # -----------------------------------
@@ -187,7 +175,9 @@ async def run_intelligence_pipeline(
 
         tone_analysis=tone_result,
 
-        icp_analysis=icp_result
+        icp_analysis=icp_result,
+
+        validation=validation
     )
 
     return {

@@ -1,7 +1,6 @@
 import requests
 
 from backend.config import get_settings
-
 from backend.notifications.models import (
     NotificationRequest,
     NotificationResult,

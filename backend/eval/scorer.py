@@ -1,11 +1,7 @@
-from backend.models.schemas import CompetitorAnalysis
-
-from backend.eval.models import (
-    EvalExpectation,
-    EvalResult
-)
-
 from unittest.mock import MagicMock
+
+from backend.eval.models import EvalExpectation, EvalResult
+from backend.models.schemas import CompetitorAnalysis
 
 try:
     from sentence_transformers import SentenceTransformer, util

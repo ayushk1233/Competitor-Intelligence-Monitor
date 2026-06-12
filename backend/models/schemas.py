@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class AnalysisOptions(BaseModel):
@@ -10,7 +11,8 @@ class AnalysisOptions(BaseModel):
 
 
 class AnalysisRequest(BaseModel):
-    competitors: list[str]          # names or URLs, 2–5
+    competitors: list[str]          # names, 2–5
+    competitor_urls: dict[str, str] = {}  # optional: name → URL override
     options: AnalysisOptions = AnalysisOptions()
 
 
@@ -47,6 +49,29 @@ class CompetitorAnalysis(BaseModel):
     momentum_score: int             # 1–10
     analyst_note: str
 
+    # Company Validation (Problem 1)
+    validation: dict = {}           # {company_name, company_description, category, product_type, primary_use_case, validation_warning}
+
+    # Per-section Evidence (Problem 2)
+    core_offering_evidence: list[str] = []
+    core_offering_source: str = ""
+    core_offering_confidence: int = 0
+    pricing_evidence: list[str] = []
+    pricing_source: str = ""
+    pricing_confidence: int = 0
+    hiring_evidence: list[str] = []
+    hiring_source: str = ""
+    hiring_confidence: int = 0
+    keywords_evidence: list[str] = []
+    keywords_confidence: int = 0
+
+    # Per-section Confidence (Problem 5)
+    confidence_scores: dict = {}    # {core_offering: 92, icp: 88, tone: 85, pricing: 40, hiring: 70, keywords: 75}
+
+    # Momentum Driver Explanation (Problem 3)
+    momentum_negative_factors: list[str] = []
+    momentum_reasoning: str = ""
+
     # Preserved Reasoning Evidence
     icp_keywords: list[str] = []
     icp_evidence: list[str] = []
@@ -62,12 +87,15 @@ class CompetitorAnalysis(BaseModel):
 
 class ComparisonResult(BaseModel):
     market_leader: str
+    market_leader_reason: str = ""
     fastest_mover: str
+    fastest_mover_reason: str = ""
     pivot_detected: Optional[str]
     smb_to_enterprise_shift: list[str]
     ai_emphasis_ranking: list[str]
     messaging_gaps: str
     threat_ranking: list[str]
+    threat_ranking_reasons: list[str] = []
     executive_briefing: str
 
 

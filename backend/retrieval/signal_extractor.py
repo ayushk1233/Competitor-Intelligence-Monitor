@@ -1,7 +1,7 @@
-import re
-import json
-from collections import defaultdict
 import hashlib
+import json
+import re
+from collections import defaultdict
 
 
 def split_into_sentences(text: str) -> list:

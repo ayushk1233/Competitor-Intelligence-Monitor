@@ -33,7 +33,6 @@ const monitoringItems = [
 ];
 
 const toolsItems = [
-  { label: "Watchlists", href: ROUTES.watchlists, icon: Layers },
   { label: "Run History", href: "/run-history", icon: PlayCircle },
   { label: "Battlecards", href: "/battlecards", icon: Swords },
   { label: "Intel Search", href: "/intel-search", icon: Search },
@@ -70,7 +69,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-800 bg-neutral-900 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-800 bg-neutral-900 font-mono transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -83,7 +82,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </div>
           <div className="flex-1">
             <div className="text-lg font-bold text-white leading-none">CIM</div>
-            <div className="text-xs text-neutral-500 leading-tight mt-0.5">Intelligence Monitor</div>
+            <div className="text-xs text-neutral-500 leading-tight mt-0.5 font-sans">Intelligence Monitor</div>
           </div>
           <button
             onClick={onClose}
@@ -154,7 +153,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <div className="border-t border-neutral-800 px-4 py-3">
-          <p className="truncate text-xs text-neutral-500">
+          <p className="truncate text-xs text-neutral-500 font-sans">
             {user?.email || user?.display_name}
           </p>
           <div className="mt-1 flex items-center gap-1">

@@ -1,7 +1,6 @@
 "use client";
 
-import { use } from "react";
-import { Inter } from "next/font/google";
+import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
@@ -10,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ROUTES, QUERY_KEYS } from "@/constants";
+import { ROUTES } from "@/constants";
 import {
   ArrowLeft,
   TrendingUp,
@@ -30,9 +29,21 @@ import {
   Rocket,
   Trash2,
   Loader2,
+  Activity,
+  Shield,
+  AlertCircle,
+  BarChart3,
+  ChevronDown,
+  ChevronRight,
+  Quote,
   ExternalLink,
+  CheckCircle2,
+  XCircle,
+  AlertOctagon,
+  Database,
+  FileSpreadsheet,
 } from "lucide-react";
-import type { IntelligenceReport, CompetitorAnalysisReport, ComparisonResult } from "@/types/api";
+import type { IntelligenceReport, CompetitorAnalysisReport, ComparisonResult, DashboardAlertResponse } from "@/types/api";
 
 interface ReportPageProps {
   params: Promise<{ runId: string }>;
@@ -46,101 +57,563 @@ const toneColors: Record<string, string> = {
   hybrid: "bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30",
 };
 
-function ScoreDisplay({ score }: { score: number }) {
-  const color = score >= 7 ? "text-[#22C55E]" : score >= 4 ? "text-[#F59E0B]" : "text-[#EF4444]";
-  return <span className={`text-2xl font-bold ${color}`}>{score}</span>;
+const severityColors: Record<string, string> = {
+  critical: "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30",
+  high: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
+  medium: "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30",
+  low: "bg-[#6B7280]/15 text-[#6B7280] border-[#6B7280]/30",
+};
+
+function ConfidenceBadge({ confidence }: { confidence: number }) {
+  if (!confidence && confidence !== 0) return null;
+  const color =
+    confidence >= 90
+      ? "bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30"
+      : confidence >= 70
+        ? "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30"
+        : confidence >= 40
+          ? "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30"
+          : "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30";
+  return (
+    <Badge variant="outline" className={`text-[10px] font-mono ${color}`}>
+      {confidence}%
+    </Badge>
+  );
 }
 
-function CompetitorSection({ c }: { c: CompetitorAnalysisReport }) {
-  const toneClass = toneColors[c.messaging_tone] ?? "bg-[#2A2A2A] text-[#A0A0A0] border-[rgba(255,255,255,0.1)]";
+function EvidenceBlock({ evidence, source }: { evidence?: string[]; source?: string }) {
+  const [open, setOpen] = useState(false);
+  if (!evidence || evidence.length === 0) return null;
+  return (
+    <div className="mt-1.5">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 text-[11px] text-[#6B7280] hover:text-[#A0A0A0] transition-colors"
+      >
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <Quote className="h-3 w-3" />
+        Evidence{source ? ` (${source})` : ""}
+      </button>
+      {open && (
+        <div className="mt-1.5 space-y-1 border-l-2 border-[rgba(255,255,255,0.06)] pl-3">
+          {evidence.map((e, i) => (
+            <p key={i} className="text-xs italic text-[#A0A0A0]">
+              &ldquo;{e}&rdquo;
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScoreMeter({ score }: { score: number }) {
+  const segments = 10;
+  const filled = Math.round((score / 10) * segments);
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`text-2xl font-bold ${score >= 7 ? "text-[#22C55E]" : score >= 4 ? "text-[#F59E0B]" : "text-[#EF4444]"}`}>
+        {score}
+      </span>
+      <span className="text-[11px] text-[#6B7280]">/ 10</span>
+      <div className="ml-1 flex gap-0.5">
+        {Array.from({ length: segments }).map((_, i) => (
+          <div
+            key={i}
+            className={`h-2 w-2 rounded-sm ${
+              i < filled
+                ? score >= 7
+                  ? "bg-[#22C55E]"
+                  : score >= 4
+                    ? "bg-[#F59E0B]"
+                    : "bg-[#EF4444]"
+                : "bg-[#2A2A2A]"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SectionHeading({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0] font-mono">
+      {icon}
+      {label}
+    </p>
+  );
+}
+
+function SectionWithEvidence({
+  icon,
+  label,
+  value,
+  evidence,
+  source,
+  confidence,
+  emptyMessage = "No public evidence found",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value?: string | null;
+  evidence?: string[];
+  source?: string;
+  confidence?: number;
+  emptyMessage?: string;
+}) {
+  const displayValue = value && value !== "Not detected" && value !== "" ? value : null;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <SectionHeading icon={icon} label={label} />
+        {confidence !== undefined && <ConfidenceBadge confidence={confidence} />}
+      </div>
+      <p className="text-sm text-white">{displayValue || emptyMessage}</p>
+      {displayValue && <EvidenceBlock evidence={evidence} source={source} />}
+    </div>
+  );
+}
+
+function MomentumCard({ c }: { c: CompetitorAnalysisReport }) {
+  const positiveCount = c.momentum_evidence?.length ?? 0;
+  const negativeCount = c.momentum_negative_factors?.length ?? 0;
+  return (
+    <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#222222] p-3">
+      <div className="flex items-center gap-2">
+        <SectionHeading icon={<BarChart3 className="h-3.5 w-3.5 text-[#22C55E]" />} label="Momentum Score" />
+      </div>
+      <div className="mt-2 flex items-center gap-3">
+        <ScoreMeter score={c.momentum_score} />
+        <span className="text-xs text-[#6B7280]">
+          {c.momentum_score >= 7
+            ? "Strong momentum — gaining market traction"
+            : c.momentum_score >= 4
+              ? "Moderate momentum — steady but not dominant"
+              : "Low momentum — potential vulnerability"}
+        </span>
+      </div>
+
+      {/* Positive Drivers */}
+      {positiveCount > 0 && (
+        <div className="mt-3">
+          <p className="flex items-center gap-1 text-xs font-semibold text-[#22C55E] font-mono">
+            <TrendingUp className="h-3 w-3" />
+            Drivers
+          </p>
+          <div className="mt-1 space-y-1">
+            {c.momentum_evidence!.map((ev, i) => (
+              <p key={i} className="flex items-start gap-1.5 text-xs text-[#A0A0A0]">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#22C55E]" />
+                {ev}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Negative Factors */}
+      {negativeCount > 0 && (
+        <div className="mt-2">
+          <p className="flex items-center gap-1 text-xs font-semibold text-[#EF4444] font-mono">
+            <TrendingDown className="h-3 w-3" />
+          </p>
+          <div className="mt-1 space-y-1">
+            {c.momentum_negative_factors!.map((factor, i) => (
+              <p key={i} className="flex items-start gap-1.5 text-xs text-[#A0A0A0]">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
+                {factor}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Reasoning */}
+      {c.momentum_reasoning && (
+        <div className="mt-3 border-t border-[rgba(255,255,255,0.06)] pt-2">
+          <p className="text-xs text-[#6B7280] font-mono">Why this score</p>
+          <p className="mt-0.5 text-xs text-[#A0A0A0]">{c.momentum_reasoning}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ValidationBanner({ validation }: { validation: CompetitorAnalysisReport["validation"] }) {
+  if (!validation?.validation_warning) return null;
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#1C1508] p-3">
+      <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-[#F59E0B]" />
+      <div>
+        <p className="text-xs font-semibold text-[#F59E0B] font-mono">Validation Warning</p>
+        <p className="text-xs text-[#A0A0A0]">
+          {validation.reason
+            ? `Low confidence in company identification: ${validation.reason}`
+            : "Low confidence in company identification. The extracted intelligence may be unreliable."}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AnalystNoteBlock({ note }: { note: string }) {
+  if (!note) return null;
+
+  const summaryMatch = note.match(/Summary:\s*(.+?)(?:\n|$)/);
+  const strengthMatch = note.match(/Strength:\s*(.+?)(?:\n|$)/);
+  const riskMatch = note.match(/Risk:\s*(.+?)(?:\n|$)/);
+  const outlookMatch = note.match(/Outlook:\s*([\s\S]+)$/);
+
+  const summary = summaryMatch?.[1]?.trim();
+  const strength = strengthMatch?.[1]?.trim();
+  const risk = riskMatch?.[1]?.trim();
+  const outlook = outlookMatch?.[1]?.trim();
+
+  if (summary || strength || risk || outlook) {
+    return (
+      <div className="space-y-3 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1A1A2E] p-3">
+        <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#F59E0B]" />} label="Analyst Note" />
+        {summary && (
+          <div>
+            <p className="text-[11px] font-semibold text-[#F59E0B] font-mono">Summary</p>
+            <p className="mt-0.5 text-sm text-[#CBD5E1]">{summary}</p>
+          </div>
+        )}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {strength && (
+            <div className="rounded-lg border border-[#22C55E]/20 bg-[#0A1A0A] p-2.5">
+              <p className="flex items-center gap-1 text-[11px] font-semibold text-[#22C55E] font-mono">
+                <CheckCircle2 className="h-3 w-3" />
+                Strength
+              </p>
+              <p className="mt-1 text-sm text-[#CBD5E1]">{strength}</p>
+            </div>
+          )}
+          {risk && (
+            <div className="rounded-lg border border-[#EF4444]/20 bg-[#1A0A0A] p-2.5">
+              <p className="flex items-center gap-1 text-[11px] font-semibold text-[#EF4444] font-mono">
+                <XCircle className="h-3 w-3" />
+                Risk
+              </p>
+              <p className="mt-1 text-sm text-[#CBD5E1]">{risk}</p>
+            </div>
+          )}
+        </div>
+        {outlook && (
+          <div>
+            <p className="text-[11px] font-semibold text-[#8B5CF6] font-mono">Outlook</p>
+            <p className="mt-0.5 text-sm italic text-[#CBD5E1]">{outlook}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-[#F59E0B]/30 bg-[#222222] p-3">
+      <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#F59E0B]" />} label="Analyst Note" />
+      <p className="mt-1 text-sm italic text-[#CBD5E1]">{note}</p>
+    </div>
+  );
+}
+
+function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts: DashboardAlertResponse[] }) {
+  const competitorAlerts = alerts.filter((a) => a.company_name === c.name);
+  const hasDrift = competitorAlerts.length > 0;
+  const maxSeverity = hasDrift
+    ? competitorAlerts.reduce(
+        (max, a) => {
+          const order = { critical: 4, high: 3, medium: 2, low: 1 } as Record<string, number>;
+          return (order[a.severity] || 0) > (order[max] || 0) ? a.severity : max;
+        },
+        competitorAlerts[0].severity,
+      )
+    : null;
+
   return (
     <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.05)] pb-4">
         <div>
-          <CardTitle className="text-lg font-bold text-white">{c.name}</CardTitle>
-          <p className="text-xs text-[#A0A0A0]">{c.domain}</p>
+          <CardTitle className="text-lg font-bold text-white font-mono">{c.name}</CardTitle>
+          <div className="mt-0.5 flex items-center gap-2">
+            <span className="text-sm text-[#6B7280]">{c.domain}</span>
+            {hasDrift && (
+              <Badge
+                variant="outline"
+                className={`text-xs font-medium capitalize ${severityColors[maxSeverity!]}`}
+              >
+                <Activity className="mr-1 h-3 w-3" />
+                Drift
+              </Badge>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <ScoreDisplay score={c.momentum_score} />
-          <span className="text-[11px] text-[#6B7280]">/ 10</span>
-        </div>
+        <ScoreMeter score={c.momentum_score} />
       </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <Zap className="h-3.5 w-3.5" /> Positioning
-            </p>
-            <p className="mt-1 text-sm text-white">{c.core_offering}</p>
+      <CardContent className="space-y-5 pt-4">
+        {/* Validation Warning Banner */}
+        <ValidationBanner validation={c.validation} />
+
+        {/* AI Summary / Analyst Note */}
+        <AnalystNoteBlock note={c.analyst_note} />
+
+        {/* Company Overview */}
+        {c.validation?.company_description && (
+          <SectionHeading icon={<Building2 className="h-3.5 w-3.5 text-[#8B5CF6]" />} label="Company Overview" />
+        )}
+        {c.validation?.company_description && (
+          <div className="-mt-4 grid grid-cols-2 gap-2 text-xs text-[#A0A0A0]">
+            {c.validation?.category && (
+              <div>
+                <span className="font-semibold text-white font-mono">Category: </span>
+                {c.validation.category}
+              </div>
+            )}
+            {c.validation?.product_type && (
+              <div>
+                <span className="font-semibold text-white font-mono">Type: </span>
+                {c.validation.product_type}
+              </div>
+            )}
+            {c.validation?.primary_use_case && (
+              <div className="col-span-2">
+                <span className="font-semibold text-white font-mono">Customers: </span>
+                {c.validation.primary_use_case}
+              </div>
+            )}
           </div>
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <Target className="h-3.5 w-3.5" /> Target Market
-            </p>
-            <p className="mt-1 text-sm text-white">{c.icp}</p>
+        )}
+
+        {/* Positioning */}
+        <SectionWithEvidence
+          icon={<Zap className="h-3.5 w-3.5 text-[#3B82F6]" />}
+          label="Positioning"
+          value={c.core_offering}
+          evidence={c.core_offering_evidence}
+          source={c.core_offering_source}
+          confidence={c.core_offering_confidence ?? c.confidence_scores?.core_offering}
+        />
+
+        {/* Target Market / ICP */}
+        <SectionWithEvidence
+          icon={<Target className="h-3.5 w-3.5 text-[#F59E0B]" />}
+          label="Target Market"
+          value={c.icp}
+          evidence={c.icp_evidence}
+          confidence={c.confidence_scores?.icp}
+        />
+
+        {/* Tone */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <SectionHeading icon={<MessageSquare className="h-3.5 w-3.5 text-[#6366F1]" />} label="Tone" />
+            {c.confidence_scores?.tone !== undefined && <ConfidenceBadge confidence={c.confidence_scores.tone} />}
           </div>
+          <Badge
+            variant="outline"
+            className={`text-xs font-medium capitalize ${toneColors[c.messaging_tone] ?? "bg-[#2A2A2A] text-[#A0A0A0] border-[rgba(255,255,255,0.1)]"}`}
+          >
+            {c.messaging_tone}
+          </Badge>
+          <EvidenceBlock evidence={c.tone_evidence} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <MessageSquare className="h-3.5 w-3.5" /> Tone
-            </p>
-            <Badge variant="outline" className={`mt-1 text-xs font-medium capitalize ${toneClass}`}>
-              {c.messaging_tone}
-            </Badge>
-          </div>
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <DollarSign className="h-3.5 w-3.5" /> Pricing
-            </p>
-            <p className="mt-1 text-sm text-white">{c.pricing_signals || "Not detected"}</p>
-          </div>
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <Users className="h-3.5 w-3.5" /> Hiring
-            </p>
-            <p className="mt-1 text-sm text-white">{c.hiring_signals || "No signals"}</p>
-          </div>
-        </div>
+        {/* Pricing */}
+        <SectionWithEvidence
+          icon={<DollarSign className="h-3.5 w-3.5 text-[#22C55E]" />}
+          label="Pricing"
+          value={c.pricing_signals}
+          evidence={c.pricing_evidence}
+          source={c.pricing_source}
+          confidence={c.pricing_confidence ?? c.confidence_scores?.pricing}
+        />
 
+        {/* Hiring */}
+        <SectionWithEvidence
+          icon={<Users className="h-3.5 w-3.5 text-[#10B981]" />}
+          label="Hiring Signals"
+          value={c.hiring_signals}
+          evidence={c.hiring_evidence}
+          source={c.hiring_source}
+          confidence={c.hiring_confidence ?? c.confidence_scores?.hiring}
+        />
+
+        {/* Strategic Keywords */}
         {c.strategic_keywords.length > 0 && (
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <Hash className="h-3.5 w-3.5" /> Keywords
-            </p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <SectionHeading icon={<Hash className="h-3.5 w-3.5 text-[#8B5CF6]" />} label="Strategic Keywords" />
+              {(c.keywords_confidence ?? c.confidence_scores?.keywords) !== undefined && (
+                <ConfidenceBadge confidence={c.keywords_confidence ?? c.confidence_scores?.keywords ?? 0} />
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
               {c.strategic_keywords.filter(Boolean).map((kw, i) => (
-                <Badge key={i} variant="outline" className="border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-xs text-white">
+                <Badge
+                  key={i}
+                  variant="outline"
+                  className="border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-xs text-white font-mono"
+                >
                   {kw}
                 </Badge>
+              ))}
+            </div>
+            <EvidenceBlock evidence={c.keywords_evidence} />
+          </div>
+        )}
+
+        {/* Recent Signals */}
+        {(c.recent_launches.length > 0 || c.growth_signals.length > 0) && (
+          <SectionHeading icon={<Package className="h-3.5 w-3.5 text-[#BC6C50]" />} label="Recent Signals" />
+        )}
+        {c.recent_launches.length > 0 && (
+          <div className="-mt-3 space-y-1.5">
+            {c.recent_launches.map((signal, i) => (
+              <p key={i} className="flex items-start gap-2 text-sm text-white">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#BC6C50]" />
+                {signal}
+              </p>
+            ))}
+          </div>
+        )}
+        {c.growth_signals.length > 0 && (
+          <div className="-mt-1 space-y-1.5">
+            {c.growth_signals.map((signal, i) => (
+              <p key={i} className="flex items-start gap-2 text-sm text-white">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#22C55E]" />
+                {signal}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* Momentum Card */}
+        <MomentumCard c={c} />
+
+        {/* Drift Section */}
+        {hasDrift && (
+          <div className="rounded-lg border border-[rgba(239,68,68,0.15)] bg-[#1C1010] p-3">
+            <SectionHeading icon={<Activity className="h-3.5 w-3.5 text-[#EF4444]" />} label="Drift Analysis" />
+            <p className="mt-1 text-xs text-[#EF4444]/70">
+              Changes detected since last analysis run
+            </p>
+            <div className="mt-3 space-y-3">
+              {competitorAlerts.map((alert) => (
+                <div key={alert.id} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-medium capitalize ${severityColors[alert.severity] ?? "bg-[#6B7280]/15 text-[#6B7280]"}`}
+                    >
+                      {alert.severity}
+                    </Badge>
+                    <span className="text-sm font-medium text-white">
+                      {alert.headline}
+                    </span>
+                  </div>
+                  {alert.summary && (
+                    <p className="pl-1 text-sm text-[#CBD5E1]">{alert.summary}</p>
+                  )}
+                  {alert.evidence && alert.evidence.length > 0 && (
+                    <div className="pl-1 space-y-0.5">
+                      {alert.evidence.map((e, i) => (
+                        <p key={i} className="flex items-start gap-1.5 text-xs text-[#6B7280]">
+                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-[#6B7280]" />
+                          {e}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        {c.recent_launches.length > 0 && (
-          <div>
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              <Package className="h-3.5 w-3.5" /> Recent Signals
-            </p>
-            <ul className="mt-1.5 space-y-1.5">
-              {c.recent_launches.map((signal, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-white">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#BC6C50]" />
-                  {signal}
-                </li>
-              ))}
-            </ul>
+        {/* Alert Status */}
+        {hasDrift && (
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className={`text-xs font-medium ${severityColors[maxSeverity!]}`}>
+              <AlertCircle className="mr-1 h-3 w-3" />
+              {competitorAlerts.length} {competitorAlerts.length === 1 ? "Alert" : "Alerts"}
+            </Badge>
+            <span className="text-xs text-[#6B7280]">
+              Last alert: {new Date(competitorAlerts[0].created_at).toLocaleDateString()}
+            </span>
+          </div>
+        )}
+        {!hasDrift && (
+          <div className="flex items-center gap-2 text-xs text-[#6B7280]">
+            <Shield className="h-3.5 w-3.5 text-[#22C55E]" />
+            No drift detected — competitor state consistent with previous analysis
           </div>
         )}
 
-        {c.analyst_note && (
-          <div className="rounded-lg border border-[#F59E0B]/30 bg-[#222222] p-3">
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#F59E0B]">
-              <Lightbulb className="h-3.5 w-3.5" /> Analyst Note
-            </p>
-            <p className="mt-1 text-sm italic text-[#CBD5E1]">{c.analyst_note}</p>
+        {/* Data Quality */}
+        <div className="border-t border-[rgba(255,255,255,0.06)] pt-3 space-y-3">
+          <SectionHeading icon={<Database className="h-3.5 w-3.5 text-[#6B7280]" />} label="Data Quality" />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-lg bg-[#222222] p-2.5">
+              <p className="text-[10px] text-[#6B7280] font-mono">Understanding</p>
+              <p className="text-sm font-semibold text-white font-mono">
+                {c.confidence_scores ? (
+                  <>
+                    {Math.round(
+                      Object.values(c.confidence_scores).reduce((a, b) => a + b, 0) /
+                        Math.max(Object.values(c.confidence_scores).length, 1)
+                    )}%
+                  </>
+                ) : "—"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-[#222222] p-2.5">
+              <p className="text-[10px] text-[#6B7280] font-mono">Sources</p>
+              <p className="text-sm font-semibold text-white font-mono">{c.pages_analyzed.length} pages</p>
+            </div>
+            <div className="rounded-lg bg-[#222222] p-2.5">
+              <p className="text-[10px] text-[#6B7280] font-mono">Evidence</p>
+              <p className="text-sm font-semibold text-white font-mono">
+                {[
+                  c.core_offering_evidence?.length ?? 0,
+                  c.icp_evidence?.length ?? 0,
+                  c.tone_evidence?.length ?? 0,
+                  c.pricing_evidence?.length ?? 0,
+                  c.hiring_evidence?.length ?? 0,
+                  c.keywords_evidence?.length ?? 0,
+                  c.momentum_evidence?.length ?? 0,
+                ].reduce((a, b) => a + b, 0)}{" "}
+                snippets
+              </p>
+            </div>
+            <div className="rounded-lg bg-[#222222] p-2.5">
+              <p className="text-[10px] text-[#6B7280] font-mono">Warnings</p>
+              <p className="text-sm font-semibold text-white font-mono">
+                {c.validation?.validation_warning ? (
+                  <span className="text-[#F59E0B]">Yes</span>
+                ) : (
+                  <span className="text-[#22C55E]">None</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sources Used */}
+        {c.pages_analyzed.length > 0 && (
+          <div>
+            <SectionHeading icon={<FileSpreadsheet className="h-3.5 w-3.5 text-[#6B7280]" />} label="Sources Analyzed" />
+            <div className="mt-1 flex flex-wrap gap-1">
+              {c.pages_analyzed.map((page, i) => (
+                <Badge
+                  key={i}
+                  variant="outline"
+                  className="border-[rgba(255,255,255,0.06)] bg-[#2A2A2A] text-[10px] text-[#6B7280] font-mono"
+                >
+                  {page}
+                </Badge>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
@@ -151,28 +624,38 @@ function CompetitorSection({ c }: { c: CompetitorAnalysisReport }) {
 function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-semibold text-white">Cross-Competitor Intelligence</h2>
+      <h2 className="text-sm font-semibold text-white font-mono">Cross-Competitor Intelligence</h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
+            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0] font-mono">
               <Trophy className="h-3.5 w-3.5 text-[#F59E0B]" /> Market Leader
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-white">{comparison.market_leader}</p>
+            {comparison.market_leader_reason && (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[#6B7280]">
+                {comparison.market_leader_reason}
+              </p>
+            )}
           </CardContent>
         </Card>
 
         <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
+            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0] font-mono">
               <Rocket className="h-3.5 w-3.5 text-[#BC6C50]" /> Fastest Mover
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-white">{comparison.fastest_mover}</p>
+            {comparison.fastest_mover_reason && (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[#6B7280]">
+                {comparison.fastest_mover_reason}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -180,18 +663,25 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
       {comparison.threat_ranking.length > 0 && (
         <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
+            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0] font-mono">
               <Swords className="h-3.5 w-3.5 text-[#EF4444]" /> Strategic Threat Ranking
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {comparison.threat_ranking.map((threat, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#2A2A2A] text-xs font-bold text-[#A0A0A0]">
+                <div key={i} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#2A2A2A] text-xs font-bold text-[#A0A0A0] font-mono">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-white">{threat}</span>
+                  <div>
+                    <span className="text-sm text-white">{threat}</span>
+                    {comparison.threat_ranking_reasons?.[i] && (
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-[#6B7280]">
+                        {comparison.threat_ranking_reasons[i]}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -202,15 +692,15 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
       {comparison.ai_emphasis_ranking.length > 0 && (
         <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0]">
-              AI Emphasis Ranking
+            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#A0A0A0] font-mono">
+              <Building2 className="h-3.5 w-3.5" /> AI Emphasis Ranking
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-1.5">
               {comparison.ai_emphasis_ranking.map((company, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-white">
-                  <span className="text-xs text-[#6B7280]">{i + 1}.</span>
+                  <span className="text-xs text-[#6B7280] font-mono">{i + 1}.</span>
                   {company}
                 </div>
               ))}
@@ -222,7 +712,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
       {comparison.executive_briefing && (
         <Card className="border-[rgba(255,255,255,0.1)] bg-[#222222]">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#F59E0B]">
+            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#F59E0B] font-mono">
               <Lightbulb className="h-3.5 w-3.5" /> Executive Briefing
             </CardTitle>
           </CardHeader>
@@ -237,8 +727,6 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
   );
 }
 
-const inter = Inter({ subsets: ["latin"] });
-
 export default function ReportPage({ params }: ReportPageProps) {
   const { runId } = use(params);
   const router = useRouter();
@@ -250,6 +738,15 @@ export default function ReportPage({ params }: ReportPageProps) {
       const res = await apiClient.get<IntelligenceReport>(`/api/report/${runId}`);
       return res.data;
     },
+  });
+
+  const { data: alerts = [] } = useQuery({
+    queryKey: ["report-alerts", runId],
+    queryFn: async () => {
+      const res = await apiClient.get<DashboardAlertResponse[]>("/api/alerts");
+      return res.data;
+    },
+    enabled: !!report,
   });
 
   const deleteMutation = useMutation({
@@ -264,13 +761,12 @@ export default function ReportPage({ params }: ReportPageProps) {
 
   if (isLoading) {
     return (
-      <div className={`${inter.className} space-y-6 p-6`}>
+      <div className="space-y-6 p-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-8 w-8 rounded-lg bg-[#2A2A2A]" />
-          <Skeleton className="h-6 w-48 bg-[#2A2A2A]" />
         </div>
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 rounded-lg bg-[#2A2A2A]" />
+          <Skeleton key={i} className="h-64 rounded-lg bg-[#2A2A2A]" />
         ))}
       </div>
     );
@@ -278,7 +774,7 @@ export default function ReportPage({ params }: ReportPageProps) {
 
   if (error || !report) {
     return (
-      <div className={`${inter.className} flex flex-col items-center gap-4 p-6 py-24 text-center`}>
+      <div className="flex flex-col items-center gap-4 p-6 py-24 text-center">
         <AlertTriangle className="h-10 w-10 text-[#A0A0A0]" />
         <p className="text-sm text-[#A0A0A0]">Report not available</p>
         <p className="text-xs text-[#6B7280]">The analysis may still be running or the report was deleted</p>
@@ -295,7 +791,8 @@ export default function ReportPage({ params }: ReportPageProps) {
   }
 
   return (
-    <div className={`${inter.className} space-y-8 p-6`}>
+    <div className="space-y-6 p-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -304,38 +801,43 @@ export default function ReportPage({ params }: ReportPageProps) {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-white">Intelligence Report</h1>
-            <p className="text-xs text-[#A0A0A0]">
-              {report.competitors.length} competitors · {report.total_pages_fetched} pages · {report.run_duration_seconds.toFixed(1)}s
-            </p>
-          </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (confirm("Delete this analysis and all its data?")) {
-              deleteMutation.mutate();
-            }
-          }}
-          disabled={deleteMutation.isPending}
-          className="border-[rgba(255,255,255,0.1)] text-[#EF4444] hover:bg-[#EF4444]/10"
-        >
-          {deleteMutation.isPending ? (
-            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="mr-1.5 h-4 w-4" />
-          )}
-          Delete
-        </Button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[#6B7280] font-mono">
+            {report.competitors.length} competitors
+          </span>
+          <span className="text-xs text-[#6B7280]">·</span>
+          <span className="text-xs text-[#6B7280] font-mono">
+            {report.run_duration_seconds.toFixed(1)}s
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (confirm("Delete this analysis and all its data?")) {
+                deleteMutation.mutate();
+              }
+            }}
+            disabled={deleteMutation.isPending}
+            className="border-[rgba(255,255,255,0.1)] text-[#EF4444] hover:bg-[#EF4444]/10"
+          >
+            {deleteMutation.isPending ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-1.5 h-4 w-4" />
+            )}
+            Delete
+          </Button>
+        </div>
       </div>
 
+      {/* Competitor Sections */}
       <div className="space-y-6">
         {report.competitors.map((c) => (
-          <CompetitorSection key={c.name} c={c} />
+          <CompetitorSection key={c.name} c={c} alerts={alerts} />
         ))}
       </div>
 
+      {/* Cross-Competitor Intelligence */}
       <ComparisonSection comparison={report.comparison} />
     </div>
   );

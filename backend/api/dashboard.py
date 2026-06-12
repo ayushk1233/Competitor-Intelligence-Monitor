@@ -2,33 +2,27 @@ from fastapi import (
     APIRouter,
     Depends,
 )
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.dependencies import (
     get_current_user,
 )
-
 from backend.database.connection import (
     get_db,
 )
-
 from backend.database.db_service import (
     DatabaseService,
 )
-
 from backend.database.models import (
     User,
 )
-
 from backend.models.schemas import (
-    DashboardSummaryResponse,
-    DashboardRecentRunsResponse,
-    DashboardRecentAlertsResponse,
     DashboardActivityResponse,
-    DashboardActivityItem,
-    DashboardCompetitorsResponse,
     DashboardCompetitorResponse,
+    DashboardCompetitorsResponse,
+    DashboardRecentAlertsResponse,
+    DashboardRecentRunsResponse,
+    DashboardSummaryResponse,
 )
 
 router = APIRouter(

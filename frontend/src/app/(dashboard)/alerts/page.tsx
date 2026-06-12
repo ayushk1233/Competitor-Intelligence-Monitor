@@ -111,8 +111,7 @@ export default function AlertsPage() {
     <div className="p-8">
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-white">Alerts</h2>
+        <div className="flex justify-end items-center px-6 py-4 border-b border-border">
           <div className="flex gap-2 items-center">
             {filterTabs.map((tab) => {
               const isActive = activeFilter === tab.value;

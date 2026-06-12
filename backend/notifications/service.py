@@ -1,18 +1,15 @@
-from backend.notifications.models import (
-    NotificationRequest,
-    NotificationResult,
-)
-
 from backend.notifications.channels.email import (
     send_email,
 )
-
 from backend.notifications.channels.slack import (
     send_slack,
 )
-
 from backend.notifications.channels.webhook import (
     send_webhook,
+)
+from backend.notifications.models import (
+    NotificationRequest,
+    NotificationResult,
 )
 
 

@@ -3,7 +3,6 @@ from pathlib import Path
 
 from backend.drift.alert_models import AlertRecord
 
-
 ALERT_RUNS_DIR = Path("alert_runs")
 
 ALERT_RUNS_DIR.mkdir(exist_ok=True)

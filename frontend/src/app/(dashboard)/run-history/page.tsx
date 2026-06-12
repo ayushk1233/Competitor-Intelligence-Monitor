@@ -99,8 +99,7 @@ export default function RunHistoryPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-xl font-bold text-white">Run History</h1>
-        <p className="mt-0.5 text-sm text-[#A0A0A0]">Full history of all analysis runs</p>
+        <p className="text-sm text-[#A0A0A0]">Full history of all analysis runs</p>
       </div>
 
       {isLoading ? (

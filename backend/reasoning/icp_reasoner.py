@@ -64,9 +64,7 @@ Do NOT analyze:
 Return JSON ONLY.
 """
 
-from backend.services.llm_service import (
-    call_openrouter
-)
+from backend.services.llm_service import call_openrouter
 
 
 async def analyze_icp(

@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 BASELINE_FILE = Path(
     "evaluation_baselines/eval_baseline_v1.json"
 )

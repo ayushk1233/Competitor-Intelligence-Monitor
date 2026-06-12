@@ -45,7 +45,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
         >
           <Menu className="h-4 w-4" />
         </button>
-        <h2 className="text-sm font-semibold tracking-tight text-white">
+        <h2 className="text-sm font-semibold tracking-tight text-white font-mono">
           {getPageTitle(pathname)}
         </h2>
       </div>
