@@ -23,7 +23,11 @@ ICP_WEIGHTS = {
     "customers": 2,
     "businesses": 2,
     "enterprise": 1,
-    "pricing": 0,
+    "pricing": 1,
+    "pro": 1,
+    "enterprise plan": 3,
+    "for teams": 3,
+    "for business": 3,
     "organizations": 1,
     "startups": 2,
     "teams": 2,
@@ -33,7 +37,14 @@ ICP_WEIGHTS = {
     "operations teams": 3,
     "agencies": 3,
     "founders": 3,
-    "companies": 1
+    "companies": 1,
+    "per seat": 2,
+    "per user": 2,
+    "per month": 1,
+    "free tier": 2,
+    "self-serve": 2,
+    "enterprise": 1,
+    "for enterprise": 3
 }
 
 def score_chunk(

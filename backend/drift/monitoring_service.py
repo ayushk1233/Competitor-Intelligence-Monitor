@@ -34,7 +34,7 @@ class MonitoringService:
             limit=2,
         )
 
-        if len(history) < 2:
+        if len(history) < 2 or not history[0].full_analysis or not history[1].full_analysis:
             return None
 
         newest = CompetitorAnalysis(

@@ -67,12 +67,12 @@ TARGET_PATHS = {
 
 PAGE_DISCOVERY_PRIORITY = [
     "about",
+    "pricing",
+    "careers",
     "blog",
     "news",
     "customers",
-    "events",
-    "pricing",
-    "careers"
+    "events"
 ]
 
 # URLs containing any of these patterns will never be selected

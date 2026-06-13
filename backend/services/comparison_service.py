@@ -45,13 +45,13 @@ Return ONLY a valid JSON object with exactly these fields:
   "smb_to_enterprise_shift": ["list of competitor names showing this pattern — empty list if none"],
   "ai_emphasis_ranking": ["ranked list of all competitors from most to least AI-focused based on content signals"],
   "messaging_gaps": "3-4 sentences describing specific positioning territory that NONE of these competitors own. Name the underserved customer segment, the unaddressed pain point, and why this is a real opportunity rather than a gap they ignored intentionally.",
-  "messaging_gap": {
+  "messaging_gap": {{
     "title": "Short opportunity title (e.g. 'Citizen Developer & SMB Automation Gap')",
     "description": "Detailed explanation of the whitespace opportunity — specific, actionable, evidence-based",
     "target_persona": "Who is underserved (e.g. 'SMB operators, business analysts, operations teams')",
     "business_value": "Why this matters commercially (e.g. 'Expands TAM and reduces dependency on engineering resources')",
     "confidence": "Low | Medium | High"
-  },
+  }},
   "threat_ranking": ["ranked from most to least dangerous to a new market entrant — include all competitors"],
   "threat_ranking_reasons": ["for each competitor in threat_ranking, a 1-sentence explanation of why they are ranked at that position"],
   "executive_briefing": "Write 6-8 sentences as a sharp intelligence briefing a CEO would forward to their product, sales, and strategy teams. Structure it as: (1) who leads and why, (2) who is moving fastest and what that means for the market, (3) what nobody is doing that represents opportunity, (4) what the team should prioritize in the next 90 days based on these signals. Use specific company names, specific signals from the data, and be direct about risk. No hedging, no vague language."
@@ -142,6 +142,24 @@ class ComparisonService:
             if data.get("pivot_detected") == "null":
                 data["pivot_detected"] = None
 
+            # LLM sometimes returns messaging_gaps as an object instead of a string
+            # (confuses it with the similar-sounding messaging_gap field)
+            if isinstance(data.get("messaging_gaps"), dict):
+                mg = data["messaging_gaps"]
+                data["messaging_gaps"] = mg.get("description") or mg.get("title") or json.dumps(mg)
+
+            # LLM sometimes returns messaging_gap as null — derive from the text
+            mg_obj = data.get("messaging_gap")
+            mg_text = data.get("messaging_gaps", "")
+            if not mg_obj and mg_text:
+                data["messaging_gap"] = {
+                    "title": "Messaging & Positioning Gap",
+                    "description": mg_text,
+                    "target_persona": "Underserved segment identified in analysis",
+                    "business_value": "Tapping this whitespace reduces competitive pressure and expands addressable market",
+                    "confidence": "Medium"
+                }
+
             return ComparisonResult(**data)
 
         except (json.JSONDecodeError, KeyError, TypeError) as e:
@@ -155,6 +173,8 @@ class ComparisonService:
         self, analyses: list[CompetitorAnalysis]
     ) -> ComparisonResult:
         names = [a.name for a in analyses]
+        if not names:
+            names = ["Unknown"]
         return ComparisonResult(
             market_leader=f"{names[0]} (comparison analysis failed)",
             fastest_mover="Not determined",

@@ -380,6 +380,11 @@ class DatabaseService:
             run.run_duration_seconds = report.run_duration_seconds
             run.completed_at = datetime.utcnow()
 
+        # Update run competitor_names to match actual analyzed names
+        # (the original input may have been URLs that got cleaned during analysis)
+        if run and report.competitors:
+            run.competitor_names = [a.name for a in report.competitors]
+
         # Save each competitor analysis
         for analysis in report.competitors:
             await self.save_competitor_analysis(run_id, analysis)
@@ -730,7 +735,10 @@ class DatabaseService:
             select(Watchlist)
             .where(
                 Watchlist.is_active == True,
-                Watchlist.next_run_at <= datetime.now(UTC),
+                or_(
+                    Watchlist.next_run_at <= datetime.now(UTC),
+                    Watchlist.next_run_at.is_(None)
+                )
             )
         )
 
@@ -948,7 +956,13 @@ class DatabaseService:
         if description is not None:
             watchlist.description = description
         if monitoring_config is not None:
+            old_freq = watchlist.monitoring_config.get("frequency") if watchlist.monitoring_config else None
+            new_freq = monitoring_config.get("frequency")
             watchlist.monitoring_config = monitoring_config
+            
+            if old_freq != new_freq and new_freq:
+                from backend.monitoring.schedule_service import calculate_next_run
+                watchlist.next_run_at = calculate_next_run(new_freq)
         if alert_rules is not None:
             watchlist.alert_rules = alert_rules
         if notification_channels is not None:

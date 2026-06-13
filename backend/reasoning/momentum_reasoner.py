@@ -59,50 +59,42 @@ Momentum agent may only use evidence present in:
 Momentum Scoring Rubric:
 
 Score 1-3:
-Little or no evidence of launches, hiring, adoption, partnerships, or shipping velocity.
+Little or no evidence of launches, hiring, adoption, partnerships, or shipping velocity. Company appears stagnant or very early.
 
 Score 4-5:
-A few recent signals exist but activity appears moderate.
+A few signals exist but activity is moderate or inconclusive. Typical for established companies maintaining status quo without acceleration. No strong evidence of growth or decline.
 
 Score 6-7:
-Multiple recent launches, adoption indicators, partnerships, or product updates exist.
+Multiple recent launches, adoption indicators, partnerships, or product updates exist. Company appears to be actively building but not yet at high velocity.
 
 Score 8-9:
-Strong evidence of rapid momentum.
+Strong evidence of rapid momentum across multiple dimensions.
 Examples:
-- many launches
-- active changelog/product updates
+- many launches (specific products, not just generic "AI")
+- active changelog/product updates spanning multiple months
 - multiple adoption signals
-- AI initiatives
+- specific AI product launches (not generic AI claims)
 - partnerships
 - visible growth
 
 Score 10:
 Exceptional momentum with overwhelming evidence across most categories.
 
-IMPORTANT:
-
-If there are:
-
-5+ launch signals
-OR
-10+ total signals across categories
-
-then momentum_score should not be below 8 unless strong negative momentum signals exist.
-
-Prevent inflation from a single large chunk.
-If a company shows relentless shipping speed (e.g. constant changelog updates), score it highly even without VC funding or AI.
+IMPORTANT — signal quality over quantity:
+- One blog post about a single launch = 1 signal, not multiple. Do NOT count the same launch multiple times across different pages.
+- Generic AI claims ("AI-powered", "using AI", "built with AI") do NOT count as AI initiatives or momentum signals. Only specific AI product launches, features, or roadmap items qualify.
+- A changelog with 20 entries across 2 years is NOT high velocity — that's ~1 entry/month. High velocity means multiple entries per month.
 
 CRITICAL:
 
 Momentum != company size.
 
-Large established companies should default to 4-6 unless there is strong evidence of aggressive expansion.
+Large established companies should default to 3-5 unless there is strong evidence of aggressive expansion. Size is NOT momentum.
 
-Only score 8-10 if multiple signals exist:
-- active hiring
-- recent launches
-- AI initiatives
+Only score 8-10 if multiple distinct signals exist:
+- active hiring across multiple roles
+- recent launches of specific products (not generic AI claims)
+- specific AI product initiatives
 - market expansion
 - pricing changes
 

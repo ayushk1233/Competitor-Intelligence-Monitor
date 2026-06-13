@@ -65,7 +65,7 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
                       Inactive
                     </Badge>
                   )}
-                  <Badge variant="outline" className="border-[var(--dialog-border)] bg-[#2A2A2A] text-[10px] text-[var(--dialog-muted)] capitalize">
+                  <Badge variant="outline" className="border-[var(--dialog-border)] bg-[var(--dialog-surface)] text-[10px] text-[var(--dialog-muted)] capitalize">
                     {sensitivity}
                   </Badge>
                 </div>
@@ -99,14 +99,14 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
           </Card>
         </button>
 
-        {/* Action buttons — visible on hover */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Action buttons — visible constantly */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-100 transition-opacity">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setEditOpen(true);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--dialog-border)] bg-[#2A2A2A] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)] transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--dialog-border)] bg-[var(--dialog-surface)] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)] transition-colors"
             title="Edit watchlist"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -116,7 +116,7 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
               e.stopPropagation();
               setShowDeleteConfirm(true);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--dialog-border)] bg-[#2A2A2A] text-[var(--dialog-muted)] hover:text-red-500 transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--dialog-border)] bg-[var(--dialog-surface)] text-[var(--dialog-muted)] hover:text-red-500 transition-colors"
             title="Delete watchlist"
           >
             <Trash2 className="h-3.5 w-3.5" />

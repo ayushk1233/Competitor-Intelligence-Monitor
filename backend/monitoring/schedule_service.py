@@ -9,6 +9,9 @@ def calculate_next_run(
 
     frequency = frequency.upper()
 
+    if frequency == "5_MINS":
+        return now + timedelta(minutes=5)
+
     if frequency == "HOURLY":
         return now + timedelta(hours=1)
 

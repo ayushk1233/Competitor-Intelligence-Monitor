@@ -105,10 +105,10 @@ async def run_intelligence_pipeline(
     if signals:
         sanitized_signals = sanitize_momentum_evidence(signals)
 
-        # Build structured-only context — NO raw chunks reach momentum LLM
+        # Build structured context with a sample of raw chunks for verification
         momentum_context = "MOMENTUM SIGNALS\n\n"
-        momentum_context += "Only the following structured signals are available.\n"
-        momentum_context += "Do NOT infer additional evidence beyond what is listed below.\n\n"
+        momentum_context += "Below are structured signals extracted from the source content, "
+        momentum_context += "followed by a small sample of raw source text for verification.\n\n"
 
         MOMENTUM_CATEGORIES = [
             "launch_signals",
@@ -132,6 +132,14 @@ async def run_intelligence_pipeline(
                 momentum_context += "(none)\n\n"
 
         momentum_context += f"Total unique evidence items: {total_evidence}\n"
+
+        # Include a sample of raw chunks for context verification
+        if chunks:
+            raw_sample = [c for c in chunks if len(c.strip()) > 50][:5]
+            if raw_sample:
+                momentum_context += "\n\nRAW SOURCE CONTEXT (sample — use to verify signals above):\n\n"
+                for i, chunk in enumerate(raw_sample, 1):
+                    momentum_context += f"[{i}] {chunk[:600]}\n\n"
     else:
         # No structured signals provided — momentum context is empty
         # The LLM will score conservatively with no evidence

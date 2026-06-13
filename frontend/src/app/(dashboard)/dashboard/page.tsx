@@ -179,12 +179,15 @@ export default function DashboardPage() {
   const isRunning = summary?.has_active_run;
   const runStatus = activeRunStatus?.status || summary?.active_run_status;
 
-  const stageLabels: Record<string, string> = {
-    queued: "Queued",
-    scraping: "Scraping pages...",
-    analyzing: "Analyzing competitors...",
-    comparing: "Generating comparison...",
+  const stageConfig: Record<string, { label: string; color: string; barColor: string }> = {
+    queued:    { label: "Queued",                  color: "#F59E0B", barColor: "#F59E0B" },
+    scraping:  { label: "Scraping pages...",       color: "#3B82F6", barColor: "#3B82F6" },
+    analyzing: { label: "Analyzing competitors...", color: "#8B5CF6", barColor: "#8B5CF6" },
+    comparing: { label: "Generating comparison...", color: "#14B8A6", barColor: "#14B8A6" },
   };
+  const stageLabels: Record<string, string> = Object.fromEntries(
+    Object.entries(stageConfig).map(([k, v]) => [k, v.label])
+  );
 
   const lastRunTimestamp = latestCompletedRun?.created_at ?? summary?.last_run_at;
   const hasLastRun = !!lastRunTimestamp;
@@ -200,16 +203,10 @@ export default function DashboardPage() {
         .slice(0, 3)
     : [];
 
-  const distinctFromRuns = new Set<string>();
-  for (const run of completedRuns.slice(0, 2)) {
-    for (const name of run.competitors ?? []) {
-      distinctFromRuns.add(name);
-    }
-  }
   const gridCompetitors = competitors?.items
-    ? competitors.items
-        .filter((c) => matchesRunName(c.company_name, c.domain, [...distinctFromRuns]))
-        .sort((a, b) => (b.momentum_score ?? 0) - (a.momentum_score ?? 0))
+    ? [...competitors.items]
+        .sort((a, b) => new Date(b.last_analyzed_at ?? 0).getTime() - new Date(a.last_analyzed_at ?? 0).getTime())
+        .slice(0, 6)
     : [];
 
   return (
@@ -232,27 +229,39 @@ export default function DashboardPage() {
       </div>
 
       {isRunning && (
-        <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-5 py-4">
+        <div className="mb-6 rounded-xl border border-[var(--progress-border)] bg-[var(--progress-bg)] px-5 py-4"
+          style={{
+            borderColor: `${(stageConfig[runStatus || ""]?.color || "#22C55E")}40`,
+            backgroundColor: `color-mix(in srgb, ${(stageConfig[runStatus || ""]?.color || "#22C55E")} 10%, var(--card))`,
+          }}
+        >
           <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />
+            <Loader2 className="h-5 w-5 animate-spin"
+              style={{ color: stageConfig[runStatus || ""]?.color || "#22C55E" }}
+            />
             <div>
               <p className="text-sm font-medium text-foreground">Analysis in progress</p>
-              <p className="text-xs text-emerald-400/80 mt-0.5">
+              <p className="text-xs mt-0.5"
+                style={{ color: `${stageConfig[runStatus || ""]?.color || "#22C55E"}CC` }}
+              >
                 {stageLabels[runStatus || ""] || "Working..."}
               </p>
             </div>
             <div className="ml-auto flex items-center gap-2">
               {activeRunStatus && (
-                <span className="text-xs text-neutral-500">
+                <span className="text-xs text-muted-foreground">
                   {activeRunStatus.pages_fetched} page{activeRunStatus.pages_fetched !== 1 ? "s" : ""} fetched
                 </span>
               )}
             </div>
           </div>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
+          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--muted)]">
             <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-              style={{ width: `${activeRunStatus?.progress_percent || 5}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${activeRunStatus?.progress_percent || 5}%`,
+                backgroundColor: stageConfig[runStatus || ""]?.barColor || "#22C55E",
+              }}
             />
           </div>
         </div>

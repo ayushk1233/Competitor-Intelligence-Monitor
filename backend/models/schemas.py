@@ -55,14 +55,18 @@ class CompetitorAnalysis(BaseModel):
     # Per-section Evidence (Problem 2)
     core_offering_evidence: list[str] = []
     core_offering_source: str = ""
+    core_offering_source_url: str = ""
     core_offering_confidence: int = 0
     pricing_evidence: list[str] = []
     pricing_source: str = ""
+    pricing_source_url: str = ""
     pricing_confidence: int = 0
     hiring_evidence: list[str] = []
     hiring_source: str = ""
+    hiring_source_url: str = ""
     hiring_confidence: int = 0
     keywords_evidence: list[str] = []
+    keywords_source_url: str = ""
     keywords_confidence: int = 0
 
     # Per-section Confidence (Problem 5)
@@ -343,6 +347,7 @@ class DashboardSummaryResponse(BaseModel):
     has_active_run: bool = False
     active_run_status: str | None = None
     active_run_id: str | None = None
+    next_scheduled_analysis: datetime | None = None
 
 
 class DashboardRecentRunsResponse(BaseModel):

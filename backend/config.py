@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # App behaviour
-    max_pages_per_competitor: int = 4
+    max_pages_per_competitor: int = 6
     request_timeout_seconds: int = 15
     max_tokens_per_chunk: int = 6000
     default_model: str = "anthropic/claude-3-haiku"

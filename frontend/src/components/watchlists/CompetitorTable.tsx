@@ -36,7 +36,7 @@ function SkeletonRow() {
 const priorityColors: Record<string, string> = {
   high: "text-[#EF4444] border-[#EF4444]/30 bg-[#EF4444]/15",
   medium: "text-[#F59E0B] border-[#F59E0B]/30 bg-[#F59E0B]/15",
-  low: "text-[var(--dialog-muted)] border-[var(--dialog-border)] bg-[#2A2A2A]",
+  low: "text-[var(--dialog-muted)] border-[var(--dialog-border)] bg-[var(--dialog-surface)]",
 };
 
 export function CompetitorTable({ watchlistId, competitors, isLoading }: CompetitorTableProps) {
@@ -86,7 +86,7 @@ export function CompetitorTable({ watchlistId, competitors, isLoading }: Competi
                 <TableRow key={c.id} className="border-[var(--dialog-border)] hover:bg-[var(--dialog-surface)]/50">
                   <TableCell className="text-sm font-medium">
                     <Link
-                      href={ROUTES.competitorDetail(watchlistId, c.company_name)}
+                      href={ROUTES.battlecards}
                       className="flex items-center gap-1.5 text-[var(--accent-color)] transition-colors hover:text-[var(--accent-color-80)] hover:underline"
                     >
                       {c.company_name}

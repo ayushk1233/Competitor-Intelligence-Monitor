@@ -133,7 +133,7 @@ export default function WatchlistDetailPage({
         </TabsContent>
 
         <TabsContent value="runs" className="mt-4 space-y-4">
-          <h2 className="text-sm font-semibold text-[#F8FAFC]">Run History</h2>
+          <h2 className="text-sm font-semibold text-foreground">Run History</h2>
           <RunHistoryTable
             runs={runs?.items}
             isLoading={runsLoading}

@@ -42,6 +42,8 @@ import {
   AlertOctagon,
   Database,
   FileSpreadsheet,
+  Star,
+  Info,
 } from "lucide-react";
 import type { IntelligenceReport, CompetitorAnalysisReport, ComparisonResult, DashboardAlertResponse } from "@/types/api";
 
@@ -61,11 +63,11 @@ const severityColors: Record<string, string> = {
   critical: "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30",
   high: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
   medium: "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30",
-  low: "bg-[#6B7280]/15 text-[#6B7280] border-[#6B7280]/30",
+  low: "bg-[#6B7280]/15 text-[var(--muted-text)] border-[#6B7280]/30",
 };
 
 function ConfidenceBadge({ confidence }: { confidence: number }) {
-  if (!confidence && confidence !== 0) return null;
+  if (confidence === 0 || (!confidence && confidence !== 0)) return null;
   const color =
     confidence >= 90
       ? "bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30"
@@ -88,14 +90,14 @@ function EvidenceBlock({ evidence, source }: { evidence?: string[]; source?: str
     <div className="mt-1.5">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-[11px] text-[#6B7280] hover:text-muted-foreground transition-colors"
+        className="flex items-center gap-1 text-[11px] text-[#2DD4BF] hover:text-[#2DD4BF]/80 transition-colors"
       >
         {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Quote className="h-3 w-3" />
         Evidence{source ? ` (${source})` : ""}
       </button>
       {open && (
-        <div className="mt-1.5 space-y-1 border-l-2 border-[rgba(255,255,255,0.06)] pl-3">
+        <div className="mt-1.5 space-y-1 border-l-2 border-[#2DD4BF]/20 pl-3">
           {evidence.map((e, i) => (
             <p key={i} className="text-xs italic text-muted-foreground">
               &ldquo;{e}&rdquo;
@@ -103,35 +105,6 @@ function EvidenceBlock({ evidence, source }: { evidence?: string[]; source?: str
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function ScoreMeter({ score }: { score: number }) {
-  const segments = 10;
-  const filled = Math.round((score / 10) * segments);
-  return (
-    <div className="flex items-center gap-2">
-      <span className={`text-2xl font-bold ${score >= 7 ? "text-[#22C55E]" : score >= 4 ? "text-[#F59E0B]" : "text-[#EF4444]"}`}>
-        {score}
-      </span>
-      <span className="text-[11px] text-[#6B7280]">/ 10</span>
-      <div className="ml-1 flex gap-0.5">
-        {Array.from({ length: segments }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-2 w-2 rounded-sm ${
-              i < filled
-                ? score >= 7
-                  ? "bg-[#22C55E]"
-                  : score >= 4
-                    ? "bg-[#F59E0B]"
-                    : "bg-[#EF4444]"
-                : "bg-muted"
-            }`}
-          />
-        ))}
-      </div>
     </div>
   );
 }
@@ -145,175 +118,184 @@ function SectionHeading({ icon, label }: { icon: React.ReactNode; label: string 
   );
 }
 
-function SectionWithEvidence({
+function StarRating({ score }: { score: number }) {
+  const filled = Math.round(score);
+  const total = 10;
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex gap-0.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <Star
+            key={i}
+            className={`h-3.5 w-3.5 ${i < filled ? "text-[#F59E0B] fill-[#F59E0B]" : "text-[var(--muted-text)]"}`}
+          />
+        ))}
+      </div>
+      <span className="ml-1 text-lg font-bold text-foreground">{score}</span>
+      <span className="text-xs text-[var(--muted-text)]">/10</span>
+    </div>
+  );
+}
+
+function ScoreMeter({ score }: { score: number }) {
+  const segments = 10;
+  const filled = Math.round((score / 10) * segments);
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`text-2xl font-bold ${score >= 7 ? "text-[#22C55E]" : score >= 4 ? "text-[#2DD4BF]" : "text-[#EF4444]"}`}>
+        {score}
+      </span>
+      <span className="text-[11px] text-[var(--muted-text)]">/ 10</span>
+      <div className="ml-1 flex gap-0.5">
+        {Array.from({ length: segments }).map((_, i) => (
+          <div
+            key={i}
+            className={`h-2 w-2 rounded-sm ${
+              i < filled
+                ? score >= 7
+                  ? "bg-[#22C55E]"
+                  : score >= 4
+                    ? "bg-[#2DD4BF]"
+                    : "bg-[#EF4444]"
+                : "bg-muted"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({
   icon,
   label,
   value,
+  status,
   evidence,
   source,
   confidence,
-  emptyMessage = "No public evidence found",
+  children,
 }: {
   icon: React.ReactNode;
   label: string;
   value?: string | null;
+  status?: string | null;
   evidence?: string[];
   source?: string;
   confidence?: number;
-  emptyMessage?: string;
+  children?: React.ReactNode;
 }) {
   const displayValue = value && value !== "Not detected" && value !== "" ? value : null;
+  const displayStatus = status && status !== "Not detected" && status !== "" ? status : null;
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <SectionHeading icon={icon} label={label} />
+    <div className="rounded-lg border border-border bg-muted p-3.5 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[#2DD4BF]">{icon}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground font-mono">{label}</span>
+        </div>
         {confidence !== undefined && <ConfidenceBadge confidence={confidence} />}
       </div>
-      <p className="text-sm text-foreground">{displayValue || emptyMessage}</p>
+      {displayValue && (
+        <p className="text-sm text-foreground leading-relaxed">{displayValue}</p>
+      )}
+      {!displayValue && displayStatus && (
+        <p className="text-sm text-muted-foreground">{displayStatus}</p>
+      )}
+      {!displayValue && !displayStatus && (
+        <p className="text-sm italic text-[var(--muted-text)]">No public evidence found</p>
+      )}
+      {children}
       {displayValue && <EvidenceBlock evidence={evidence} source={source} />}
     </div>
   );
 }
 
-function MomentumCard({ c }: { c: CompetitorAnalysisReport }) {
+function MomentumHero({ c }: { c: CompetitorAnalysisReport }) {
   const positiveCount = c.momentum_evidence?.length ?? 0;
   const negativeCount = c.momentum_negative_factors?.length ?? 0;
+  const score = c.momentum_score;
+
+  const momentumLabel =
+    score >= 7
+      ? "Strong momentum — gaining market traction"
+      : score >= 4
+        ? "Moderate momentum — steady but not dominant"
+        : "Low momentum — potential vulnerability";
+
+  const hasNoHiring = !c.hiring_signals || c.hiring_signals === "Not detected" || c.hiring_signals === "No public evidence found" || c.hiring_signals === "";
+
   return (
-    <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[var(--dialog-surface)] p-3">
-      <div className="flex items-center gap-2">
-        <SectionHeading icon={<BarChart3 className="h-3.5 w-3.5 text-[#22C55E]" />} label="Momentum Score" />
-      </div>
-      <div className="mt-2 flex items-center gap-3">
-        <ScoreMeter score={c.momentum_score} />
-        <span className="text-xs text-[#6B7280]">
-          {c.momentum_score >= 7
-            ? "Strong momentum — gaining market traction"
-            : c.momentum_score >= 4
-              ? "Moderate momentum — steady but not dominant"
-              : "Low momentum — potential vulnerability"}
-        </span>
+    <div className="rounded-lg border border-border bg-gradient-to-br from-card to-muted p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart3 className="h-4 w-4 text-[#2DD4BF]" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground font-mono">Momentum Score</span>
       </div>
 
-      {/* Positive Drivers */}
-      {positiveCount > 0 && (
-        <div className="mt-3">
-          <p className="flex items-center gap-1 text-xs font-semibold text-[#22C55E] font-mono">
-            <TrendingUp className="h-3 w-3" />
-            Drivers
-          </p>
-          <div className="mt-1 space-y-1">
-            {c.momentum_evidence!.map((ev, i) => (
-              <p key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#22C55E]" />
-                {ev}
-              </p>
-            ))}
-          </div>
+      {/* Gauge + Stars */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <StarRating score={score} />
+        </div>
+        <div className="flex-1">
+          <ScoreMeter score={score} />
+        </div>
+      </div>
+
+      {/* Score description */}
+      <p className="mt-3 text-sm text-foreground">{momentumLabel}</p>
+
+      {/* Hiring alert */}
+      {hasNoHiring && (
+        <div className="mt-3 flex items-center gap-2 rounded-md bg-[#EF4444]/10 border border-[#EF4444]/20 px-3 py-2">
+          <AlertOctagon className="h-3.5 w-3.5 text-[#EF4444] shrink-0" />
+          <span className="text-xs text-[#EF4444] font-medium">No hiring activity detected.</span>
         </div>
       )}
 
-      {/* Negative Factors */}
-      {negativeCount > 0 && (
-        <div className="mt-2">
-          <p className="flex items-center gap-1 text-xs font-semibold text-[#EF4444] font-mono">
-            <TrendingDown className="h-3 w-3" />
-          </p>
-          <div className="mt-1 space-y-1">
-            {c.momentum_negative_factors!.map((factor, i) => (
-              <p key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
-                {factor}
-              </p>
-            ))}
+      {/* Drivers + Negative Factors */}
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {positiveCount > 0 && (
+          <div>
+            <p className="flex items-center gap-1 text-xs font-semibold text-[#10B981] font-mono">
+              <TrendingUp className="h-3 w-3" />
+              Drivers
+            </p>
+            <div className="mt-1.5 space-y-1">
+              {c.momentum_evidence!.map((ev, i) => (
+                <p key={i} className="flex items-start gap-1.5 text-xs text-foreground">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#10B981]" />
+                  {ev}
+                </p>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        {negativeCount > 0 && (
+          <div>
+            <p className="flex items-center gap-1 text-xs font-semibold text-[#EF4444] font-mono">
+              <TrendingDown className="h-3 w-3" />
+              Negative Factors
+            </p>
+            <div className="mt-1.5 space-y-1">
+              {c.momentum_negative_factors!.map((factor, i) => (
+                <p key={i} className="flex items-start gap-1.5 text-xs text-foreground">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
+                  {factor}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Reasoning */}
       {c.momentum_reasoning && (
-        <div className="mt-3 border-t border-[rgba(255,255,255,0.06)] pt-2">
-          <p className="text-xs text-[#6B7280] font-mono">Why this score</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{c.momentum_reasoning}</p>
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="text-[11px] text-[var(--muted-text)] font-mono mb-1">Why this score</p>
+          <p className="text-xs text-foreground leading-relaxed">{c.momentum_reasoning}</p>
         </div>
       )}
-    </div>
-  );
-}
-
-function ValidationBanner({ validation }: { validation: CompetitorAnalysisReport["validation"] }) {
-  if (!validation?.validation_warning) return null;
-  return (
-    <div className="flex items-start gap-3 rounded-lg border border-[#F59E0B]/30 bg-[#1C1508] p-3">
-      <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-[#F59E0B]" />
-      <div>
-        <p className="text-xs font-semibold text-[#F59E0B] font-mono">Validation Warning</p>
-        <p className="text-xs text-muted-foreground">
-          {validation.reason
-            ? `Low confidence in company identification: ${validation.reason}`
-            : "Low confidence in company identification. The extracted intelligence may be unreliable."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function AnalystNoteBlock({ note }: { note: string }) {
-  if (!note) return null;
-
-  const summaryMatch = note.match(/Summary:\s*(.+?)(?:\n|$)/);
-  const strengthMatch = note.match(/Strength:\s*(.+?)(?:\n|$)/);
-  const riskMatch = note.match(/Risk:\s*(.+?)(?:\n|$)/);
-  const outlookMatch = note.match(/Outlook:\s*([\s\S]+)$/);
-
-  const summary = summaryMatch?.[1]?.trim();
-  const strength = strengthMatch?.[1]?.trim();
-  const risk = riskMatch?.[1]?.trim();
-  const outlook = outlookMatch?.[1]?.trim();
-
-  if (summary || strength || risk || outlook) {
-    return (
-      <div className="space-y-3 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1A1A2E] p-3">
-        <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#F59E0B]" />} label="Analyst Note" />
-        {summary && (
-          <div>
-            <p className="text-[11px] font-semibold text-[#F59E0B] font-mono">Summary</p>
-            <p className="mt-0.5 text-sm text-[#CBD5E1]">{summary}</p>
-          </div>
-        )}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {strength && (
-            <div className="rounded-lg border border-[#22C55E]/20 bg-[#0A1A0A] p-2.5">
-              <p className="flex items-center gap-1 text-[11px] font-semibold text-[#22C55E] font-mono">
-                <CheckCircle2 className="h-3 w-3" />
-                Strength
-              </p>
-              <p className="mt-1 text-sm text-[#CBD5E1]">{strength}</p>
-            </div>
-          )}
-          {risk && (
-            <div className="rounded-lg border border-[#EF4444]/20 bg-[#1A0A0A] p-2.5">
-              <p className="flex items-center gap-1 text-[11px] font-semibold text-[#EF4444] font-mono">
-                <XCircle className="h-3 w-3" />
-                Risk
-              </p>
-              <p className="mt-1 text-sm text-[#CBD5E1]">{risk}</p>
-            </div>
-          )}
-        </div>
-        {outlook && (
-          <div>
-            <p className="text-[11px] font-semibold text-[#8B5CF6] font-mono">Outlook</p>
-            <p className="mt-0.5 text-sm italic text-[#CBD5E1]">{outlook}</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-lg border border-[#F59E0B]/30 bg-[var(--dialog-surface)] p-3">
-      <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#F59E0B]" />} label="Analyst Note" />
-      <p className="mt-1 text-sm italic text-[#CBD5E1]">{note}</p>
     </div>
   );
 }
@@ -331,133 +313,201 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
       )
     : null;
 
+  // Key Insight (analyst_note)
+  const keyInsight = c.analyst_note?.replace(/^Key Insight:\s*/i, "").trim() || "";
+
   return (
-    <Card className="border-border bg-card">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.05)] pb-4">
-        <div className="flex items-center gap-3">
+    <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+      {/* ── HEADER ── */}
+      <div className="flex items-start justify-between p-6 pb-4 border-b border-border">
+        <div className="flex items-center gap-4">
           {c.logo_url && (
             <img
               src={c.logo_url}
               alt={`${c.name} logo`}
-              className="h-9 w-9 rounded-lg bg-neutral-800 object-contain shrink-0"
+              className="h-12 w-12 rounded-xl bg-muted object-contain shrink-0"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
             />
           )}
           <div>
-            <CardTitle className="text-lg font-bold text-foreground font-mono">{c.name}</CardTitle>
-            <div className="mt-0.5 flex items-center gap-2">
-              <span className="text-sm text-[#6B7280]">{c.domain}</span>
-              {hasDrift && (
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-medium capitalize ${severityColors[maxSeverity!]}`}
-                >
-                  <Activity className="mr-1 h-3 w-3" />
-                  Drift
+            <h2 className="text-xl font-bold text-foreground">{c.name}</h2>
+            <p className="text-sm text-[var(--muted-text)] mt-0.5">{c.domain}</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1.5">
+          <StarRating score={c.momentum_score} />
+          {hasDrift && (
+            <Badge variant="outline" className={`text-[10px] font-medium capitalize ${severityColors[maxSeverity!]}`}>
+              <Activity className="mr-1 h-3 w-3" />
+              Drift Detected
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* ── EXECUTIVE OVERVIEW ── */}
+        {(c.validation?.company_description || c.core_offering) && (
+          <div className="space-y-3">
+            <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#2DD4BF]" />} label="Executive Overview" />
+
+            {/* Company metadata line */}
+            {c.validation?.company_description && (
+              <p className="text-xs text-muted-foreground leading-relaxed">{c.validation.company_description}</p>
+            )}
+            {c.validation?.category || c.validation?.product_type || c.validation?.primary_use_case ? (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--muted-text)]">
+                {c.validation?.category && (
+                  <span><span className="font-semibold text-muted-foreground">Category:</span> {c.validation.category}</span>
+                )}
+                {c.validation?.product_type && (
+                  <span><span className="font-semibold text-muted-foreground">Type:</span> {c.validation.product_type}</span>
+                )}
+                {c.validation?.primary_use_case && (
+                  <span className="w-full"><span className="font-semibold text-muted-foreground">Customers:</span> {c.validation.primary_use_case}</span>
+                )}
+              </div>
+            ) : null}
+
+            {/* Core offering */}
+            <p className="text-sm text-foreground leading-relaxed">{c.core_offering}</p>
+          </div>
+        )}
+
+        {/* ── VALIDATION WARNING CALLOUT ── */}
+        {c.validation?.validation_warning && (
+          <div className="rounded-lg border border-amber-400/40 bg-[#FEF3C7] px-4 py-3">
+            <div className="flex items-start gap-3">
+              <AlertOctagon className="h-4 w-4 shrink-0 text-[#D97706] mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-[#92400E] font-mono">Validation Warning</p>
+                <p className="text-xs text-[#92400E]/80 mt-0.5">
+                  {c.validation?.reason
+                    ? `Low confidence in company identification: ${c.validation.reason}`
+                    : "Low confidence in company identification. The extracted intelligence may be unreliable."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── KEY INSIGHT ── */}
+        {keyInsight && (
+          <div className="rounded-lg border border-[#2DD4BF]/20 bg-[#2DD4BF]/5 p-3.5">
+            <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#2DD4BF]" />} label="Key Insight" />
+            <p className="mt-1 text-sm text-foreground leading-relaxed">{keyInsight}</p>
+          </div>
+        )}
+
+        {/* ── KEY SIGNALS GRID ── */}
+        {(c.momentum_evidence?.length || c.momentum_negative_factors?.length) && (
+          <div className="space-y-3">
+            <SectionHeading icon={<Info className="h-3.5 w-3.5 text-[#2DD4BF]" />} label="Key Signals" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Key Strengths */}
+              <div className="rounded-lg border border-[#10B981]/20 bg-[#10B981]/5 p-3.5">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-[#10B981] font-mono">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Key Strengths
+                </p>
+                <ul className="mt-2 space-y-1.5">
+                  {c.momentum_evidence?.map((ev, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#10B981]" />
+                      {ev}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Key Risks */}
+              <div className="rounded-lg border border-[#EF4444]/20 bg-[#EF4444]/5 p-3.5">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-[#EF4444] font-mono">
+                  <XCircle className="h-3.5 w-3.5" />
+                  Key Risks
+                </p>
+                <ul className="mt-2 space-y-1.5">
+                  {c.momentum_negative_factors?.map((factor, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
+                      {factor}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── DETAILED METRICS GRID ── */}
+        <div className="space-y-3">
+          <SectionHeading icon={<Activity className="h-3.5 w-3.5 text-[#2DD4BF]" />} label="Detailed Metrics" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Positioning */}
+            <MetricCard
+              icon={<Zap className="h-4 w-4" />}
+              label="Position"
+              value={c.core_offering}
+              evidence={c.core_offering_evidence}
+              source={c.core_offering_source}
+              confidence={c.core_offering_confidence ?? c.confidence_scores?.core_offering}
+            />
+            {/* Target Market */}
+            <MetricCard
+              icon={<Target className="h-4 w-4" />}
+              label="Target Market"
+              value={c.icp}
+              evidence={c.icp_evidence}
+              confidence={c.confidence_scores?.icp}
+            />
+            {/* Tone */}
+            <MetricCard
+              icon={<MessageSquare className="h-4 w-4" />}
+              label="Tone"
+              status={c.messaging_tone}
+              evidence={c.tone_evidence}
+              confidence={c.confidence_scores?.tone}
+            >
+              {c.messaging_tone && (
+                <Badge variant="outline" className={`mt-1 text-[11px] font-medium capitalize ${toneColors[c.messaging_tone] ?? "bg-muted text-muted-foreground border-border"}`}>
+                  {c.messaging_tone}
                 </Badge>
               )}
-            </div>
+            </MetricCard>
+            {/* Pricing */}
+            <MetricCard
+              icon={<DollarSign className="h-4 w-4" />}
+              label="Pricing"
+              value={c.pricing_signals}
+              evidence={c.pricing_evidence}
+              source={c.pricing_source}
+              confidence={c.pricing_confidence ?? c.confidence_scores?.pricing}
+            />
+            {/* Hiring */}
+            <MetricCard
+              icon={<Users className="h-4 w-4" />}
+              label="Hiring"
+              value={c.hiring_signals}
+              evidence={c.hiring_evidence}
+              source={c.hiring_source}
+              confidence={c.hiring_confidence ?? c.confidence_scores?.hiring}
+            />
+            {/* Risk Flags */}
+            {c.risk_flags.length > 0 && (
+              <MetricCard
+                icon={<AlertCircle className="h-4 w-4" />}
+                label="Risk Flags"
+                value={c.risk_flags.join(", ")}
+                evidence={undefined}
+              />
+            )}
           </div>
         </div>
-        <ScoreMeter score={c.momentum_score} />
-      </CardHeader>
-      <CardContent className="space-y-5 pt-4">
-        {/* Validation Warning Banner */}
-        <ValidationBanner validation={c.validation} />
 
-        {/* AI Summary / Analyst Note */}
-        <AnalystNoteBlock note={c.analyst_note} />
-
-        {/* Company Overview */}
-        {c.validation?.company_description && (
-          <SectionHeading icon={<Building2 className="h-3.5 w-3.5 text-[#8B5CF6]" />} label="Company Overview" />
-        )}
-        {c.validation?.company_description && (
-          <div className="-mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-            {c.validation?.category && (
-              <div>
-                <span className="font-semibold text-foreground font-mono">Category: </span>
-                {c.validation.category}
-              </div>
-            )}
-            {c.validation?.product_type && (
-              <div>
-                <span className="font-semibold text-foreground font-mono">Type: </span>
-                {c.validation.product_type}
-              </div>
-            )}
-            {c.validation?.primary_use_case && (
-              <div className="col-span-2">
-                <span className="font-semibold text-foreground font-mono">Customers: </span>
-                {c.validation.primary_use_case}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Positioning */}
-        <SectionWithEvidence
-          icon={<Zap className="h-3.5 w-3.5 text-[#3B82F6]" />}
-          label="Positioning"
-          value={c.core_offering}
-          evidence={c.core_offering_evidence}
-          source={c.core_offering_source}
-          confidence={c.core_offering_confidence ?? c.confidence_scores?.core_offering}
-        />
-
-        {/* Target Market / ICP */}
-        <SectionWithEvidence
-          icon={<Target className="h-3.5 w-3.5 text-[#F59E0B]" />}
-          label="Target Market"
-          value={c.icp}
-          evidence={c.icp_evidence}
-          confidence={c.confidence_scores?.icp}
-        />
-
-        {/* Tone */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <SectionHeading icon={<MessageSquare className="h-3.5 w-3.5 text-[#6366F1]" />} label="Tone" />
-            {c.confidence_scores?.tone !== undefined && <ConfidenceBadge confidence={c.confidence_scores.tone} />}
-          </div>
-          <Badge
-            variant="outline"
-            className={`text-xs font-medium capitalize ${toneColors[c.messaging_tone] ?? "bg-muted text-muted-foreground border-border"}`}
-          >
-            {c.messaging_tone}
-          </Badge>
-          <EvidenceBlock evidence={c.tone_evidence} />
-        </div>
-
-        {/* Pricing */}
-        <SectionWithEvidence
-          icon={<DollarSign className="h-3.5 w-3.5 text-[#22C55E]" />}
-          label="Pricing"
-          value={c.pricing_signals}
-          evidence={c.pricing_evidence}
-          source={c.pricing_source}
-          confidence={c.pricing_confidence ?? c.confidence_scores?.pricing}
-        />
-
-        {/* Hiring */}
-        <SectionWithEvidence
-          icon={<Users className="h-3.5 w-3.5 text-[#10B981]" />}
-          label="Hiring Signals"
-          value={c.hiring_signals}
-          evidence={c.hiring_evidence}
-          source={c.hiring_source}
-          confidence={c.hiring_confidence ?? c.confidence_scores?.hiring}
-        />
-
-        {/* Strategic Keywords */}
+        {/* ── STRATEGIC KEYWORDS ── */}
         {c.strategic_keywords.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <SectionHeading icon={<Hash className="h-3.5 w-3.5 text-[#8B5CF6]" />} label="Strategic Keywords" />
-              {(c.keywords_confidence ?? c.confidence_scores?.keywords) !== undefined && (
-                <ConfidenceBadge confidence={c.keywords_confidence ?? c.confidence_scores?.keywords ?? 0} />
-              )}
-            </div>
+          <div className="space-y-2.5">
+            <SectionHeading icon={<Hash className="h-3.5 w-3.5 text-[#2DD4BF]" />} label="Strategic Keywords" />
             <div className="flex flex-wrap gap-1.5">
               {c.strategic_keywords.filter(Boolean).map((kw, i) => (
                 <Badge
@@ -473,62 +523,46 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
           </div>
         )}
 
-        {/* Recent Signals */}
+        {/* ── RECENT SIGNALS ── */}
         {(c.recent_launches.length > 0 || c.growth_signals.length > 0) && (
-          <SectionHeading icon={<Package className="h-3.5 w-3.5 text-[#BC6C50]" />} label="Recent Signals" />
-        )}
-        {c.recent_launches.length > 0 && (
-          <div className="-mt-3 space-y-1.5">
-            {c.recent_launches.map((signal, i) => (
-              <p key={i} className="flex items-start gap-2 text-sm text-foreground">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#BC6C50]" />
-                {signal}
-              </p>
-            ))}
-          </div>
-        )}
-        {c.growth_signals.length > 0 && (
-          <div className="-mt-1 space-y-1.5">
-            {c.growth_signals.map((signal, i) => (
-              <p key={i} className="flex items-start gap-2 text-sm text-foreground">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#22C55E]" />
-                {signal}
-              </p>
-            ))}
+          <div className="space-y-2.5">
+            <SectionHeading icon={<Package className="h-3.5 w-3.5 text-[#2DD4BF]" />} label="Recent Signals" />
+            <div className="space-y-1.5">
+              {c.recent_launches.map((signal, i) => (
+                <p key={i} className="flex items-start gap-2 text-sm text-foreground">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#BC6C50]" />
+                  {signal}
+                </p>
+              ))}
+              {c.growth_signals.map((signal, i) => (
+                <p key={i} className="flex items-start gap-2 text-sm text-foreground">
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#10B981]" />
+                  {signal}
+                </p>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Momentum Card */}
-        <MomentumCard c={c} />
-
-        {/* Drift Section */}
+        {/* ── DRIFT ANALYSIS ── */}
         {hasDrift && (
-          <div className="rounded-lg border border-[rgba(239,68,68,0.15)] bg-[#1C1010] p-3">
+          <div className="space-y-3">
             <SectionHeading icon={<Activity className="h-3.5 w-3.5 text-[#EF4444]" />} label="Drift Analysis" />
-            <p className="mt-1 text-xs text-[#EF4444]/70">
-              Changes detected since last analysis run
-            </p>
-            <div className="mt-3 space-y-3">
+            <p className="text-xs text-[#EF4444]/70 mt-1">Changes detected since last analysis run</p>
+            <div className="space-y-3">
               {competitorAlerts.map((alert) => (
-                <div key={alert.id} className="space-y-1">
+                <div key={alert.id} className="rounded-lg border border-border bg-muted p-3 space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] font-medium capitalize ${severityColors[alert.severity] ?? "bg-[#6B7280]/15 text-[#6B7280]"}`}
-                    >
+                    <Badge variant="outline" className={`text-[10px] font-medium capitalize ${severityColors[alert.severity] ?? "bg-[#6B7280]/15 text-[var(--muted-text)]"}`}>
                       {alert.severity}
                     </Badge>
-                    <span className="text-sm font-medium text-foreground">
-                      {alert.headline}
-                    </span>
+                    <span className="text-sm font-medium text-foreground">{alert.headline}</span>
                   </div>
-                  {alert.summary && (
-                    <p className="pl-1 text-sm text-[#CBD5E1]">{alert.summary}</p>
-                  )}
+                  {alert.summary && <p className="text-sm text-foreground">{alert.summary}</p>}
                   {alert.evidence && alert.evidence.length > 0 && (
-                    <div className="pl-1 space-y-0.5">
+                    <div className="space-y-0.5 pl-1">
                       {alert.evidence.map((e, i) => (
-                        <p key={i} className="flex items-start gap-1.5 text-xs text-[#6B7280]">
+                        <p key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                           <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-[#6B7280]" />
                           {e}
                         </p>
@@ -538,35 +572,34 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Alert Status */}
-        {hasDrift && (
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className={`text-xs font-medium ${severityColors[maxSeverity!]}`}>
-              <AlertCircle className="mr-1 h-3 w-3" />
-              {competitorAlerts.length} {competitorAlerts.length === 1 ? "Alert" : "Alerts"}
-            </Badge>
-            <span className="text-xs text-[#6B7280]">
-              Last alert: {new Date(competitorAlerts[0].created_at).toLocaleDateString()}
-            </span>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className={`text-xs font-medium ${severityColors[maxSeverity!]}`}>
+                <AlertCircle className="mr-1 h-3 w-3" />
+                {competitorAlerts.length} {competitorAlerts.length === 1 ? "Alert" : "Alerts"}
+              </Badge>
+              <span className="text-xs text-[var(--muted-text)]">
+                Last alert: {new Date(competitorAlerts[0].created_at).toLocaleDateString()}
+              </span>
+            </div>
           </div>
         )}
         {!hasDrift && (
-          <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-            <Shield className="h-3.5 w-3.5 text-[#22C55E]" />
+          <div className="flex items-center gap-2 text-xs text-[var(--muted-text)]">
+            <Shield className="h-3.5 w-3.5 text-[#10B981]" />
             No drift detected — competitor state consistent with previous analysis
           </div>
         )}
 
-        {/* Data Quality */}
-        <div className="border-t border-[rgba(255,255,255,0.06)] pt-3 space-y-3">
-          <SectionHeading icon={<Database className="h-3.5 w-3.5 text-[#6B7280]" />} label="Data Quality" />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
-              <p className="text-[10px] text-[#6B7280] font-mono">Understanding</p>
-              <p className="text-sm font-semibold text-foreground font-mono">
+        {/* ── MOMENTUM SCORE HERO ── */}
+        <MomentumHero c={c} />
+
+        {/* ── DATA QUALITY + SOURCES ── */}
+        <div className="border-t border-border pt-4 space-y-4">
+          <SectionHeading icon={<Database className="h-3.5 w-3.5 text-[var(--muted-text)]" />} label="Data Quality" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-lg bg-muted border border-border p-3">
+              <p className="text-[10px] text-[var(--muted-text)] font-mono">Understanding</p>
+              <p className="text-sm font-semibold text-foreground font-mono mt-0.5">
                 {c.confidence_scores ? (
                   <>
                     {Math.round(
@@ -577,13 +610,13 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
                 ) : "—"}
               </p>
             </div>
-            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
-              <p className="text-[10px] text-[#6B7280] font-mono">Sources</p>
-              <p className="text-sm font-semibold text-foreground font-mono">{c.pages_analyzed.length} pages</p>
+            <div className="rounded-lg bg-muted border border-border p-3">
+              <p className="text-[10px] text-[var(--muted-text)] font-mono">Sources</p>
+              <p className="text-sm font-semibold text-foreground font-mono mt-0.5">{c.pages_analyzed.length} pages</p>
             </div>
-            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
-              <p className="text-[10px] text-[#6B7280] font-mono">Evidence</p>
-              <p className="text-sm font-semibold text-foreground font-mono">
+            <div className="rounded-lg bg-muted border border-border p-3">
+              <p className="text-[10px] text-[var(--muted-text)] font-mono">Evidence</p>
+              <p className="text-sm font-semibold text-foreground font-mono mt-0.5">
                 {[
                   c.core_offering_evidence?.length ?? 0,
                   c.icp_evidence?.length ?? 0,
@@ -596,38 +629,38 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
                 snippets
               </p>
             </div>
-            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
-              <p className="text-[10px] text-[#6B7280] font-mono">Warnings</p>
-              <p className="text-sm font-semibold text-foreground font-mono">
+            <div className="rounded-lg bg-muted border border-border p-3">
+              <p className="text-[10px] text-[var(--muted-text)] font-mono">Warnings</p>
+              <p className="text-sm font-semibold text-foreground font-mono mt-0.5">
                 {c.validation?.validation_warning ? (
                   <span className="text-[#F59E0B]">Yes</span>
                 ) : (
-                  <span className="text-[#22C55E]">None</span>
+                  <span className="text-[#10B981]">None</span>
                 )}
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Sources Used */}
-        {c.pages_analyzed.length > 0 && (
-          <div>
-            <SectionHeading icon={<FileSpreadsheet className="h-3.5 w-3.5 text-[#6B7280]" />} label="Sources Analyzed" />
-            <div className="mt-1 flex flex-wrap gap-1">
-              {c.pages_analyzed.map((page, i) => (
-                <Badge
-                  key={i}
-                  variant="outline"
-                  className="border-[rgba(255,255,255,0.06)] bg-muted text-[10px] text-[#6B7280] font-mono"
-                >
-                  {page}
-                </Badge>
-              ))}
+          {/* Sources Analyzed */}
+          {c.pages_analyzed.length > 0 && (
+            <div>
+              <SectionHeading icon={<FileSpreadsheet className="h-3.5 w-3.5 text-[var(--muted-text)]" />} label="Sources Analyzed" />
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {c.pages_analyzed.map((page, i) => (
+                  <Badge
+                    key={i}
+                    variant="outline"
+                    className="border-border bg-muted text-[10px] text-[var(--muted-text)] font-mono"
+                  >
+                    {page}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -646,7 +679,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
           <CardContent>
             <p className="text-sm text-foreground">{comparison.market_leader}</p>
             {comparison.market_leader_reason && (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-[#6B7280]">
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--muted-text)]">
                 {comparison.market_leader_reason}
               </p>
             )}
@@ -662,7 +695,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
           <CardContent>
             <p className="text-sm text-foreground">{comparison.fastest_mover}</p>
             {comparison.fastest_mover_reason && (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-[#6B7280]">
+              <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--muted-text)]">
                 {comparison.fastest_mover_reason}
               </p>
             )}
@@ -687,7 +720,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
                   <div>
                     <span className="text-sm text-foreground">{threat}</span>
                     {comparison.threat_ranking_reasons?.[i] && (
-                      <p className="mt-0.5 text-[11px] leading-relaxed text-[#6B7280]">
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--muted-text)]">
                         {comparison.threat_ranking_reasons[i]}
                       </p>
                     )}
@@ -710,7 +743,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
             <div className="space-y-1.5">
               {comparison.ai_emphasis_ranking.map((company, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-foreground">
-                  <span className="text-xs text-[#6B7280] font-mono">{i + 1}.</span>
+                  <span className="text-xs text-[var(--muted-text)] font-mono">{i + 1}.</span>
                   {company}
                 </div>
               ))}
@@ -727,7 +760,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-[#CBD5E1] italic">
+            <p className="text-sm leading-relaxed text-foreground italic">
               {comparison.executive_briefing}
             </p>
           </CardContent>
@@ -748,15 +781,15 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
             </div>
             <div>
               <p className="text-xs font-semibold text-[#3B82F6] uppercase tracking-wider mb-1">Description</p>
-              <p className="text-sm leading-relaxed text-[#CBD5E1]">{comparison.messaging_gap.description}</p>
+              <p className="text-sm leading-relaxed text-foreground">{comparison.messaging_gap.description}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-[#3B82F6] uppercase tracking-wider mb-1">Target Persona</p>
-              <p className="text-sm text-[#CBD5E1]">{comparison.messaging_gap.target_persona}</p>
+              <p className="text-sm text-foreground">{comparison.messaging_gap.target_persona}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-[#3B82F6] uppercase tracking-wider mb-1">Business Value</p>
-              <p className="text-sm text-[#CBD5E1]">{comparison.messaging_gap.business_value}</p>
+              <p className="text-sm text-foreground">{comparison.messaging_gap.business_value}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-[#3B82F6] uppercase tracking-wider mb-1">Confidence</p>
@@ -804,7 +837,7 @@ export default function ReportPage({ params }: ReportPageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recent-analysis-runs"] });
       toast.success("Analysis deleted");
-      router.push(ROUTES.dashboard);
+      router.push(ROUTES.runHistory);
     },
     onError: () => toast.error("Failed to delete analysis"),
   });
@@ -827,14 +860,14 @@ export default function ReportPage({ params }: ReportPageProps) {
       <div className="flex flex-col items-center gap-4 p-6 py-24 text-center">
         <AlertTriangle className="h-10 w-10 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Report not available</p>
-        <p className="text-xs text-[#6B7280]">The analysis may still be running or the report was deleted</p>
+        <p className="text-xs text-[var(--muted-text)]">The analysis may still be running or the report was deleted</p>
         <Button
           variant="outline"
-          onClick={() => router.push(ROUTES.dashboard)}
+          onClick={() => router.push(ROUTES.runHistory)}
           className="border-border text-muted-foreground"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
-          Back to Dashboard
+          Back to Run History
         </Button>
       </div>
     );
@@ -846,18 +879,18 @@ export default function ReportPage({ params }: ReportPageProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push(ROUTES.dashboard)}
+            onClick={() => router.push(ROUTES.runHistory)}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#6B7280] font-mono">
+          <span className="text-xs text-[var(--muted-text)] font-mono">
             {report.competitors.length} competitors
           </span>
-          <span className="text-xs text-[#6B7280]">·</span>
-          <span className="text-xs text-[#6B7280] font-mono">
+          <span className="text-xs text-[var(--muted-text)]">·</span>
+          <span className="text-xs text-[var(--muted-text)] font-mono">
             {report.run_duration_seconds.toFixed(1)}s
           </span>
           <Button

@@ -270,11 +270,46 @@ async def get_report(
     from datetime import datetime
     competitors = []
     for r in analysis_records:
+        if not r.full_analysis:
+            print(f"[report] Skipping {r.competitor_name}: full_analysis is None")
+            continue
         ca = CompetitorAnalysis(**r.full_analysis)
+
+        # Backfill momentum_evidence from raw agent output if synthesis dropped it
+        if not ca.momentum_evidence and ca.agent_outputs:
+            momentum_raw = ca.agent_outputs.get("momentum", "{}")
+            try:
+                import json as _json
+                momentum_data = _json.loads(momentum_raw) if isinstance(momentum_raw, str) else momentum_raw
+                me = momentum_data.get("momentum_evidence", {})
+                if isinstance(me, dict):
+                    flat = []
+                    for cat_ev in me.values():
+                        if isinstance(cat_ev, list):
+                            flat.extend(cat_ev)
+                    ca.momentum_evidence = flat
+            except (_json.JSONDecodeError, KeyError, TypeError):
+                pass
+
         if ca.domain and not ca.logo_url:
             ca.logo_url = f"https://icons.duckduckgo.com/ip3/{ca.domain}.ico"
         competitors.append(ca)
-    comparison = ComparisonResult(**comparison_record.full_comparison)
+    if not comparison_record or not comparison_record.full_comparison:
+        raise HTTPException(
+            status_code=500, detail="Comparison data missing or incomplete for this run"
+        )
+    comparison_data = dict(comparison_record.full_comparison)
+
+    # Backfill messaging_gap from text if LLM returned null
+    if not comparison_data.get("messaging_gap") and comparison_data.get("messaging_gaps"):
+        comparison_data["messaging_gap"] = {
+            "title": "Messaging & Positioning Gap",
+            "description": comparison_data["messaging_gaps"],
+            "target_persona": "Underserved segment identified in analysis",
+            "business_value": "Tapping this whitespace reduces competitive pressure and expands addressable market",
+            "confidence": "Medium"
+        }
+    comparison = ComparisonResult(**comparison_data)
 
     return IntelligenceReport(
         competitors=competitors,
@@ -618,6 +653,11 @@ async def get_competitor_drift(
         raise HTTPException(
             status_code=404,
             detail="Not enough history for drift detection"
+        )
+    if not history[0].full_analysis or not history[1].full_analysis:
+        raise HTTPException(
+            status_code=400,
+            detail="Full analysis data missing for drift detection"
         )
     newest = CompetitorAnalysis(**history[0].full_analysis)
     previous = CompetitorAnalysis(**history[1].full_analysis)

@@ -51,24 +51,24 @@ function StatusBadge({ status }: { status: string }) {
 
 function SkeletonRow() {
   return (
-    <TableRow className="border-[#1A2332]">
-      <TableCell><Skeleton className="h-5 w-20 rounded-full bg-[#1A2332]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-16 bg-[#1A2332]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-8 bg-[#1A2332]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-8 bg-[#1A2332]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-8 bg-[#1A2332]" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-24 bg-[#1A2332]" /></TableCell>
+    <TableRow className="border-[var(--dialog-border)]">
+      <TableCell><Skeleton className="h-5 w-20 rounded-full bg-[#2A2A2A]" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-16 bg-[#2A2A2A]" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-8 bg-[#2A2A2A]" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-8 bg-[#2A2A2A]" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-8 bg-[#2A2A2A]" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-24 bg-[#2A2A2A]" /></TableCell>
     </TableRow>
   );
 }
 
 export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
   return (
-    <div className="rounded-lg border border-[#1A2332] bg-[#121826]">
+    <div className="rounded-lg border border-[var(--dialog-border)] bg-[var(--dialog-bg)]">
       {isLoading ? (
         <Table>
           <TableHeader>
-            <TableRow className="border-[#1A2332] hover:bg-transparent">
+            <TableRow className="border-[var(--dialog-border)] hover:bg-transparent">
               <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Status</TableHead>
               <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Trigger</TableHead>
               <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Checked</TableHead>
@@ -87,7 +87,7 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
         </Table>
       ) : !runs || runs.length === 0 ? (
         <div className="flex flex-col items-center gap-1 py-12 text-center">
-          <Activity className="h-8 w-8 text-[#1A2332]" />
+          <Activity className="h-8 w-8 text-[#2A2A2A]" />
           <p className="text-sm text-[var(--muted-text)]">No monitoring runs yet</p>
           <p className="text-xs text-[#6B7280]">
             Trigger a monitoring run to see results here
@@ -97,7 +97,7 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-[#1A2332] hover:bg-transparent">
+              <TableRow className="border-[var(--dialog-border)] hover:bg-transparent">
                 <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Status</TableHead>
                 <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Trigger</TableHead>
                 <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Checked</TableHead>
@@ -108,20 +108,20 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
             </TableHeader>
             <TableBody>
               {runs.map((run) => (
-                <TableRow key={run.id} className="border-[#1A2332] hover:bg-[#1A2332]/50">
+                <TableRow key={run.id} className="border-[var(--dialog-border)] hover:bg-[var(--dialog-surface)]/50">
                   <TableCell>
                     <StatusBadge status={run.status} />
                   </TableCell>
-                  <TableCell className="text-sm text-[#CBD5E1]">
+                  <TableCell className="text-sm text-[var(--dialog-text)]">
                     {run.trigger_type}
                   </TableCell>
-                  <TableCell className="text-sm text-[#CBD5E1]">
+                  <TableCell className="text-sm text-[var(--dialog-text)]">
                     {run.competitors_checked}
                   </TableCell>
-                  <TableCell className="text-sm text-[#CBD5E1]">
+                  <TableCell className="text-sm text-[var(--dialog-text)]">
                     {run.alerts_generated}
                   </TableCell>
-                  <TableCell className="text-sm text-[#CBD5E1]">
+                  <TableCell className="text-sm text-[var(--dialog-text)]">
                     {run.notifications_sent}
                   </TableCell>
                   <TableCell className="text-sm text-[var(--muted-text)]">

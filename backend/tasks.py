@@ -273,7 +273,7 @@ async def _scheduled_monitoring_impl():
 
             run = MonitoringRun(
                 watchlist_id=watchlist.id,
-                trigger_type="SCHEDULED",
+                trigger_type="AUTOMATED",
                 status="QUEUED",
             )
 
@@ -307,6 +307,7 @@ async def _run_monitoring_pipeline(run_id: str):
     from backend.database.models import (
         MonitoringRun,
         Run,
+        Watchlist,
         WatchlistCompetitor,
     )
     from backend.services.analysis_service import AnalysisService
@@ -338,9 +339,15 @@ async def _run_monitoring_pipeline(run_id: str):
             competitor_names = [c.company_name for c in competitors]
 
             # ── Create a Run entry for run history ──
+            watchlist_result = await session.execute(
+                select(Watchlist).where(Watchlist.id == run.watchlist_id)
+            )
+            watchlist = watchlist_result.scalar_one_or_none()
+
             analysis_run = Run(
                 status="running",
                 competitor_names=competitor_names,
+                user_id=watchlist.user_id if watchlist else None,
             )
             session.add(analysis_run)
             await session.flush()

@@ -221,6 +221,14 @@ def ensure_list(value):
         return []
     if isinstance(value, list):
         return value
+    if isinstance(value, dict):
+        result = []
+        for v in value.values():
+            if isinstance(v, list):
+                result.extend(v)
+            elif isinstance(v, str) and v:
+                result.append(v)
+        return result
     if isinstance(value, str):
         cleaned = value.strip()
         if cleaned.lower() in [
@@ -482,6 +490,21 @@ class AnalysisService:
             for field in list_fields:
                 data[field] = ensure_list(data.get(field))
 
+            # Backfill momentum_evidence from raw momentum agent output if synthesis dropped it
+            if not data.get("momentum_evidence") and agent_outputs:
+                momentum_raw = agent_outputs.get("momentum", "{}")
+                try:
+                    momentum_data = safe_json_loads(momentum_raw) if isinstance(momentum_raw, str) else momentum_raw
+                    me = momentum_data.get("momentum_evidence", {})
+                    if isinstance(me, dict):
+                        flat = []
+                        for cat_ev in me.values():
+                            if isinstance(cat_ev, list):
+                                flat.extend(cat_ev)
+                        data["momentum_evidence"] = flat
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    pass
+
             string_fields = [
                 "core_offering",
                 "icp",
@@ -490,8 +513,12 @@ class AnalysisService:
                 "hiring_signals",
                 "analyst_note",
                 "core_offering_source",
+                "core_offering_source_url",
                 "pricing_source",
+                "pricing_source_url",
                 "hiring_source",
+                "hiring_source_url",
+                "keywords_source_url",
                 "momentum_reasoning",
             ]
             for field in string_fields:
@@ -525,6 +552,16 @@ class AnalysisService:
                     confidence_scores[key] = int(confidence_val)
                 except (ValueError, TypeError):
                     confidence_scores[key] = 0
+
+                # Calibrate: if evidence exists for a section, boost confidence floor to 50
+                evidence_key = f"{key}_evidence"
+                if key == "tone":
+                    evidence_key = "tone_evidence"
+                if key == "keywords":
+                    evidence_key = "keywords_evidence"
+                existing_evidence = data.get(evidence_key, [])
+                if isinstance(existing_evidence, list) and len(existing_evidence) > 0:
+                    confidence_scores[key] = max(confidence_scores[key], 50)
 
             data["confidence_scores"] = confidence_scores
             data["validation"] = validation
@@ -571,6 +608,21 @@ class AnalysisService:
                     for field in list_fields:
                         data[field] = ensure_list(data.get(field))
 
+                    # Backfill momentum_evidence from raw momentum agent output if synthesis dropped it
+                    if not data.get("momentum_evidence") and agent_outputs:
+                        momentum_raw = agent_outputs.get("momentum", "{}")
+                        try:
+                            momentum_data = safe_json_loads(momentum_raw) if isinstance(momentum_raw, str) else momentum_raw
+                            me = momentum_data.get("momentum_evidence", {})
+                            if isinstance(me, dict):
+                                flat = []
+                                for cat_ev in me.values():
+                                    if isinstance(cat_ev, list):
+                                        flat.extend(cat_ev)
+                                data["momentum_evidence"] = flat
+                        except (json.JSONDecodeError, KeyError, TypeError):
+                            pass
+
                     string_fields = [
                         "core_offering",
                         "icp",
@@ -579,8 +631,12 @@ class AnalysisService:
                         "hiring_signals",
                         "analyst_note",
                         "core_offering_source",
+                        "core_offering_source_url",
                         "pricing_source",
+                        "pricing_source_url",
                         "hiring_source",
+                        "hiring_source_url",
+                        "keywords_source_url",
                         "momentum_reasoning",
                     ]
                     for field in string_fields:

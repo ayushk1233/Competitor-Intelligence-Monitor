@@ -60,6 +60,7 @@ export interface DashboardSummaryResponse {
   has_active_run: boolean;
   active_run_status?: string;
   active_run_id?: string;
+  next_scheduled_analysis?: string;
 }
 
 export interface MonitoringRunResponse {

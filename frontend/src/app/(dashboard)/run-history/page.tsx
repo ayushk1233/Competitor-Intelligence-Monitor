@@ -20,7 +20,7 @@ const statusConfig: Record<string, { label: string; icon: typeof Loader2; class:
   analyzing:  { label: "Analyzing",  icon: Loader2,      class: "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/15" },
   comparing:  { label: "Comparing",  icon: Loader2,      class: "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/15" },
   completed:  { label: "Completed",  icon: CheckCircle2, class: "text-[var(--status-completed)] border-[var(--status-completed)]/30 bg-[var(--status-completed)]/15" },
-  failed:     { label: "Failed",     icon: XCircle,      class: "text-[#EF4444] border-[#EF4444]/30 bg-[#EF4444]/15" },
+  failed:     { label: "Failed",     icon: XCircle,      class: "text-[#DC2626] border-[#DC2626]/40 bg-[#DC2626]/25" },
 };
 
 function StatusBadge({ status }: { status: string }) {

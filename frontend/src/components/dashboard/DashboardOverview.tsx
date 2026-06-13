@@ -59,15 +59,26 @@ function KpiCards({ summary, competitors, monitoringRuns, competitorItems, isLoa
     : 0;
 
   const lastRun = monitoringRuns?.items?.[0];
-  let nextRunLabel = "Tomorrow, 09:00 AM";
-  let nextRunSub = "Daily automated monitoring";
-  if (lastRun?.created_at) {
-    const last = new Date(lastRun.created_at);
-    const next = new Date(last.getTime() + 24 * 60 * 60 * 1000);
-    const tomorrow = next.toLocaleDateString("en-US", { weekday: "long" });
+  let nextRunLabel = "Not scheduled";
+  let nextRunSub = "No active watchlists";
+  
+  if (summary?.next_scheduled_analysis) {
+    const next = new Date(summary.next_scheduled_analysis);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    let dayStr = "";
+    if (next.toDateString() === today.toDateString()) {
+      dayStr = "Today";
+    } else if (next.toDateString() === tomorrow.toDateString()) {
+      dayStr = "Tomorrow";
+    } else {
+      dayStr = next.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    }
     const time = next.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    nextRunLabel = `${tomorrow}, ${time}`;
-    nextRunSub = "Daily automated monitoring";
+    nextRunLabel = `${dayStr}, ${time}`;
+    nextRunSub = "Automated monitoring";
   }
 
   const cards = [

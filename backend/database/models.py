@@ -561,7 +561,7 @@ class MonitoringRun(Base):
 
     trigger_type: Mapped[str] = mapped_column(
         String(50),
-        default="SCHEDULED",
+        default="AUTOMATED",
     )
 
     status: Mapped[str] = mapped_column(

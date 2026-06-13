@@ -21,7 +21,7 @@ import type { WatchlistResponse } from "@/types/api";
 
 const sources = ["homepage", "pricing", "blog", "careers"] as const;
 const sensitivities = ["low", "medium", "high"] as const;
-const frequencies = ["daily", "weekly"] as const;
+const frequencies = ["5_mins", "daily", "weekly"] as const;
 
 const editWatchlistSchema = z.object({
   name: z.string().min(1, "Name is required"),

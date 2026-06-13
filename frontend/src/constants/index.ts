@@ -24,6 +24,8 @@ export const ROUTES = {
   reportDetail: (runId: string) => `/reports/${runId}`,
   notifications: "/notifications",
   settings: "/settings",
+  runHistory: "/run-history",
+  battlecards: "/battlecards",
 } as const;
 
 export const POLL_INTERVAL = 10_000;

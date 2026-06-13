@@ -59,6 +59,16 @@ async def get_dashboard_summary(
         candidates.append(last_adhoc_run.created_at)
     last_run_at = max(candidates) if candidates else None
 
+    from backend.database.models import Watchlist
+    from sqlalchemy import select, func
+    next_run_res = await db.execute(
+        select(func.min(Watchlist.next_run_at))
+        .where(Watchlist.user_id == str(current_user.id))
+        .where(Watchlist.is_active == True)
+        .where(Watchlist.next_run_at.is_not(None))
+    )
+    next_scheduled_analysis = next_run_res.scalar()
+
     return DashboardSummaryResponse(
         watchlists=await service.get_watchlist_count(
             current_user.id
@@ -82,6 +92,7 @@ async def get_dashboard_summary(
         has_active_run=active_run is not None,
         active_run_status=active_run.status if active_run else None,
         active_run_id=active_run.id if active_run else None,
+        next_scheduled_analysis=next_scheduled_analysis,
     )
 
 
