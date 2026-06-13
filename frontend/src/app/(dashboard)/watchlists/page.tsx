@@ -14,12 +14,12 @@ export default function WatchlistsPage() {
         <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-[#A0A0A0]">Manage your competitor monitoring groups</p>
+            <p className="text-sm text-muted-foreground">Manage your competitor monitoring groups</p>
           </div>
         </div>
         <div className="flex flex-col items-center gap-3 py-20 text-center">
           <AlertCircle className="h-10 w-10 text-[#EF4444]" />
-          <p className="text-sm text-[#A0A0A0]">Failed to load watchlists</p>
+          <p className="text-sm text-muted-foreground">Failed to load watchlists</p>
           <p className="text-xs text-[#6B7280]">{(error as Error)?.message || "An error occurred"}</p>
         </div>
       </div>

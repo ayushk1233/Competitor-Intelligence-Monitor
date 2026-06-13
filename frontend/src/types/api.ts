@@ -30,6 +30,7 @@ export interface CurrentUserResponse {
 export interface DashboardCompetitor {
   company_name: string;
   domain?: string;
+  logo_url?: string;
   messaging_tone?: string;
   momentum_score?: number;
   last_analyzed_at?: string;
@@ -273,6 +274,7 @@ export interface DriftReport {
 export interface CompetitorAnalysisReport {
   name: string;
   domain: string;
+  logo_url?: string;
   core_offering: string;
   icp: string;
   messaging_tone: string;
@@ -336,6 +338,13 @@ export interface ComparisonResult {
   smb_to_enterprise_shift: string[];
   ai_emphasis_ranking: string[];
   messaging_gaps: string;
+  messaging_gap?: {
+    title: string;
+    description: string;
+    target_persona: string;
+    business_value: string;
+    confidence: string;
+  };
   threat_ranking: string[];
   threat_ranking_reasons?: string[];
   executive_briefing: string;

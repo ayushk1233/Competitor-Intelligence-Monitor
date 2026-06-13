@@ -14,8 +14,8 @@ export default function NotificationsPage() {
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-white">Notifications</h1>
-            <p className="text-sm text-[#A0A0A0]">Manage your notification channels</p>
+            <h1 className="text-xl font-semibold text-foreground">Notifications</h1>
+            <p className="text-sm text-muted-foreground">Manage your notification channels</p>
           </div>
         </div>
         <div className="flex flex-col items-center gap-3 py-20 text-center">
@@ -33,7 +33,7 @@ export default function NotificationsPage() {
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-white">Notifications</h1>
+            <h1 className="text-xl font-semibold text-foreground">Notifications</h1>
             <p className="text-sm text-[#A3A3A3]">Manage your notification channels</p>
         </div>
         {!isLoading && channels.length > 0 && <CreateChannelDialog />}

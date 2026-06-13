@@ -121,11 +121,12 @@ class DatabaseService:
         await self.session.commit()
         return True
 
-    async def get_last_adhoc_run(self) -> Run | None:
-        """Get the most recent ad-hoc analysis run."""
-        result = await self.session.execute(
-            select(Run).order_by(desc(Run.created_at)).limit(1)
-        )
+    async def get_last_adhoc_run(self, user_id: str | None = None) -> Run | None:
+        """Get the most recent ad-hoc analysis run, optionally filtered by user."""
+        query = select(Run).order_by(desc(Run.created_at)).limit(1)
+        if user_id:
+            query = query.where(Run.user_id == user_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
 

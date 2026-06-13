@@ -49,7 +49,7 @@ async def get_dashboard_summary(
 
     alert_counts = await service.get_alert_counts_by_severity_for_user(current_user.id)
     last_monitoring_run = await service.get_last_run_for_user(current_user.id)
-    last_adhoc_run = await service.get_last_adhoc_run()
+    last_adhoc_run = await service.get_last_adhoc_run(user_id=str(current_user.id))
     active_run = await service.get_active_run()
 
     candidates = []
@@ -102,7 +102,7 @@ async def get_recent_runs(
     service = DatabaseService(db)
 
     runs = await service.get_recent_runs_for_user(
-        current_user.id
+        current_user.id, limit=5
     )
 
     return {
@@ -209,6 +209,7 @@ async def get_dashboard_competitors(
             DashboardCompetitorResponse(
                 company_name=r.competitor_name,
                 domain=r.domain,
+                logo_url=f"https://icons.duckduckgo.com/ip3/{r.domain}.ico" if r.domain else None,
                 messaging_tone=r.messaging_tone,
                 momentum_score=r.momentum_score,
                 last_analyzed_at=r.created_at,

@@ -83,6 +83,15 @@ class CompetitorAnalysis(BaseModel):
     pages_analyzed: list[str]
     analysis_success: bool = True
     error: Optional[str] = None
+    logo_url: str = ""
+
+
+class MessagingGap(BaseModel):
+    title: str
+    description: str
+    target_persona: str
+    business_value: str
+    confidence: str
 
 
 class ComparisonResult(BaseModel):
@@ -94,6 +103,7 @@ class ComparisonResult(BaseModel):
     smb_to_enterprise_shift: list[str]
     ai_emphasis_ranking: list[str]
     messaging_gaps: str
+    messaging_gap: MessagingGap | None = None
     threat_ranking: list[str]
     threat_ranking_reasons: list[str] = []
     executive_briefing: str
@@ -371,6 +381,7 @@ class DashboardActivityItem(BaseModel):
 class DashboardCompetitorResponse(BaseModel):
     company_name: str
     domain: str | None = None
+    logo_url: str | None = None
     messaging_tone: str | None = None
     momentum_score: int | None = None
     last_analyzed_at: datetime | None = None

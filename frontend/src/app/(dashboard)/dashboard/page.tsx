@@ -11,9 +11,10 @@ import {
 import { useRunStatus } from "@/hooks/use-run-status";
 import { useRecentAnalysisRuns } from "@/hooks/use-analysis-runs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardOverview, MomentumRanking, RecentRunsWidget } from "@/components/dashboard/DashboardOverview";
 import { NewAnalysisModal } from "@/components/dashboard/NewAnalysisModal";
 import { RecentRunsTable } from "@/components/dashboard/RecentRunsTable";
-import { Clock, Play, AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, Loader2 } from "lucide-react";
+import { AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, Loader2 } from "lucide-react";
 import type { DashboardAlertResponse, DashboardCompetitor } from "@/types/api";
 
 const toneColors: Record<string, string> = {
@@ -23,6 +24,17 @@ const toneColors: Record<string, string> = {
   visionary: "bg-amber-500/10 text-amber-300",
   hybrid: "bg-purple-500/10 text-purple-300",
 };
+
+function matchesRunName(companyName: string, domain: string | undefined, candidates: Set<string> | string[]): boolean {
+  if (candidates instanceof Set && candidates.has(companyName)) return true;
+  if (Array.isArray(candidates) && candidates.includes(companyName)) return true;
+  if (!domain) return false;
+  const list = candidates instanceof Set ? [...candidates] : candidates;
+  return list.some((n) => {
+    const urlDomain = n.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
+    return urlDomain === domain || urlDomain === `www.${domain}`;
+  });
+}
 
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -57,14 +69,24 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
   return (
     <div className={`rounded-xl bg-card p-4 flex flex-col gap-4 ${borderClass}`}>
       <div className="flex items-start justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-white">{competitor.company_name}</span>
-            {hasAlerts && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
-          </div>
-                  {competitor.domain && (
-            <p className="text-xs text-neutral-500 truncate mt-0.5 font-sans">{competitor.domain}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          {competitor.logo_url && (
+            <img
+              src={competitor.logo_url}
+              alt={`${competitor.company_name} logo`}
+              className="h-8 w-8 rounded-lg bg-neutral-800 object-contain shrink-0"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
+            />
           )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold text-foreground">{competitor.company_name}</span>
+              {hasAlerts && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
+            </div>
+            {competitor.domain && (
+              <p className="text-xs text-neutral-500 truncate mt-0.5 font-sans">{competitor.domain}</p>
+            )}
+          </div>
         </div>
         {competitor.momentum_score !== null && competitor.momentum_score !== undefined && (
           <div className="flex items-center gap-1">
@@ -72,7 +94,7 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             </svg>
             <span className="text-xs text-neutral-500">Momentum</span>
-            <span className="text-lg font-bold text-white">{competitor.momentum_score}</span>
+            <span className="text-lg font-bold text-foreground">{competitor.momentum_score}</span>
           </div>
         )}
       </div>
@@ -119,7 +141,7 @@ function AlertRow({ alert }: { alert: DashboardAlertResponse }) {
       <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${s.border}`} />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-white">{alert.company_name}</span>
+          <span className="text-sm font-bold text-foreground">{alert.company_name}</span>
           <span className={`${s.pill} ${s.pillText} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide`}>
             {label}
           </span>
@@ -128,7 +150,7 @@ function AlertRow({ alert }: { alert: DashboardAlertResponse }) {
           {alert.created_at ? relativeTime(alert.created_at) : ""}
         </span>
       </div>
-      <p className="text-sm text-white leading-relaxed mt-1.5">{alert.headline}</p>
+      <p className="text-sm text-foreground leading-relaxed mt-1.5">{alert.headline}</p>
       {alert.summary && (
         <p className="text-sm text-neutral-400 leading-relaxed mt-1">{alert.summary}</p>
       )}
@@ -165,6 +187,7 @@ export default function DashboardPage() {
   };
 
   const lastRunTimestamp = latestCompletedRun?.created_at ?? summary?.last_run_at;
+  const hasLastRun = !!lastRunTimestamp;
   const lastRunLabel = lastRunTimestamp
     ? `Last run ${relativeTime(lastRunTimestamp)}`
     : "No runs yet";
@@ -172,55 +195,48 @@ export default function DashboardPage() {
   const latestCompetitorNames = new Set(latestCompletedRun?.competitors ?? []);
   const topCompetitors = competitors?.items
     ? competitors.items
-        .filter((c) => latestCompetitorNames.has(c.company_name))
+        .filter((c) => matchesRunName(c.company_name, c.domain, latestCompetitorNames))
         .sort((a, b) => (b.momentum_score ?? 0) - (a.momentum_score ?? 0))
         .slice(0, 3)
     : [];
 
   const distinctFromRuns = new Set<string>();
-  for (const run of completedRuns) {
+  for (const run of completedRuns.slice(0, 2)) {
     for (const name of run.competitors ?? []) {
       distinctFromRuns.add(name);
     }
-    if (distinctFromRuns.size >= 6) break;
   }
   const gridCompetitors = competitors?.items
     ? competitors.items
-        .filter((c) => distinctFromRuns.has(c.company_name))
+        .filter((c) => matchesRunName(c.company_name, c.domain, [...distinctFromRuns]))
         .sort((a, b) => (b.momentum_score ?? 0) - (a.momentum_score ?? 0))
     : [];
 
   return (
     <div className="p-8">
-      {/* Top Action Bar */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 rounded-lg border border-[#BC6C50]/40 bg-transparent px-4 py-2 text-sm text-terracotta transition-colors hover:bg-[#140A07]/30 font-mono">
-            <Clock className="h-4 w-4" />
-            {lastRunLabel}
-          </button>
-          <button
-            onClick={() => setAnalysisOpen(true)}
-            disabled={isRunning}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 font-mono"
-          >
-            {isRunning ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
-            ) : (
-              <><Play className="h-4 w-4" /> Run Analysis</>
-            )}
-          </button>
-        </div>
-      </div>
-
       <NewAnalysisModal open={analysisOpen} onClose={() => setAnalysisOpen(false)} />
+
+      {/* Dashboard Overview — KPI Cards + Intelligence Widgets */}
+      <div className="mb-10">
+        <DashboardOverview
+          summary={summary}
+          competitors={competitors}
+          alerts={alerts}
+          monitoringRuns={monitoringRuns}
+          isLoading={competitorsLoading || alertsLoading || monitoringLoading}
+          lastRunLabel={lastRunLabel}
+          hasLastRun={hasLastRun}
+          isRunning={!!isRunning}
+          onRunAnalysis={() => setAnalysisOpen(true)}
+        />
+      </div>
 
       {isRunning && (
         <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-5 py-4">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />
             <div>
-              <p className="text-sm font-medium text-white">Analysis in progress</p>
+              <p className="text-sm font-medium text-foreground">Analysis in progress</p>
               <p className="text-xs text-emerald-400/80 mt-0.5">
                 {stageLabels[runStatus || ""] || "Working..."}
               </p>
@@ -247,11 +263,11 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-emerald-500" />
-            <h2 className="text-lg font-bold text-white font-mono">Latest Intelligence</h2>
+            <h2 className="text-lg font-bold text-foreground font-mono">Latest Intelligence</h2>
             {latestCompletedRunId && (
               <Link
                 href={`/reports/${latestCompletedRunId}`}
-                className="ml-auto text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono"
+                className="ml-auto text-sm text-[var(--link-accent)] hover:text-[var(--link-accent-hover)] transition-colors font-mono"
               >
                 View Full Report &rarr;
               </Link>
@@ -266,12 +282,22 @@ export default function DashboardPage() {
               return (
               <div key={comp.company_name} className={`rounded-xl bg-card p-4 ${topBorder}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">{comp.company_name}</span>
-                      <MomentumIcon score={comp.momentum_score ?? 0} />
+                  <div className="flex items-center gap-3">
+                    {comp.logo_url && (
+                      <img
+                        src={comp.logo_url}
+                        alt={`${comp.company_name} logo`}
+                        className="h-8 w-8 rounded-lg bg-neutral-800 object-contain shrink-0"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
+                      />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground">{comp.company_name}</span>
+                        <MomentumIcon score={comp.momentum_score ?? 0} />
+                      </div>
+                      <span className="text-xs text-neutral-500">Score: {comp.momentum_score ?? "—"}/10</span>
                     </div>
-                    <span className="text-xs text-neutral-500">Score: {comp.momentum_score ?? "—"}/10</span>
                   </div>
                 </div>
                 {comp.core_offering && (
@@ -291,11 +317,17 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Intelligence Widgets */}
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <MomentumRanking competitors={competitors?.items} isLoading={competitorsLoading} />
+        <RecentRunsWidget runs={monitoringRuns?.items} isLoading={monitoringLoading} />
+      </div>
+
       {/* Competitors Grid Section */}
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white font-mono">Competitors</h2>
-          <Link href="/run-history" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono">
+          <h2 className="text-lg font-bold text-foreground font-mono">Competitors</h2>
+          <Link href="/run-history" className="text-sm text-[var(--link-accent)] hover:text-[var(--link-accent-hover)] transition-colors font-mono">
             View all &rarr;
           </Link>
         </div>
@@ -320,23 +352,11 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Monitoring Runs */}
-      <div className="mb-8">
-        <RecentRunsTable runs={monitoringRuns?.items?.slice(0, 2)} isLoading={monitoringLoading} />
-        {monitoringRuns && monitoringRuns.items.length > 2 && (
-          <div className="mt-2 text-right">
-            <Link href="/watchlists" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono">
-              View all &rarr;
-            </Link>
-          </div>
-        )}
-      </div>
-
       {/* Recent Alerts Section */}
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white font-mono">Recent alerts</h2>
-          <Link href="/alerts" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors font-mono">
+          <h2 className="text-lg font-bold text-foreground font-mono">Recent alerts</h2>
+          <Link href="/alerts" className="text-sm text-[var(--link-accent)] hover:text-[var(--link-accent-hover)] transition-colors font-mono">
             View all &rarr;
           </Link>
         </div>

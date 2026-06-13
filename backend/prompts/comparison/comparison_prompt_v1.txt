@@ -35,6 +35,13 @@ Return ONLY a valid JSON object with exactly these fields:
   "smb_to_enterprise_shift": ["list of competitor names showing this pattern — empty list if none"],
   "ai_emphasis_ranking": ["ranked list of all competitors from most to least AI-focused based on content signals"],
   "messaging_gaps": "3-4 sentences describing specific positioning territory that NONE of these competitors own. Name the underserved customer segment, the unaddressed pain point, and why this is a real opportunity rather than a gap they ignored intentionally.",
+  "messaging_gap": {{
+    "title": "Short opportunity title (e.g. 'Citizen Developer & SMB Automation Gap')",
+    "description": "Detailed explanation of the whitespace opportunity — specific, actionable, evidence-based",
+    "target_persona": "Who is underserved (e.g. 'SMB operators, business analysts, operations teams')",
+    "business_value": "Why this matters commercially (e.g. 'Expands TAM and reduces dependency on engineering resources')",
+    "confidence": "Low | Medium | High"
+  }},
   "threat_ranking": ["ranked from most to least dangerous to a new market entrant — include all competitors"],
   "executive_briefing": "Write 6-8 sentences as a sharp intelligence briefing a CEO would forward to their product, sales, and strategy teams. Structure it as: (1) who leads and why, (2) who is moving fastest and what that means for the market, (3) what nobody is doing that represents opportunity, (4) what the team should prioritize in the next 90 days based on these signals. Use specific company names, specific signals from the data, and be direct about risk. No hedging, no vague language."
 }}

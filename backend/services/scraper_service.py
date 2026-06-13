@@ -447,9 +447,10 @@ class ScraperService:
     def _extract_name(self, identifier: str, domain: str) -> str:
         """
         Get a clean display name.
-        'hubspot.com' → 'HubSpot' (best effort, capitalize domain root)
+        'hubspot.com' → 'Hubspot', 'app.emergent.sh' → 'Emergent'
         """
         if "." not in identifier:
             return identifier.title()
-        root = domain.split(".")[0]
+        parts = domain.split(".")
+        root = parts[-2] if len(parts) >= 2 else parts[0]
         return root.capitalize()

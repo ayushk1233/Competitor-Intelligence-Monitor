@@ -268,9 +268,12 @@ async def get_report(
 
     # Reconstruct IntelligenceReport from stored JSON
     from datetime import datetime
-    competitors = [
-        CompetitorAnalysis(**r.full_analysis) for r in analysis_records
-    ]
+    competitors = []
+    for r in analysis_records:
+        ca = CompetitorAnalysis(**r.full_analysis)
+        if ca.domain and not ca.logo_url:
+            ca.logo_url = f"https://icons.duckduckgo.com/ip3/{ca.domain}.ico"
+        competitors.append(ca)
     comparison = ComparisonResult(**comparison_record.full_comparison)
 
     return IntelligenceReport(

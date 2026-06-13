@@ -7,7 +7,7 @@ export default function IntelSearchPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <p className="text-sm text-[#A0A0A0]">Search across all competitor intelligence data</p>
+        <p className="text-sm text-muted-foreground">Search across all competitor intelligence data</p>
       </div>
       <ComingSoon
         icon={<Search className="h-6 w-6" />}

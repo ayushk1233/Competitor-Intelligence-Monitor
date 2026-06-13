@@ -54,29 +54,29 @@ export default function WatchlistDetailPage({
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push(ROUTES.watchlists)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] text-[#A0A0A0] transition-colors hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
             {watchlistLoading ? (
               <div className="space-y-1">
-                <Skeleton className="h-5 w-40 bg-[#2A2A2A]" />
-                <Skeleton className="h-4 w-60 bg-[#2A2A2A]" />
+                <Skeleton className="h-5 w-40 bg-muted" />
+                <Skeleton className="h-4 w-60 bg-muted" />
               </div>
             ) : watchlist ? (
               <>
-                <h1 className="text-xl font-semibold text-white">
+                <h1 className="text-xl font-semibold text-foreground">
                   {watchlist.name}
                 </h1>
                 {watchlist.description && (
-                  <p className="text-sm text-[#A0A0A0]">
+                  <p className="text-sm text-muted-foreground">
                     {watchlist.description}
                   </p>
                 )}
               </>
             ) : (
-              <h1 className="text-xl font-semibold text-white">
+              <h1 className="text-xl font-semibold text-foreground">
                 Watchlist
               </h1>
             )}
@@ -103,17 +103,17 @@ export default function WatchlistDetailPage({
       </div>
 
       <Tabs defaultValue="competitors">
-        <TabsList className="border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+        <TabsList className="border border-border bg-card">
           <TabsTrigger
             value="competitors"
-            className="flex items-center gap-2 text-[#A0A0A0] data-[state=active]:bg-[#2A2A2A] data-[state=active]:text-white"
+            className="flex items-center gap-2 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
           >
             <Users className="h-4 w-4" />
             Competitors
           </TabsTrigger>
           <TabsTrigger
             value="runs"
-            className="flex items-center gap-2 text-[#A0A0A0] data-[state=active]:bg-[#2A2A2A] data-[state=active]:text-white"
+            className="flex items-center gap-2 text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
           >
             <Activity className="h-4 w-4" />
             Monitoring Runs
@@ -122,7 +122,7 @@ export default function WatchlistDetailPage({
 
         <TabsContent value="competitors" className="mt-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Competitors</h2>
+            <h2 className="text-sm font-semibold text-foreground">Competitors</h2>
             <AddCompetitorDialog watchlistId={id} />
           </div>
           <CompetitorTable

@@ -62,7 +62,7 @@ function ScoreLabel({ delta }: { delta: number }) {
     );
   }
   return (
-    <span className="flex items-center gap-1 text-sm text-[#A0A0A0]">
+    <span className="flex items-center gap-1 text-sm text-muted-foreground">
       <Minus className="h-4 w-4" />0
     </span>
   );
@@ -83,17 +83,17 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center gap-4">
-          <Skeleton className="h-8 w-8 rounded-lg bg-[#2A2A2A]" />
+          <Skeleton className="h-8 w-8 rounded-lg bg-muted" />
           <div className="space-y-1">
-            <Skeleton className="h-6 w-48 bg-[#2A2A2A]" />
+            <Skeleton className="h-6 w-48 bg-muted" />
             <div className="flex gap-3">
-              <Skeleton className="h-4 w-20 bg-[#2A2A2A]" />
-              <Skeleton className="h-4 w-20 bg-[#2A2A2A]" />
+              <Skeleton className="h-4 w-20 bg-muted" />
+              <Skeleton className="h-4 w-20 bg-muted" />
             </div>
           </div>
         </div>
-        <Skeleton className="h-48 rounded-lg bg-[#2A2A2A]" />
-        <Skeleton className="h-32 rounded-lg bg-[#2A2A2A]" />
+        <Skeleton className="h-48 rounded-lg bg-muted" />
+        <Skeleton className="h-32 rounded-lg bg-muted" />
       </div>
     );
   }
@@ -119,23 +119,23 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
     );
   }
 
-  const toneClass = toneConfig[analysis.messaging_tone] ?? "bg-[#2A2A2A] text-[#A0A0A0] border-[rgba(255,255,255,0.1)]";
+  const toneClass = toneConfig[analysis.messaging_tone] ?? "bg-muted text-muted-foreground border-border";
 
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push(ROUTES.watchlistDetail(id))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] text-[#A0A0A0] transition-colors hover:text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="border-[rgba(255,255,255,0.1)] text-[#A0A0A0] hover:text-white">
+          <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground">
             <Swords className="mr-1.5 h-4 w-4" />
             Battlecard
           </Button>
-          <Button variant="outline" className="border-[rgba(255,255,255,0.1)] text-[#A0A0A0] hover:text-white">
+          <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground">
             <Bell className="mr-1.5 h-4 w-4" />
             Watch
           </Button>
@@ -143,10 +143,10 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-white">{analysis.name}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{analysis.name}</h1>
         <div className="mt-2 flex items-center gap-4">
           <ScoreLabel delta={drift?.momentum_delta ?? 0} />
-          <span className="flex items-center gap-1 text-sm text-[#A0A0A0]">
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
             <MessageSquare className="h-4 w-4" />
             {analysis.messaging_tone ? (
               <Badge variant="outline" className={`text-xs font-medium capitalize ${toneClass}`}>
@@ -161,35 +161,35 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {analysis.core_offering && (
-          <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+          <Card className="border-border bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[#A0A0A0]">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <Zap className="mr-1.5 inline h-3.5 w-3.5" />
                 Core offering
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed text-white">{analysis.core_offering}</p>
+              <p className="text-sm leading-relaxed text-foreground">{analysis.core_offering}</p>
             </CardContent>
           </Card>
         )}
         {analysis.icp && (
-          <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+          <Card className="border-border bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[#A0A0A0]">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <Target className="mr-1.5 inline h-3.5 w-3.5" />
                 Ideal customer
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed text-white">{analysis.icp}</p>
+              <p className="text-sm leading-relaxed text-foreground">{analysis.icp}</p>
             </CardContent>
           </Card>
         )}
       </div>
 
       {analysis.analyst_note && (
-        <Card className="border-[rgba(255,255,255,0.1)] bg-[#222222]">
+        <Card className="border-border bg-[#222222]">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#F59E0B]">
               <Lightbulb className="h-3.5 w-3.5" />
@@ -197,15 +197,15 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-white italic">{analysis.analyst_note}</p>
+            <p className="text-sm leading-relaxed text-foreground italic">{analysis.analyst_note}</p>
           </CardContent>
         </Card>
       )}
 
       {analysis.recent_launches && analysis.recent_launches.length > 0 && (
-        <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[#A0A0A0]">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Recent Signals
             </CardTitle>
           </CardHeader>
@@ -214,7 +214,7 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
               {analysis.recent_launches.map((signal, i) => {
                 const dotColor = severityColor[i < 3 ? ["HIGH", "MEDIUM", "LOW"][i] : "LOW"];
                 return (
-                  <li key={i} className="flex items-start gap-3 text-sm text-white">
+                  <li key={i} className="flex items-start gap-3 text-sm text-foreground">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
                     {signal}
                   </li>
@@ -226,9 +226,9 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
       )}
 
       {analysis.strategic_keywords && analysis.strategic_keywords.length > 0 && (
-        <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[#A0A0A0]">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Hash className="mr-1.5 inline h-3.5 w-3.5" />
               Strategic Keywords
             </CardTitle>
@@ -239,10 +239,10 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
                 <Badge
                   key={i}
                   variant="outline"
-                  className={`border-[rgba(255,255,255,0.1)] text-xs font-medium ${
+                  className={`border-border text-xs font-medium ${
                     i < 3
                       ? "bg-white text-[#121212]"
-                      : "bg-[#2A2A2A] text-white"
+                      : "bg-muted text-foreground"
                   }`}
                 >
                   {i < 3 ? `+ ${keyword}` : keyword}
@@ -254,9 +254,9 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
       )}
 
       {drift && (drift.added_keywords.length > 0 || drift.removed_keywords.length > 0 || drift.tone_changed) && (
-        <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[#A0A0A0]">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Recent Changes
             </CardTitle>
           </CardHeader>

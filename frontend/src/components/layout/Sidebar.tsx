@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useDashboardSummary } from "@/hooks/use-dashboard";
-import { useTheme } from "@/providers/ThemeProvider";
 import { ROUTES } from "@/constants";
 import {
   LayoutDashboard,
@@ -16,8 +15,6 @@ import {
   Search,
   LogOut,
   X,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -48,8 +45,6 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { data: summary } = useDashboardSummary();
-  const { theme, toggle } = useTheme();
-
   const handleNav = (href: string) => {
     router.push(href);
     onClose();
@@ -69,7 +64,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-800 bg-neutral-900 font-mono transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-800 bg-card font-mono transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -81,7 +76,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             </svg>
           </div>
           <div className="flex-1">
-            <div className="text-lg font-bold text-white leading-none">CIM</div>
+            <div className="text-lg font-bold text-foreground leading-none">CIM</div>
             <div className="text-xs text-neutral-500 leading-tight mt-0.5 font-sans">Intelligence Monitor</div>
           </div>
           <button
@@ -108,7 +103,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   onClick={() => handleNav(item.href)}
                   className={`flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                     active
-                      ? "bg-neutral-800/50 text-white"
+                      ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
                       : "text-neutral-400 hover:bg-neutral-800/30 hover:text-white"
                   }`}
                 >
@@ -140,7 +135,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   onClick={() => handleNav(item.href)}
                   className={`flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                     active
-                      ? "bg-neutral-800/50 text-white"
+                      ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
                       : "text-neutral-400 hover:bg-neutral-800/30 hover:text-white"
                   }`}
                 >
@@ -156,14 +151,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           <p className="truncate text-xs text-neutral-500 font-sans">
             {user?.email || user?.display_name}
           </p>
-          <div className="mt-1 flex items-center gap-1">
-            <button
-              onClick={toggle}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-500 transition-colors hover:text-white"
-            >
-              {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-              {theme === "dark" ? "Light" : "Dark"}
-            </button>
+          <div className="mt-1">
             <button
               onClick={logout}
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-500 transition-colors hover:text-red-500"

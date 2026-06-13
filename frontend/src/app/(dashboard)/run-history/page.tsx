@@ -19,12 +19,12 @@ const statusConfig: Record<string, { label: string; icon: typeof Loader2; class:
   scraping:   { label: "Scraping",   icon: Loader2,      class: "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/15" },
   analyzing:  { label: "Analyzing",  icon: Loader2,      class: "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/15" },
   comparing:  { label: "Comparing",  icon: Loader2,      class: "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/15" },
-  completed:  { label: "Completed",  icon: CheckCircle2, class: "text-[#22C55E] border-[#22C55E]/30 bg-[#22C55E]/15" },
+  completed:  { label: "Completed",  icon: CheckCircle2, class: "text-[var(--status-completed)] border-[var(--status-completed)]/30 bg-[var(--status-completed)]/15" },
   failed:     { label: "Failed",     icon: XCircle,      class: "text-[#EF4444] border-[#EF4444]/30 bg-[#EF4444]/15" },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const c = statusConfig[status] ?? { label: status, icon: Loader2, class: "text-[#A0A0A0] border-[rgba(255,255,255,0.1)] bg-[#2A2A2A]" };
+  const c = statusConfig[status] ?? { label: status, icon: Loader2, class: "text-muted-foreground border-border bg-muted" };
   const Icon = c.icon;
   return (
     <Badge variant="outline" className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold ${c.class}`}>
@@ -47,12 +47,12 @@ function RunRow({ run }: { run: RunListItem }) {
   });
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] p-4">
+    <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-4">
         <StatusBadge status={run.status} />
         <div>
-          <p className="text-sm font-medium text-white">{run.competitors.join(", ")}</p>
-          <p className="text-xs text-[#A0A0A0]">{run.pages_fetched} pages fetched</p>
+          <p className="text-sm font-medium text-foreground">{run.competitors.join(", ")}</p>
+          <p className="text-xs text-muted-foreground">{run.pages_fetched} pages fetched</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ function RunRow({ run }: { run: RunListItem }) {
         {run.status === "completed" && (
           <Link
             href={ROUTES.reportDetail(run.run_id)}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-[#A0A0A0] hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground hover:text-foreground"
           >
             <FileText className="h-4 w-4" />
           </Link>
@@ -80,7 +80,7 @@ function RunRow({ run }: { run: RunListItem }) {
             }
           }}
           disabled={deleteMutation.isPending}
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-[#A0A0A0] hover:text-[#EF4444]"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground hover:text-[#EF4444]"
         >
           {deleteMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -99,19 +99,19 @@ export default function RunHistoryPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <p className="text-sm text-[#A0A0A0]">Full history of all analysis runs</p>
+        <p className="text-sm text-muted-foreground">Full history of all analysis runs</p>
       </div>
 
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 rounded-lg bg-[#2A2A2A]" />
+            <Skeleton key={i} className="h-16 rounded-lg bg-muted" />
           ))}
         </div>
       ) : !runs || runs.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] py-16 text-center">
-          <Play className="h-8 w-8 text-[#A0A0A0]" />
-          <p className="text-sm text-[#A0A0A0]">No runs yet</p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card py-16 text-center">
+          <Play className="h-8 w-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No runs yet</p>
           <p className="text-xs text-[#6B7280]">Run an analysis from the dashboard to see history here</p>
         </div>
       ) : (

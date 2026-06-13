@@ -7,7 +7,7 @@ export default function BattlecardsPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <p className="text-sm text-[#A0A0A0]">Competitor battlecards for sales and positioning</p>
+        <p className="text-sm text-muted-foreground">Competitor battlecards for sales and positioning</p>
       </div>
       <ComingSoon
         icon={<Swords className="h-6 w-6" />}

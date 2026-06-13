@@ -7,7 +7,7 @@ export default function TrendsPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <p className="text-sm text-[#A0A0A0]">Competitor momentum and market trends</p>
+        <p className="text-sm text-muted-foreground">Competitor momentum and market trends</p>
       </div>
       <ComingSoon
         icon={<TrendingUp className="h-6 w-6" />}

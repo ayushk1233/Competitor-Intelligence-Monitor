@@ -58,7 +58,7 @@ function SingleAlertRow({ alert }: { alert: DashboardAlertResponse }) {
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${style.border}`} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-base font-bold text-white">{alert.company_name}</span>
+          <span className="text-base font-bold text-foreground">{alert.company_name}</span>
           <span className={`${style.pill} ${style.pillText} px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide`}>
             {toLabel(alert.severity)}
           </span>
@@ -74,7 +74,7 @@ function SingleAlertRow({ alert }: { alert: DashboardAlertResponse }) {
             : ""}
         </span>
       </div>
-      <p className="text-sm text-white leading-relaxed mt-2">{alert.headline}</p>
+      <p className="text-sm text-foreground leading-relaxed mt-2">{alert.headline}</p>
       {alert.summary && (
         <p className="text-sm text-neutral-400 leading-relaxed mt-1.5">{alert.summary}</p>
       )}
