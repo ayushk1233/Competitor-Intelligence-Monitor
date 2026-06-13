@@ -1,41 +1,71 @@
 import json
 import re
-import asyncio
 
 from backend.config import get_settings
-from backend.models.schemas import CompetitorAnalysis, CompetitorPages
-from backend.utils.chunker import merge_page_contents
-from backend.services.llm_service import call_openrouter, ANALYSIS_MODEL
-
 from backend.metrics import (
     llm_momentum_score,
 )
-from backend.prompts.metadata.prompt_versions import (
-    ANALYSIS_PROMPT_VERSION
-)
+from backend.models.schemas import CompetitorAnalysis, CompetitorPages
+from backend.reasoning.orchestrator import run_intelligence_pipeline
+from backend.retrieval.context_builder import build_ranked_context
+from backend.retrieval.signal_compressor import compress_signals
+from backend.retrieval.signal_extractor import extract_signals
+from backend.services.llm_service import call_openrouter
 from backend.utils.json_utils import safe_json_loads
-
-from backend.retrieval.context_builder import (
-    build_ranked_context
-)
-
-from backend.retrieval.signal_extractor import (
-    extract_signals
-)
-
-from backend.retrieval.signal_compressor import (
-    compress_signals
-)
-
-from backend.reasoning.orchestrator import (
-    run_intelligence_pipeline
-)
 
 settings = get_settings()
 
 EVALUATION_MODE = True
 MAX_CONTEXT_CHARS = 12000 if EVALUATION_MODE else 30000
 
+
+VALIDATION_SYSTEM_PROMPT = """You are a company identification specialist.
+Your job is to identify what company this is and what it does based on web content.
+Be precise and specific. If you are unsure, set validation_warning to true.
+
+CRITICAL RULES:
+- Do NOT classify software/platform companies as "IT Services". This is a common mistake.
+- A company that sells a SaaS product is NOT "IT Services".
+- A company that sells a competitive intelligence platform is NOT "Lead Generation" or "IT Services".
+- A company that sells developer tools, marketing platforms, or any software product is a SOFTWARE company.
+- "IT Services" means outsourcing, managed services, consulting, system integration — NOT software products.
+- If the company sells a PRODUCT (SaaS, platform, tool, app), its category should reflect what that product does, not "IT Services".
+"""
+
+VALIDATION_USER_PROMPT_TEMPLATE = """Identify the company from the following web content.
+
+Answer these questions:
+1. What company is this? (company_name)
+2. What does this company actually do? (company_description — one sentence)
+3. What category does it belong to? (category — be specific. Examples: "Competitive Intelligence", "CRM", "Marketing Automation", "Developer Tools", "Cloud Infrastructure", "Data Analytics", "Financial Services", "Security", "Design Tools", "Analytics Platform", "No-Code Platform", "Collaboration Software". Do NOT use "IT Services" for software product companies.)
+4. What product type is this? (product_type — e.g., "SaaS platform", "Dev tool", "Consulting", "Marketplace", "Open source project", "Agency services", "Mobile app")
+5. Who are the primary customers? (primary_use_case — e.g., "Enterprise sales teams", "Software developers", "IT operations", "Small business owners", "Marketing teams", "Product managers")
+6. Is your confidence LOW? (validation_warning — true if you are uncertain about the company identity, false if confident)
+
+VALIDATION WARNING TRIGGERS — set validation_warning = true if ANY apply:
+- The company appears to be a consulting firm, agency, or services company (not a product company)
+- You cannot clearly determine what product they sell
+- The content is ambiguous or contradictory about what the company does
+- The company seems to be an IT services/outsourcing firm rather than a software product company
+
+COMMON MISTAKES TO AVOID:
+- Owler is NOT lead generation or IT services — it is a COMPETITIVE INTELLIGENCE platform. Its category should be "Competitive Intelligence" or "Market Intelligence".
+- Crayon is NOT IT services — it is a COMPETITIVE INTELLIGENCE platform. Its category should be "Competitive Intelligence" or "Market Intelligence".
+- Klue is NOT lead generation — it is a COMPETITIVE INTELLIGENCE platform. Its category should be "Competitive Intelligence".
+- If a company's homepage says "competitive intelligence", "competitor tracking", or "market intelligence", categorize it as "Competitive Intelligence", not "IT Services" or "Lead Generation".
+
+Return ONLY valid JSON:
+{
+  "company_name": "exact company name",
+  "company_description": "what they do in one sentence",
+  "category": "most specific category (never 'IT Services' for software products)",
+  "product_type": "most specific product type",
+  "primary_use_case": "who their customers are",
+  "validation_warning": false
+}
+
+Content:
+{content}"""
 
 SYSTEM_PROMPT = """You are a competitive intelligence analyst at a VC-backed B2B SaaS startup.
 Your job is to extract strategic signals from competitor web content — not describe what companies do.
@@ -46,7 +76,7 @@ Rules you never break:
 - NEVER describe what a company does generically
 - ALWAYS identify what signals their content reveals about strategy and trajectory
 - ALWAYS return valid JSON — nothing else, no markdown, no explanation outside the JSON
-- If a signal is not detectable from the content, write "Not detected" — never hallucinate
+- If a signal is not detectable from the content, write "No public evidence found" — never hallucinate
 - momentum_score must be an integer 1–10, nothing else"""
 
 USER_PROMPT_TEMPLATE = """You are analyzing web content scraped from {company_name}.
@@ -59,7 +89,7 @@ Return ONLY a valid JSON object with exactly these fields:
   "core_offering": "One sentence — what specific problem they solve and for whom",
   "icp": "Ideal customer profile based on messaging evidence — industry, company size, role",
   "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid",
-  "pricing_signals": "Any pricing tier names, price points, model (per seat/usage/flat), or recent changes detected. Write Not detected if pricing page was unavailable.",
+  "pricing_signals": "Any pricing tier names, price points, model (per seat/usage/flat), or recent changes detected. Write 'No public evidence found' if pricing page was unavailable.",
   "hiring_signals": "Which job functions dominate their open roles? What does this reveal about their growth direction?",
   "recent_launches": ["list", "of", "detectable", "new", "features", "or", "product", "announcements"],
   "strategic_keywords": ["top", "8", "recurring", "strategic", "terms", "from", "their", "content"],
@@ -191,10 +221,20 @@ def ensure_list(value):
         return []
     if isinstance(value, list):
         return value
+    if isinstance(value, dict):
+        result = []
+        for v in value.values():
+            if isinstance(v, list):
+                result.extend(v)
+            elif isinstance(v, str) and v:
+                result.append(v)
+        return result
     if isinstance(value, str):
         cleaned = value.strip()
         if cleaned.lower() in [
             "not detected",
+            "no public evidence found",
+            "insufficient information available",
             "none",
             "n/a",
             ""
@@ -220,19 +260,86 @@ class AnalysisService:
         self.inter_call_delay = 4
 
 
+    async def validate_company(
+        self, competitor_pages: CompetitorPages
+    ) -> dict:
+        """
+        Stage 1: Company Validation.
+        Identifies what company this is before doing full intelligence extraction.
+        Returns validation dict with company_name, category, validation_warning, etc.
+        """
+        print(f"  [validation] Validating {competitor_pages.name}...")
+
+        # Use homepage and about page content for validation
+        validation_pages = []
+        for p in competitor_pages.pages:
+            if p.page_type in ("homepage", "about") and p.fetch_success and p.content:
+                validation_pages.append(f"[{p.page_type.upper()}]\n{p.content[:3000]}")
+
+        if not validation_pages:
+            # Use any available page
+            for p in competitor_pages.pages:
+                if p.fetch_success and p.content:
+                    validation_pages.append(f"[{p.page_type.upper()}]\n{p.content[:3000]}")
+                    break
+
+        if not validation_pages:
+            return {
+                "company_name": competitor_pages.name,
+                "company_description": "No content available",
+                "category": "Unknown",
+                "product_type": "Unknown",
+                "primary_use_case": "Unknown",
+                "validation_warning": True,
+            }
+
+        content = "\n\n".join(validation_pages)
+
+        try:
+            response = await call_openrouter(
+                prompt=VALIDATION_USER_PROMPT_TEMPLATE.format(content=content),
+                system_prompt=VALIDATION_SYSTEM_PROMPT
+            )
+
+            if not response:
+                print(f"  [validation] Empty response for {competitor_pages.name}")
+                return {"validation_warning": True}
+
+            data = safe_json_loads(response)
+            if not isinstance(data, dict):
+                return {"validation_warning": True}
+
+            validation = {
+                "company_name": ensure_string(data.get("company_name", competitor_pages.name)),
+                "company_description": ensure_string(data.get("company_description", "")),
+                "category": ensure_string(data.get("category", "")),
+                "product_type": ensure_string(data.get("product_type", "")),
+                "primary_use_case": ensure_string(data.get("primary_use_case", "")),
+                "validation_warning": bool(data.get("validation_warning", False)),
+            }
+
+            print(f"  [validation] Result: {validation.get('company_name')} "
+                  f"(warning={validation.get('validation_warning')})")
+
+            return validation
+
+        except Exception as e:
+            print(f"  [validation] Failed for {competitor_pages.name}: {e}")
+            return {"validation_warning": True}
+
+
     async def analyze_competitor(
         self, competitor_pages: CompetitorPages
     ) -> CompetitorAnalysis:
         """
         Takes scraped pages for one competitor.
+        Pipeline: Validate → Build Context → Extract Signals → Multi-agent Orchestration → Parse
         Returns structured CompetitorAnalysis from OpenRouter LLM.
         """
         print(f"  [analysis] Analyzing {competitor_pages.name}...")
 
-        print("\n=== SCRAPED PAGES ===")
-        for p in competitor_pages.pages:
-            if p.fetch_success and p.content:
-                print(p.page_type, p.url)
+        # Stage 1: Company Validation
+        validation = await self.validate_company(competitor_pages)
 
         pages_as_dicts = [
             {
@@ -253,10 +360,6 @@ class AnalysisService:
 
         merged_chunks = build_ranked_context(pages_as_dicts)
         merged_content_str = "\n\n".join(merged_chunks)
-
-        print("\n=== CONTEXT STATS ===")
-        print(f"Context chars: {len(merged_content_str)}")
-        print(merged_content_str[:1000])
 
         raw_signals = extract_signals(
             merged_content_str
@@ -313,16 +416,11 @@ class AnalysisService:
             "[analysis] Running multi-agent orchestration..."
         )
 
-        # Pause before each call to avoid per-minute quota bursting
-        await asyncio.sleep(self.inter_call_delay)
-
         agent_result = await run_intelligence_pipeline(
             final_chunks_for_pipeline,
-            compressed_signals
+            compressed_signals,
+            validation
         )
-
-        print("\n=== FINAL ANALYSIS ===")
-        pprint.pprint(agent_result)
 
         print(
             "[analysis] Multi-agent synthesis complete"
@@ -349,7 +447,8 @@ class AnalysisService:
             competitor_pages.name,
             competitor_pages.domain,
             page_types,
-            agent_outputs
+            agent_outputs,
+            validation
         )
 
 
@@ -359,10 +458,13 @@ class AnalysisService:
         name: str,
         domain: str,
         page_types: list[str],
-        agent_outputs: dict = None
+        agent_outputs: dict = None,
+        validation: dict = None
     ) -> CompetitorAnalysis:
         if agent_outputs is None:
             agent_outputs = {}
+        if validation is None:
+            validation = {}
         try:
             data = safe_json_loads(raw_text)
             data["momentum_score"] = int(data.get("momentum_score", 5))
@@ -378,10 +480,30 @@ class AnalysisService:
                 "icp_keywords",
                 "icp_evidence",
                 "tone_evidence",
-                "momentum_evidence"
+                "momentum_evidence",
+                "core_offering_evidence",
+                "pricing_evidence",
+                "hiring_evidence",
+                "keywords_evidence",
+                "momentum_negative_factors",
             ]
             for field in list_fields:
                 data[field] = ensure_list(data.get(field))
+
+            # Backfill momentum_evidence from raw momentum agent output if synthesis dropped it
+            if not data.get("momentum_evidence") and agent_outputs:
+                momentum_raw = agent_outputs.get("momentum", "{}")
+                try:
+                    momentum_data = safe_json_loads(momentum_raw) if isinstance(momentum_raw, str) else momentum_raw
+                    me = momentum_data.get("momentum_evidence", {})
+                    if isinstance(me, dict):
+                        flat = []
+                        for cat_ev in me.values():
+                            if isinstance(cat_ev, list):
+                                flat.extend(cat_ev)
+                        data["momentum_evidence"] = flat
+                except (json.JSONDecodeError, KeyError, TypeError):
+                    pass
 
             string_fields = [
                 "core_offering",
@@ -389,11 +511,60 @@ class AnalysisService:
                 "messaging_tone",
                 "pricing_signals",
                 "hiring_signals",
-                "analyst_note"
+                "analyst_note",
+                "core_offering_source",
+                "core_offering_source_url",
+                "pricing_source",
+                "pricing_source_url",
+                "hiring_source",
+                "hiring_source_url",
+                "keywords_source_url",
+                "momentum_reasoning",
             ]
             for field in string_fields:
                 if field in data:
                     data[field] = ensure_string(data[field])
+
+            int_fields = [
+                "core_offering_confidence",
+                "pricing_confidence",
+                "hiring_confidence",
+                "keywords_confidence",
+            ]
+            for field in int_fields:
+                if field in data:
+                    try:
+                        data[field] = int(data[field])
+                    except (ValueError, TypeError):
+                        data[field] = 0
+
+            # Build confidence_scores dict from individual fields
+            confidence_scores = {}
+            for key in ["core_offering", "icp", "tone", "pricing", "hiring", "keywords"]:
+                confidence_key = f"{key}_confidence"
+                if key == "icp":
+                    confidence_val = data.get("icp_confidence", data.get("confidence_scores", {}).get("icp", 0))
+                elif key == "tone":
+                    confidence_val = data.get("tone_confidence", data.get("confidence_scores", {}).get("tone", 0))
+                else:
+                    confidence_val = data.get(confidence_key, data.get("confidence_scores", {}).get(key, 0))
+                try:
+                    confidence_scores[key] = int(confidence_val)
+                except (ValueError, TypeError):
+                    confidence_scores[key] = 0
+
+                # Calibrate: if evidence exists for a section, boost confidence floor to 50
+                evidence_key = f"{key}_evidence"
+                if key == "tone":
+                    evidence_key = "tone_evidence"
+                if key == "keywords":
+                    evidence_key = "keywords_evidence"
+                existing_evidence = data.get(evidence_key, [])
+                if isinstance(existing_evidence, list) and len(existing_evidence) > 0:
+                    confidence_scores[key] = max(confidence_scores[key], 50)
+
+            data["confidence_scores"] = confidence_scores
+            data["validation"] = validation
 
             return CompetitorAnalysis(
                 name=name,
@@ -427,10 +598,30 @@ class AnalysisService:
                         "icp_keywords",
                         "icp_evidence",
                         "tone_evidence",
-                        "momentum_evidence"
+                        "momentum_evidence",
+                        "core_offering_evidence",
+                        "pricing_evidence",
+                        "hiring_evidence",
+                        "keywords_evidence",
+                        "momentum_negative_factors",
                     ]
                     for field in list_fields:
                         data[field] = ensure_list(data.get(field))
+
+                    # Backfill momentum_evidence from raw momentum agent output if synthesis dropped it
+                    if not data.get("momentum_evidence") and agent_outputs:
+                        momentum_raw = agent_outputs.get("momentum", "{}")
+                        try:
+                            momentum_data = safe_json_loads(momentum_raw) if isinstance(momentum_raw, str) else momentum_raw
+                            me = momentum_data.get("momentum_evidence", {})
+                            if isinstance(me, dict):
+                                flat = []
+                                for cat_ev in me.values():
+                                    if isinstance(cat_ev, list):
+                                        flat.extend(cat_ev)
+                                data["momentum_evidence"] = flat
+                        except (json.JSONDecodeError, KeyError, TypeError):
+                            pass
 
                     string_fields = [
                         "core_offering",
@@ -438,11 +629,49 @@ class AnalysisService:
                         "messaging_tone",
                         "pricing_signals",
                         "hiring_signals",
-                        "analyst_note"
+                        "analyst_note",
+                        "core_offering_source",
+                        "core_offering_source_url",
+                        "pricing_source",
+                        "pricing_source_url",
+                        "hiring_source",
+                        "hiring_source_url",
+                        "keywords_source_url",
+                        "momentum_reasoning",
                     ]
                     for field in string_fields:
                         if field in data:
                             data[field] = ensure_string(data[field])
+
+                    int_fields = [
+                        "core_offering_confidence",
+                        "pricing_confidence",
+                        "hiring_confidence",
+                        "keywords_confidence",
+                    ]
+                    for field in int_fields:
+                        if field in data:
+                            try:
+                                data[field] = int(data[field])
+                            except (ValueError, TypeError):
+                                data[field] = 0
+
+                    confidence_scores = {}
+                    for key in ["core_offering", "icp", "tone", "pricing", "hiring", "keywords"]:
+                        confidence_key = f"{key}_confidence"
+                        if key == "icp":
+                            confidence_val = data.get("icp_confidence", data.get("confidence_scores", {}).get("icp", 0))
+                        elif key == "tone":
+                            confidence_val = data.get("tone_confidence", data.get("confidence_scores", {}).get("tone", 0))
+                        else:
+                            confidence_val = data.get(confidence_key, data.get("confidence_scores", {}).get(key, 0))
+                        try:
+                            confidence_scores[key] = int(confidence_val)
+                        except (ValueError, TypeError):
+                            confidence_scores[key] = 0
+
+                    data["confidence_scores"] = confidence_scores
+                    data["validation"] = validation
 
                     print(f"  [analysis] Recovered via fallback parser for {name}")
                     return CompetitorAnalysis(
@@ -466,10 +695,10 @@ class AnalysisService:
             name=name,
             domain=domain,
             core_offering="Analysis failed",
-            icp="Not available",
+            icp="Insufficient information available",
             messaging_tone="hybrid",
-            pricing_signals="Not detected",
-            hiring_signals="Not detected",
+            pricing_signals="No public evidence found",
+            hiring_signals="No public evidence found",
             recent_launches=[],
             strategic_keywords=[],
             growth_signals=[],
@@ -478,5 +707,6 @@ class AnalysisService:
             analyst_note=f"Could not analyze {name}: {reason}",
             pages_analyzed=[],
             analysis_success=False,
-            error=reason
+            error=reason,
+            validation={"validation_warning": True, "reason": reason},
         )

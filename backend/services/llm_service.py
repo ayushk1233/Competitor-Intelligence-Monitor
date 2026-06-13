@@ -7,19 +7,19 @@ by OpenRouter docs. Handles retries with exponential backoff for
 429 / timeout errors.
 """
 
-import os
 import asyncio
-import time
+import os
 import re
+import time
 
 from openai import OpenAI
 
 from backend.config import get_settings
 from backend.metrics import (
+    llm_errors_total,
     llm_request_duration,
     llm_requests_total,
     llm_tokens_used,
-    llm_errors_total,
 )
 
 DEFAULT_MODEL = "anthropic/claude-3-haiku"
@@ -45,6 +45,7 @@ def _get_client() -> OpenAI:
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
+        timeout=60.0,
     )
 
 
@@ -89,17 +90,20 @@ async def call_openrouter(
 
             # The OpenAI SDK call is synchronous, so we run it in a
             # thread to keep the async event loop free.
-            completion = await asyncio.to_thread(
-                client.chat.completions.create,
-                extra_headers={
-                    "HTTP-Referer": "http://localhost",
-                    "X-OpenRouter-Title": "Competitor Intelligence Monitor",
-                },
-                model=resolved_model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                response_format={"type": "json_object"}
+            completion = await asyncio.wait_for(
+                asyncio.to_thread(
+                    client.chat.completions.create,
+                    extra_headers={
+                        "HTTP-Referer": "http://localhost",
+                        "X-OpenRouter-Title": "Competitor Intelligence Monitor",
+                    },
+                    model=resolved_model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format={"type": "json_object"}
+                ),
+                timeout=90.0
             )
 
             duration = time.time() - start
@@ -130,7 +134,7 @@ async def call_openrouter(
             is_exhausted = "402" in error_str or "credit" in error_str.lower()
 
             if is_exhausted:
-                print(f"  [llm] OpenRouter credits exhausted! Aborting retries.")
+                print("  [llm] OpenRouter credits exhausted! Aborting retries.")
                 raise Exception("OpenRouter credits exhausted")
 
             if is_rate_limit:

@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="Competitor Intelligence Monitor",
     page_icon="🔍",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # ── API base URL — points to FastAPI running in Docker ────────────────────────
@@ -108,6 +108,36 @@ st.markdown("""
     div[data-testid="stMarkdownContainer"] .metric-card * {
         color: #1a1a1a !important;
     }
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #065F46 0%, #047857 100%) !important;
+    }
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
+    [data-testid="stSidebar"] .stSelectbox label,
+    [data-testid="stSidebar"] .stTextInput label,
+    [data-testid="stSidebar"] .stButton button {
+        color: white !important;
+    }
+    [data-testid="stSidebar"] .stButton button {
+        background: rgba(255,255,255,0.15) !important;
+        border: 1px solid rgba(255,255,255,0.3) !important;
+    }
+    [data-testid="stSidebar"] .stButton button:hover {
+        background: rgba(255,255,255,0.25) !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ── Black background override (keep panels/cards/sidebar as-is) ──────────────
+st.markdown("""
+<style>
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    .main,
+    .block-container {
+        background: #000000 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -134,7 +164,7 @@ def tone_badge(tone: str) -> str:
 
 def momentum_color(score: int) -> str:
     if score >= 8:
-        return "#10B981"
+        return "#2E86AB"
     elif score >= 5:
         return "#F59E0B"
     else:
@@ -986,15 +1016,6 @@ def render_competitor_card(c: dict):
             f'</div>',
             unsafe_allow_html=True
         )
-
-
-def momentum_color(score: int) -> str:
-    if score >= 8:
-        return "#10B981"
-    elif score >= 5:
-        return "#F59E0B"
-    else:
-        return "#EF4444"
 
 
 if __name__ == "__main__":

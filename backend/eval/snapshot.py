@@ -1,6 +1,6 @@
+from typing import Dict, List
+
 from pydantic import BaseModel
-from typing import List, Dict
-from datetime import datetime
 
 from backend.eval.models import EvalResult
 

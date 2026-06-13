@@ -1,4 +1,4 @@
-from datetime import datetime, UTC, timedelta
+from datetime import UTC, datetime, timedelta
 
 
 def calculate_next_run(
@@ -8,6 +8,9 @@ def calculate_next_run(
     now = datetime.now(UTC)
 
     frequency = frequency.upper()
+
+    if frequency == "5_MINS":
+        return now + timedelta(minutes=5)
 
     if frequency == "HOURLY":
         return now + timedelta(hours=1)

@@ -1,4 +1,3 @@
-from urllib.parse import urlparse
 
 
 PAGE_TYPE_WEIGHTS = {

@@ -1,14 +1,23 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_, func
+
 from backend.database.models import (
-    Run, CompetitorAnalysisRecord,
-    ComparisonRecord, PageSnapshot, AlertHistory,
-    AlertSuppression, NotificationEvent, Watchlist,
-    NotificationChannel, User, WatchlistCompetitor,
+    AlertHistory,
+    AlertSuppression,
+    ComparisonRecord,
+    CompetitorAnalysisRecord,
     MonitoringRun,
+    NotificationChannel,
+    NotificationEvent,
+    PageSnapshot,
+    Run,
+    User,
+    Watchlist,
+    WatchlistCompetitor,
 )
-from backend.models.schemas import IntelligenceReport, CompetitorPages
+from backend.models.schemas import CompetitorPages, IntelligenceReport
 
 
 class DatabaseService:
@@ -63,9 +72,9 @@ class DatabaseService:
 
     # ── Run operations ────────────────────────────────────────────────────
 
-    async def create_run(self, competitor_names: list[str]) -> str:
+    async def create_run(self, competitor_names: list[str], user_id: str | None = None) -> str:
         """Create a new run record. Returns the run_id."""
-        run = Run(competitor_names=competitor_names, status="queued")
+        run = Run(competitor_names=competitor_names, status="queued", user_id=user_id)
         self.session.add(run)
         await self.session.flush()  # Gets the ID without committing
         return run.id
@@ -84,12 +93,73 @@ class DatabaseService:
         result = await self.session.execute(select(Run).where(Run.id == run_id))
         return result.scalar_one_or_none()
 
-    async def get_recent_runs(self, limit: int = 10) -> list[Run]:
-        """Get the most recent runs ordered by creation time."""
-        result = await self.session.execute(
-            select(Run).order_by(desc(Run.created_at)).limit(limit)
-        )
+    async def get_recent_runs(self, limit: int = 10, user_id: str | None = None) -> list[Run]:
+        """Get the most recent runs, optionally filtered by user."""
+        query = select(Run)
+        if user_id:
+            query = query.where(Run.user_id == user_id)
+        query = query.order_by(desc(Run.created_at)).limit(limit)
+        result = await self.session.execute(query)
         return list(result.scalars().all())
+
+    async def get_run_for_user(self, run_id: str, user_id: str) -> Run | None:
+        """Fetch a run by ID and verify ownership."""
+        result = await self.session.execute(
+            select(Run).where(Run.id == run_id, Run.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def delete_run(self, run_id: str, user_id: str | None = None) -> bool:
+        """Delete an ad-hoc analysis run. If user_id is provided, checks ownership."""
+        if user_id:
+            run = await self.get_run_for_user(run_id, user_id)
+        else:
+            run = await self.session.get(Run, run_id)
+        if not run:
+            return False
+        await self.session.delete(run)
+        await self.session.commit()
+        return True
+
+    async def get_last_adhoc_run(self, user_id: str | None = None) -> Run | None:
+        """Get the most recent ad-hoc analysis run, optionally filtered by user."""
+        query = select(Run).order_by(desc(Run.created_at)).limit(1)
+        if user_id:
+            query = query.where(Run.user_id == user_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+
+    async def delete_monitoring_run(self, run_id: str) -> bool:
+        """Delete a monitoring run."""
+        run = await self.session.get(MonitoringRun, run_id)
+        if not run:
+            return False
+        await self.session.delete(run)
+        await self.session.commit()
+        return True
+
+    async def get_monitoring_run_for_user(self, run_id: str, user_id: str) -> MonitoringRun | None:
+        """Get a monitoring run by ID and verify ownership via watchlist."""
+        result = await self.session.execute(
+            select(MonitoringRun)
+            .join(Watchlist, Watchlist.id == MonitoringRun.watchlist_id)
+            .where(MonitoringRun.id == run_id, Watchlist.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_run_competitor_names(self, user_id: str) -> list[str]:
+        """Get unique competitor names from runs owned by the user."""
+        result = await self.session.execute(
+            select(Run.competitor_names)
+            .where(Run.user_id == user_id)
+            .order_by(Run.created_at.desc())
+        )
+        names: set[str] = set()
+        for row in result.all():
+            if row[0]:
+                names.update(row[0])
+        return list(names)
 
     # ── Analysis operations ───────────────────────────────────────────────
 
@@ -131,23 +201,151 @@ class DatabaseService:
         self,
         company_name: str,
         severity: str,
-        reasons: list[str],
+        headline: str,
+        summary: str | None = None,
+        reasons: list | None = None,
+        evidence: list | None = None,
+        confidence: int = 90,
+        business_impact: str | None = None,
+        recommended_action: str | None = None,
+        watchlist_id: str | None = None,
+        fingerprint_hash: str | None = None,
     ):
-        """
-        Persist generated monitoring alerts.
-        """
-
         alert = AlertHistory(
             company_name=company_name,
             severity=severity,
-            reasons=reasons,
+            headline=headline,
+            summary=summary,
+            reasons=reasons or [],
+            evidence=evidence or [],
+            confidence=confidence,
+            business_impact=business_impact,
+            recommended_action=recommended_action,
+            watchlist_id=watchlist_id,
+            fingerprint_hash=fingerprint_hash,
+            status="new",
         )
 
         self.session.add(alert)
-
         await self.session.flush()
-
         return alert
+
+    async def get_alert_by_id(self, alert_id: int) -> AlertHistory | None:
+        result = await self.session.execute(
+            select(AlertHistory).where(AlertHistory.id == alert_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def update_alert_status(
+        self, alert_id: int, status: str
+    ) -> AlertHistory | None:
+        alert = await self.get_alert_by_id(alert_id)
+        if not alert:
+            return None
+        alert.status = status
+        alert.updated_at = datetime.utcnow()
+        await self.session.flush()
+        return alert
+
+    async def get_user_competitor_names(self, user_id: str) -> list[str]:
+        result = await self.session.execute(
+            select(WatchlistCompetitor.company_name)
+            .join(Watchlist, Watchlist.id == WatchlistCompetitor.watchlist_id)
+            .where(Watchlist.user_id == user_id)
+            .distinct()
+        )
+        return [row[0] for row in result.all()]
+
+    async def get_alert_counts_by_severity(
+        self,
+        competitor_names: list[str] | None = None,
+        watchlist_ids: list[str] | None = None,
+    ) -> dict[str, int]:
+        counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        for severity in counts:
+            query = select(func.count()).select_from(AlertHistory).where(
+                AlertHistory.severity == severity,
+                AlertHistory.status.in_(["new", "viewed"]),
+            )
+            if competitor_names is not None:
+                query = query.where(AlertHistory.company_name.in_(competitor_names))
+            if watchlist_ids is not None:
+                query = query.where(AlertHistory.watchlist_id.in_(watchlist_ids))
+            result = await self.session.execute(query)
+            counts[severity] = result.scalar() or 0
+        return counts
+
+    async def get_alert_counts_by_severity_for_user(self, user_id: str) -> dict[str, int]:
+        watchlist_ids = await self.get_user_watchlist_ids(user_id)
+        if not watchlist_ids:
+            return {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        competitor_names = await self.get_user_watchlist_competitor_names(user_id)
+        counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        for severity in counts:
+            query = (
+                select(func.count())
+                .select_from(AlertHistory)
+                .where(
+                    AlertHistory.severity == severity,
+                    AlertHistory.status.in_(["new", "viewed"]),
+                    or_(
+                        AlertHistory.watchlist_id.in_(watchlist_ids),
+                        and_(
+                            AlertHistory.watchlist_id.is_(None),
+                            AlertHistory.company_name.in_(competitor_names),
+                        ),
+                    ),
+                )
+            )
+            result = await self.session.execute(query)
+            counts[severity] = result.scalar() or 0
+        return counts
+
+    async def get_alert_count_for_company(self, company_name: str, watchlist_ids: list[str] | None = None) -> int:
+        if not watchlist_ids:
+            return 0
+        query = (
+            select(func.count())
+            .select_from(AlertHistory)
+            .where(AlertHistory.company_name == company_name)
+            .where(AlertHistory.status.in_(["new", "acknowledged"]))
+            .where(AlertHistory.watchlist_id.in_(watchlist_ids))
+        )
+        result = await self.session.execute(query)
+        return result.scalar() or 0
+
+    async def get_highest_severity_for_company(self, company_name: str, watchlist_ids: list[str] | None = None) -> str | None:
+        if not watchlist_ids:
+            return None
+        severity_order = {
+            "CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3,
+        }
+        query = (
+            select(AlertHistory.severity)
+            .where(AlertHistory.company_name == company_name)
+            .where(AlertHistory.status.in_(["new", "acknowledged"]))
+            .where(AlertHistory.watchlist_id.in_(watchlist_ids))
+        )
+        result = await self.session.execute(query)
+        severities = result.scalars().all()
+        if not severities:
+            return None
+        return min(severities, key=lambda s: severity_order.get(s, 99))
+
+    async def update_run_pages_fetched(self, run_id: str, total_pages: int):
+        result = await self.session.execute(select(Run).where(Run.id == run_id))
+        run = result.scalar_one_or_none()
+        if run:
+            run.total_pages_fetched = total_pages
+
+    async def get_active_run(self) -> Run | None:
+        result = await self.session.execute(
+            select(Run)
+            .where(Run.status.in_(["queued", "scraping", "analyzing", "comparing"]))
+            .order_by(Run.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
 
     async def save_page_snapshots(
         self, run_id: str, competitor_pages: CompetitorPages
@@ -182,6 +380,11 @@ class DatabaseService:
             run.run_duration_seconds = report.run_duration_seconds
             run.completed_at = datetime.utcnow()
 
+        # Update run competitor_names to match actual analyzed names
+        # (the original input may have been URLs that got cleaned during analysis)
+        if run and report.competitors:
+            run.competitor_names = [a.name for a in report.competitors]
+
         # Save each competitor analysis
         for analysis in report.competitors:
             await self.save_competitor_analysis(run_id, analysis)
@@ -206,16 +409,62 @@ class DatabaseService:
         )
         return list(result.scalars().all())
 
+    async def get_user_watchlist_ids(self, user_id: str) -> list[str]:
+        result = await self.session.execute(
+            select(Watchlist.id).where(Watchlist.user_id == user_id)
+        )
+        return [row[0] for row in result.all()]
+
     async def get_alerts(
         self,
         limit: int = 100,
+        competitor_names: list[str] | None = None,
+        watchlist_ids: list[str] | None = None,
     ):
+        query = select(AlertHistory).order_by(desc(AlertHistory.created_at))
+        if competitor_names is not None:
+            query = query.where(AlertHistory.company_name.in_(competitor_names))
+        if watchlist_ids is not None:
+            query = query.where(AlertHistory.watchlist_id.in_(watchlist_ids))
+        if limit:
+            query = query.limit(limit)
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_user_watchlist_competitor_names(self, user_id: str) -> list[str]:
+        """Get all competitor names from all of a user's watchlists."""
+        watchlist_ids_sub = select(Watchlist.id).where(Watchlist.user_id == user_id).scalar_subquery()
         result = await self.session.execute(
+            select(WatchlistCompetitor.company_name)
+            .where(WatchlistCompetitor.watchlist_id.in_(watchlist_ids_sub))
+            .distinct()
+        )
+        return [row[0] for row in result.all()]
+
+    async def get_alerts_for_user(
+        self,
+        user_id: str,
+        limit: int = 100,
+    ):
+        watchlist_ids = await self.get_user_watchlist_ids(user_id)
+        if not watchlist_ids:
+            return []
+        competitor_names = await self.get_user_watchlist_competitor_names(user_id)
+        query = (
             select(AlertHistory)
+            .where(
+                or_(
+                    AlertHistory.watchlist_id.in_(watchlist_ids),
+                    and_(
+                        AlertHistory.watchlist_id.is_(None),
+                        AlertHistory.company_name.in_(competitor_names),
+                    ),
+                )
+            )
             .order_by(desc(AlertHistory.created_at))
             .limit(limit)
         )
-
+        result = await self.session.execute(query)
         return list(result.scalars().all())
 
     async def get_alerts_for_company(
@@ -322,6 +571,29 @@ class DatabaseService:
         )
 
         return list(result.scalars().all())
+
+    async def get_notification_events(
+        self,
+        channel_id: str,
+        limit: int = 20,
+    ):
+        channel = await self.session.execute(
+            select(NotificationChannel).where(NotificationChannel.id == channel_id)
+        )
+        channel = channel.scalar_one_or_none()
+        if not channel:
+            return []
+
+        result = await self.session.execute(
+            select(NotificationEvent)
+            .where(
+                NotificationEvent.destination == channel.destination,
+                NotificationEvent.channel_type == channel.channel_type,
+            )
+            .order_by(NotificationEvent.created_at.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
 
     async def create_notification_event(
         self,
@@ -463,7 +735,10 @@ class DatabaseService:
             select(Watchlist)
             .where(
                 Watchlist.is_active == True,
-                Watchlist.next_run_at <= datetime.now(UTC),
+                or_(
+                    Watchlist.next_run_at <= datetime.now(UTC),
+                    Watchlist.next_run_at.is_(None)
+                )
             )
         )
 
@@ -559,6 +834,22 @@ class DatabaseService:
             result.scalars().all()
         )
 
+    async def get_last_run_for_user(
+        self,
+        user_id: str,
+    ):
+        result = await self.session.execute(
+            select(MonitoringRun)
+            .join(
+                Watchlist,
+                Watchlist.id == MonitoringRun.watchlist_id,
+            )
+            .where(Watchlist.user_id == user_id)
+            .order_by(MonitoringRun.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
     async def get_monitoring_runs_today(
         self,
         user_id: str,
@@ -620,3 +911,153 @@ class DatabaseService:
         )
 
         return list(result.scalars().all())
+
+    async def create_watchlist(
+        self,
+        user_id: str,
+        name: str,
+        description: str | None = None,
+        monitoring_config: dict | None = None,
+        alert_rules: dict | None = None,
+        notification_channels: list | None = None,
+    ) -> Watchlist:
+        watchlist = Watchlist(
+            user_id=user_id,
+            name=name,
+            description=description,
+            monitoring_config=monitoring_config or {
+                "frequency": "daily",
+                "sources": ["homepage", "pricing", "blog", "careers"],
+                "sensitivity": "medium",
+            },
+            alert_rules=alert_rules or {},
+            notification_channels=notification_channels or [],
+        )
+        self.session.add(watchlist)
+        await self.session.flush()
+        return watchlist
+
+    async def update_watchlist(
+        self,
+        watchlist_id: str,
+        user_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        monitoring_config: dict | None = None,
+        alert_rules: dict | None = None,
+        notification_channels: list | None = None,
+        is_active: bool | None = None,
+    ) -> Watchlist | None:
+        watchlist = await self.get_watchlist_for_user(watchlist_id, user_id)
+        if not watchlist:
+            return None
+        if name is not None:
+            watchlist.name = name
+        if description is not None:
+            watchlist.description = description
+        if monitoring_config is not None:
+            old_freq = watchlist.monitoring_config.get("frequency") if watchlist.monitoring_config else None
+            new_freq = monitoring_config.get("frequency")
+            watchlist.monitoring_config = monitoring_config
+            
+            if old_freq != new_freq and new_freq:
+                from backend.monitoring.schedule_service import calculate_next_run
+                watchlist.next_run_at = calculate_next_run(new_freq)
+        if alert_rules is not None:
+            watchlist.alert_rules = alert_rules
+        if notification_channels is not None:
+            watchlist.notification_channels = notification_channels
+        if is_active is not None:
+            watchlist.is_active = is_active
+        watchlist.updated_at = datetime.utcnow()
+        await self.session.flush()
+        return watchlist
+
+    async def delete_watchlist(
+        self, watchlist_id: str, user_id: str
+    ) -> bool:
+        watchlist = await self.get_watchlist_for_user(watchlist_id, user_id)
+        if not watchlist:
+            return False
+        await self.session.delete(watchlist)
+        await self.session.flush()
+        return True
+
+    async def get_all_latest_analyses(self, competitor_names: list[str] | None = None) -> list[CompetitorAnalysisRecord]:
+        """
+        Get the latest analysis for every unique competitor.
+        Optionally filter by a list of competitor names.
+        """
+        latest_q = select(
+            CompetitorAnalysisRecord.competitor_name,
+            func.max(CompetitorAnalysisRecord.created_at).label("max_created_at"),
+        )
+        if competitor_names:
+            latest_q = latest_q.where(CompetitorAnalysisRecord.competitor_name.in_(competitor_names))
+        latest_q = latest_q.group_by(CompetitorAnalysisRecord.competitor_name)
+        latest_per_competitor = latest_q.subquery()
+
+        result = await self.session.execute(
+            select(CompetitorAnalysisRecord)
+            .join(
+                latest_per_competitor,
+                (CompetitorAnalysisRecord.competitor_name == latest_per_competitor.c.competitor_name)
+                & (CompetitorAnalysisRecord.created_at == latest_per_competitor.c.max_created_at),
+            )
+        )
+        return list(result.scalars().all())
+
+    async def add_competitor_to_watchlist(
+        self,
+        watchlist_id: str,
+        company_name: str,
+        domain: str | None = None,
+        priority: str = "medium",
+        monitoring_enabled: bool = True,
+    ) -> WatchlistCompetitor:
+        competitor = WatchlistCompetitor(
+            watchlist_id=watchlist_id,
+            company_name=company_name,
+            domain=domain,
+            priority=priority,
+            monitoring_enabled=monitoring_enabled,
+        )
+        self.session.add(competitor)
+        await self.session.flush()
+        return competitor
+
+    async def update_watchlist_competitor(
+        self,
+        competitor_id: str,
+        company_name: str | None = None,
+        domain: str | None = None,
+        priority: str | None = None,
+        monitoring_enabled: bool | None = None,
+    ) -> WatchlistCompetitor | None:
+        result = await self.session.execute(
+            select(WatchlistCompetitor).where(WatchlistCompetitor.id == competitor_id)
+        )
+        comp = result.scalar_one_or_none()
+        if not comp:
+            return None
+        if company_name is not None:
+            comp.company_name = company_name
+        if domain is not None:
+            comp.domain = domain
+        if priority is not None:
+            comp.priority = priority
+        if monitoring_enabled is not None:
+            comp.monitoring_enabled = monitoring_enabled
+        await self.session.flush()
+        return comp
+
+    async def delete_watchlist_competitor(self, competitor_id: str) -> bool:
+        result = await self.session.execute(
+            select(WatchlistCompetitor).where(WatchlistCompetitor.id == competitor_id)
+        )
+        comp = result.scalar_one_or_none()
+        if not comp:
+            return False
+        await self.session.delete(comp)
+        await self.session.flush()
+        return True

@@ -1,15 +1,7 @@
 from typing import List
-from collections import Counter
-import re
 
-from backend.retrieval.ranking import (
-    rank_text_chunks
-)
-
-from backend.retrieval.page_classifier import (
-    classify_page_type
-)
-
+from backend.retrieval.page_classifier import classify_page_type
+from backend.retrieval.ranking import rank_text_chunks
 
 # ---------------------------------------------------------------------------
 # BUDGET & WEIGHTS

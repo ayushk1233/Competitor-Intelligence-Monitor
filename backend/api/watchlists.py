@@ -1,38 +1,38 @@
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
 )
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.dependencies import (
     get_current_user,
 )
-
-from backend.tasks import monitor_watchlist_task
 from backend.database.connection import get_db
 from backend.database.db_service import (
     DatabaseService,
 )
 from backend.database.models import (
+    MonitoringRun,
     User,
     Watchlist,
     WatchlistCompetitor,
-    MonitoringRun,
 )
 from backend.models.schemas import (
-    WatchlistCreateRequest,
-    WatchlistResponse,
-    WatchlistListResponse,
-    CompetitorListResponse,
     CompetitorCreateRequest,
+    CompetitorListResponse,
     CompetitorResponse,
+    CompetitorUpdateRequest,
     MonitoringRunCreateRequest,
-    MonitoringRunResponse,
     MonitoringRunListResponse,
+    MonitoringRunResponse,
+    WatchlistCreateRequest,
+    WatchlistListResponse,
+    WatchlistResponse,
+    WatchlistUpdateRequest,
 )
+from backend.tasks import monitor_watchlist_task
 
 router = APIRouter(
     prefix="/api/watchlists",
@@ -59,15 +59,17 @@ async def create_watchlist(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    watchlist = Watchlist(
+    service = DatabaseService(db)
+
+    watchlist = await service.create_watchlist(
         user_id=current_user.id,
         name=request.name,
         description=request.description,
+        monitoring_config=request.monitoring_config,
+        alert_rules=request.alert_rules,
+        notification_channels=request.notification_channels,
     )
 
-    db.add(watchlist)
-
-    await db.flush()
     await db.refresh(watchlist)
 
     return watchlist
@@ -108,6 +110,67 @@ async def list_watchlists(
     return {
         "items": watchlists,
     }
+
+
+@router.get(
+    "/{watchlist_id}",
+    response_model=WatchlistResponse,
+    summary="Get watchlist",
+    description="Return a single watchlist with full details.",
+)
+async def get_watchlist(
+    watchlist_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DatabaseService(db)
+    watchlist = await service.get_watchlist_for_user(watchlist_id, current_user.id)
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    return watchlist
+
+
+@router.put(
+    "/{watchlist_id}",
+    response_model=WatchlistResponse,
+    summary="Update watchlist",
+)
+async def update_watchlist(
+    watchlist_id: str,
+    request: WatchlistUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DatabaseService(db)
+    watchlist = await service.update_watchlist(
+        watchlist_id=watchlist_id,
+        user_id=current_user.id,
+        name=request.name,
+        description=request.description,
+        monitoring_config=request.monitoring_config,
+        alert_rules=request.alert_rules,
+        notification_channels=request.notification_channels,
+        is_active=request.is_active,
+    )
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    return watchlist
+
+
+@router.delete(
+    "/{watchlist_id}",
+    summary="Delete watchlist",
+)
+async def delete_watchlist(
+    watchlist_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DatabaseService(db)
+    deleted = await service.delete_watchlist(watchlist_id, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+    return {"deleted": True}
 
 
 @router.post(
@@ -157,15 +220,14 @@ async def add_competitor(
             detail="Competitor already exists in watchlist",
         )
 
-    competitor = WatchlistCompetitor(
+    competitor = await service.add_competitor_to_watchlist(
         watchlist_id=watchlist_id,
         company_name=normalized_name,
         domain=request.domain,
+        priority=request.priority,
+        monitoring_enabled=request.monitoring_enabled,
     )
 
-    db.add(competitor)
-
-    await db.flush()
     await db.refresh(competitor)
 
     return competitor
@@ -220,6 +282,56 @@ async def list_competitors(
     return {
         "items": competitors,
     }
+
+
+@router.put(
+    "/{watchlist_id}/competitors/{competitor_id}",
+    response_model=CompetitorResponse,
+    summary="Update competitor",
+)
+async def update_competitor(
+    watchlist_id: str,
+    competitor_id: str,
+    request: CompetitorUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DatabaseService(db)
+    watchlist = await service.get_watchlist_for_user(watchlist_id, current_user.id)
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+
+    competitor = await service.update_watchlist_competitor(
+        competitor_id=competitor_id,
+        company_name=request.company_name,
+        domain=request.domain,
+        priority=request.priority,
+        monitoring_enabled=request.monitoring_enabled,
+    )
+    if not competitor:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    return competitor
+
+
+@router.delete(
+    "/{watchlist_id}/competitors/{competitor_id}",
+    summary="Delete competitor",
+)
+async def delete_competitor(
+    watchlist_id: str,
+    competitor_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = DatabaseService(db)
+    watchlist = await service.get_watchlist_for_user(watchlist_id, current_user.id)
+    if not watchlist:
+        raise HTTPException(status_code=404, detail="Watchlist not found")
+
+    deleted = await service.delete_watchlist_competitor(competitor_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    return {"deleted": True}
 
 
 @router.post(
@@ -328,3 +440,19 @@ async def list_monitoring_runs(
     return {
         "items": runs,
     }
+
+
+@router.delete(
+    "/{watchlist_id}/runs/{run_id}",
+    summary="Delete a monitoring run",
+)
+async def delete_monitoring_run(
+    watchlist_id: str,
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    db_service = DatabaseService(db)
+    deleted = await db_service.delete_monitoring_run(run_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Monitoring run not found")
+    return {"deleted": True, "run_id": run_id}

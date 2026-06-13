@@ -1,19 +1,19 @@
-import httpx
 import asyncio
-from urllib.parse import urlparse, urljoin
+import time
+from urllib.parse import urljoin, urlparse
+
+import httpx
 from bs4 import BeautifulSoup
 
 from backend.config import get_settings
-from backend.models.schemas import PageData, CompetitorPages
-from backend.utils.cleaner import clean_html
-
-import time
 from backend.metrics import (
+    scrape_duration,
+    scrape_failure_total,
     scrape_requests_total,
     scrape_success_total,
-    scrape_failure_total,
-    scrape_duration,
 )
+from backend.models.schemas import CompetitorPages, PageData
+from backend.utils.cleaner import clean_html
 
 settings = get_settings()
 
@@ -67,12 +67,12 @@ TARGET_PATHS = {
 
 PAGE_DISCOVERY_PRIORITY = [
     "about",
+    "pricing",
+    "careers",
     "blog",
     "news",
     "customers",
-    "events",
-    "pricing",
-    "careers"
+    "events"
 ]
 
 # URLs containing any of these patterns will never be selected
@@ -447,9 +447,10 @@ class ScraperService:
     def _extract_name(self, identifier: str, domain: str) -> str:
         """
         Get a clean display name.
-        'hubspot.com' → 'HubSpot' (best effort, capitalize domain root)
+        'hubspot.com' → 'Hubspot', 'app.emergent.sh' → 'Emergent'
         """
         if "." not in identifier:
             return identifier.title()
-        root = domain.split(".")[0]
+        parts = domain.split(".")
+        root = parts[-2] if len(parts) >= 2 else parts[0]
         return root.capitalize()

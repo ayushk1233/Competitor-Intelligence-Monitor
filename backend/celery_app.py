@@ -1,5 +1,5 @@
 from celery import Celery
-from celery.schedules import crontab
+
 from backend.config import get_settings
 
 settings = get_settings()

@@ -1,24 +1,11 @@
 import asyncio
 
-from backend.reasoning.momentum_reasoner import (
-    analyze_momentum
-)
+from backend.reasoning.icp_reasoner import analyze_icp
+from backend.reasoning.momentum_reasoner import analyze_momentum
+from backend.reasoning.synthesis_reasoner import synthesize_intelligence
+from backend.reasoning.tone_reasoner import analyze_tone
+from backend.retrieval.evidence_router import route_evidence
 
-from backend.reasoning.tone_reasoner import (
-    analyze_tone
-)
-
-from backend.reasoning.icp_reasoner import (
-    analyze_icp
-)
-
-from backend.reasoning.synthesis_reasoner import (
-    synthesize_intelligence
-)
-
-from backend.retrieval.evidence_router import (
-    route_evidence
-)
 
 def is_real_momentum_signal(text: str) -> bool:
     """Accepts launches, shipping velocity, adoption, partnerships, hiring, and funding."""
@@ -81,14 +68,9 @@ def sanitize_momentum_evidence(signals_dict: dict) -> dict:
 
 async def run_intelligence_pipeline(
     chunks: list[str],
-    signals: dict = None
+    signals: dict = None,
+    validation: dict = None
 ):
-
-    print(f"[orchestrator] Type received: {type(chunks)}")
-    if isinstance(chunks, list) and chunks:
-        print(f"[orchestrator] First chunk preview: {repr(chunks[0][:200])}")
-    elif isinstance(chunks, str):
-        print(f"[orchestrator] String preview: {repr(chunks[:200])}")
 
     # -----------------------------------
     # Run specialist agents concurrently
@@ -123,10 +105,10 @@ async def run_intelligence_pipeline(
     if signals:
         sanitized_signals = sanitize_momentum_evidence(signals)
 
-        # Build structured-only context — NO raw chunks reach momentum LLM
+        # Build structured context with a sample of raw chunks for verification
         momentum_context = "MOMENTUM SIGNALS\n\n"
-        momentum_context += "Only the following structured signals are available.\n"
-        momentum_context += "Do NOT infer additional evidence beyond what is listed below.\n\n"
+        momentum_context += "Below are structured signals extracted from the source content, "
+        momentum_context += "followed by a small sample of raw source text for verification.\n\n"
 
         MOMENTUM_CATEGORIES = [
             "launch_signals",
@@ -150,6 +132,14 @@ async def run_intelligence_pipeline(
                 momentum_context += "(none)\n\n"
 
         momentum_context += f"Total unique evidence items: {total_evidence}\n"
+
+        # Include a sample of raw chunks for context verification
+        if chunks:
+            raw_sample = [c for c in chunks if len(c.strip()) > 50][:5]
+            if raw_sample:
+                momentum_context += "\n\nRAW SOURCE CONTEXT (sample — use to verify signals above):\n\n"
+                for i, chunk in enumerate(raw_sample, 1):
+                    momentum_context += f"[{i}] {chunk[:600]}\n\n"
     else:
         # No structured signals provided — momentum context is empty
         # The LLM will score conservatively with no evidence
@@ -193,27 +183,10 @@ async def run_intelligence_pipeline(
 
         tone_analysis=tone_result,
 
-        icp_analysis=icp_result
+        icp_analysis=icp_result,
+
+        validation=validation
     )
-
-    import os
-    import time
-
-    def log_agent_output(agent_name: str, output: str):
-        log_dir = "logs/agent_outputs"
-        os.makedirs(log_dir, exist_ok=True)
-        timestamp = int(time.time())
-        file_path = os.path.join(log_dir, f"{agent_name}_{timestamp}.txt")
-        try:
-            with open(file_path, "w") as f:
-                f.write(str(output))
-        except Exception as e:
-            print(f"Failed to write agent log: {e}")
-
-    log_agent_output("momentum", momentum_result)
-    log_agent_output("tone", tone_result)
-    log_agent_output("icp", icp_result)
-    log_agent_output("synthesis", final_result)
 
     return {
 

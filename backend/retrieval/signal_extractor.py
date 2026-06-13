@@ -1,7 +1,7 @@
-import re
-import json
-from collections import defaultdict
 import hashlib
+import json
+import re
+from collections import defaultdict
 
 
 def split_into_sentences(text: str) -> list:
@@ -442,8 +442,6 @@ def extract_sentence_launch_signals(paragraph: str) -> list:
     for sentence in sentences:
         sentence = sentence.strip()
         if len(sentence) < 20:
-            if len(sentence) > 3:
-                print(f"  [signals] launch candidate rejected (too short): {sentence}")
             continue
             
         lower = sentence.lower()
@@ -453,9 +451,6 @@ def extract_sentence_launch_signals(paragraph: str) -> list:
                 if cleaned and not is_false_positive(cleaned):
                     if len(cleaned) >= 20:
                         found.append(cleaned)
-                        print(f"  [signals] launch candidate accepted: {cleaned}")
-                    else:
-                        print(f"  [signals] launch candidate rejected (too short after clean): {cleaned}")
                 break
     return found
 
@@ -593,16 +588,13 @@ def extract_signals(text: str) -> dict:
     extracted = defaultdict(list)
 
     sentences = split_into_sentences(text)
-    print(f"[signals] Received {len(sentences)} sentences")
 
     # Evaluate each sentence independently
     for sentence in sentences:
         sentence = extract_quote_content(sentence)
         if is_low_quality(sentence):
-            print(f"[signal rejected]\n[low quality]\n[{sentence[:40]}]\n")
             continue
         if is_ocr_noise(sentence):
-            print(f"[signal rejected]\n[ocr noise]\n[{sentence[:40]}]\n")
             continue
 
         # Skip noise
@@ -617,13 +609,11 @@ def extract_signals(text: str) -> dict:
         
         # ---- PRIORITY LAUNCH (HubSpot) ----
         has_priority_launch = False
-        print(f"[launch candidate] {sentence[:60]}")
         
         for pat in INTRODUCING_PATTERNS:
             if re.search(pat, sentence_lower, flags=re.IGNORECASE):
                 sig = format_signal(sentence, "launch")
                 extracted["launch_signals"].insert(0, sig)
-                print(f"[signal accepted]\n[launch]\n[{sentence[:80]}]\n")
                 has_priority_launch = True
                 break
                 
@@ -632,7 +622,6 @@ def extract_signals(text: str) -> dict:
                 if prod in sentence_lower:
                     sig = format_signal(sentence + " [announced]", "launch")
                     extracted["launch_signals"].append(sig)
-                    print(f"[signal accepted]\n[launch]\n[{sentence[:80]}]\n")
                     has_priority_launch = True
                     break
         
@@ -642,7 +631,6 @@ def extract_signals(text: str) -> dict:
             if re.search(pat, sentence_lower, flags=re.IGNORECASE):
                 sig = format_signal(sentence, "adoption")
                 extracted["adoption_signals"].insert(0, sig)
-                print(f"[signal accepted]\n[adoption]\n[{sentence[:80]}]\n")
                 has_priority_growth = True
                 break
                 
@@ -650,14 +638,12 @@ def extract_signals(text: str) -> dict:
             continue
         
         # ---- LAUNCH ----
-        # Use existing logic for atomic signals (IBM support)
         launch_items = extract_atomic_launch_signals(sentence)
         launch_sentences = extract_sentence_launch_signals(sentence)
         
         for item in launch_items + launch_sentences:
             sig = format_signal(item, "launch")
             extracted["launch_signals"].append(sig)
-            print(f"[signal accepted]\n[launch]\n[{item[:80]}]\n")
 
         # ---- SHIPPING VELOCITY ----
         has_shipping = False
@@ -667,17 +653,14 @@ def extract_signals(text: str) -> dict:
                 sig_text = m.group(0)
                 sig = format_signal(sig_text, "shipping_velocity")
                 extracted["shipping_velocity_signals"].append(sig)
-                print(f"[signal accepted]\n[shipping_velocity]\n[{sig_text}]\n")
                 has_shipping = True
         
         if not has_shipping:
-            # Fallback for IBM
             if any(re.search(pat, sentence_lower, flags=re.IGNORECASE) for pat in SHIPPING_PATTERNS_DETECT):
                 items = extract_shipping_velocity(sentence)
                 for item in items:
                     sig = format_signal(item, "shipping_velocity")
                     extracted["shipping_velocity_signals"].append(sig)
-                    print(f"[signal accepted]\n[shipping_velocity]\n[{item[:60]}]\n")
 
         # ---- ADOPTION ----
         has_adoption = False
@@ -685,7 +668,6 @@ def extract_signals(text: str) -> dict:
             if re.search(pat, sentence_lower, flags=re.IGNORECASE):
                 sig = format_signal(sentence, "adoption")
                 extracted["adoption_signals"].append(sig)
-                print(f"[signal accepted]\n[adoption]\n[{sentence[:60]}]\n")
                 has_adoption = True
                 break
                 
@@ -693,19 +675,16 @@ def extract_signals(text: str) -> dict:
             for item in extract_adoption_signals(sentence):
                 sig = format_signal(item, "adoption")
                 extracted["adoption_signals"].append(sig)
-                print(f"[signal accepted]\n[adoption]\n[{item[:80]}]\n")
 
         # ---- PARTNERSHIPS ----
         for item in extract_partnership_signals(sentence):
             sig = format_signal(item, "partnership")
             extracted["partnership_signals"].append(sig)
-            print(f"[signal accepted]\n[partnership]\n[{item[:80]}]\n")
 
         # ---- HIRING ----
         for item in extract_hiring_signals(sentence):
             sig = format_signal(item, "hiring")
             extracted["hiring_signals"].append(sig)
-            print(f"[signal accepted]\n[hiring]\n[{item[:80]}]\n")
 
         # ---- AI INITIATIVES ----
         has_action_verb = any(
@@ -721,11 +700,6 @@ def extract_signals(text: str) -> dict:
         if has_ai_keyword and has_action_verb:
             sig = format_signal(sentence, "ai_initiative")
             extracted["ai_initiatives"].append(sig)
-            print(
-                f"[signal accepted]\n"
-                f"[ai_initiative]\n"
-                f"[{sentence[:40]}]\n"
-            )
 
         # ---- TECHNICAL ----
         if any(kw in sentence_lower for kw in TECHNICAL_KEYWORDS):
@@ -742,21 +716,7 @@ def extract_signals(text: str) -> dict:
 
     deduped = deduplicate_signals(extracted)
 
-    print("\n" + "=" * 50)
-    print("===== SIGNAL AUDIT =====")
-    print("=" * 50)
-    for cat in ["launch_signals", "shipping_velocity_signals", "adoption_signals",
-                "hiring_signals", "partnership_signals"]:
-        items = deduped.get(cat, [])
-        print(f"{cat}: {len(items)}")
-        for ex in items[:5]:
-            try:
-                obj = json.loads(ex)
-                text = obj.get("text", ex)
-            except:
-                text = ex
-            print(f"  - {text[:100]}")
-    print("=" * 50)
+    print(f"  [signals] extracted: {sum(len(v) for v in deduped.values())} signals across {len(deduped)} categories")
 
     # Apply ranking
     for cat in ["launch_signals", "adoption_signals", "partnership_signals"]:

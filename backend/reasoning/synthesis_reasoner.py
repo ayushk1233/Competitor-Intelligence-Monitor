@@ -28,7 +28,25 @@ Do not invent:
 - office expansions
 - hiring numbers
 
-If evidence is absent, return "Not detected".
+If evidence is absent, use one of:
+- "No public evidence found" (for a section where content was available but no signal detected)
+- "Insufficient information available" (for a section where the relevant page was not accessible)
+
+Do NOT use "Not detected" — it sounds unprofessional.
+
+FOR EVERY MAJOR SECTION you MUST provide:
+- extracted_value (the analytical conclusion)
+- evidence (a verbatim quote or specific observation from the content that supports this conclusion)
+- source (which page/section the evidence came from, e.g. "homepage", "pricing page", "about page")
+- source_url (the actual URL or path where the evidence was found, e.g. "/pricing", "/about", "/blog/new-feature")
+- confidence (integer 0–100 — how certain you are based on evidence strength)
+
+Confidence calibration:
+- 90-100: Direct statement from official source (e.g., pricing page shows "$29/month")
+- 70-89: Strongly implied by multiple pieces of evidence
+- 50-69: Reasonable inference from available content
+- 30-49: Weak signal or ambiguous wording
+- 0-29: No evidence, educated guess only
 
 Use specialist outputs heavily.
 
@@ -50,30 +68,58 @@ Return ONLY valid JSON with exactly these fields:
 
 {
   "core_offering": "One sentence — what specific problem they solve and for whom",
+  "core_offering_evidence": ["verbatim quote from content supporting this"],
+  "core_offering_source": "homepage",
+  "core_offering_source_url": "/",
+  "core_offering_confidence": 92,
   "icp": "Synthesize from the ICP analysis",
   "icp_keywords": ["preserve", "directly", "from", "icp", "analysis"],
   "icp_evidence": ["preserve", "directly", "from", "icp", "analysis"],
+  "icp_confidence": 88,
   "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid (from Tone analysis)",
   "tone_evidence": ["preserve", "directly", "from", "tone", "analysis"],
-  "pricing_signals": "Extract from context. Write Not detected if unavailable.",
-  "hiring_signals": "Extract from context. Write Not detected if unavailable.",
+  "tone_confidence": 85,
+  "pricing_signals": "Extract from context. Use 'No public evidence found' if unavailable.",
+  "pricing_evidence": [],
+  "pricing_source": "",
+  "pricing_source_url": "",
+  "pricing_confidence": 0,
+  "hiring_signals": "Extract from context. Use 'No public evidence found' if unavailable.",
+  "hiring_evidence": [],
+  "hiring_source": "",
+  "hiring_source_url": "",
+  "hiring_confidence": 0,
   "recent_launches": ["extract", "from", "context", "or", "momentum", "analysis"],
   "strategic_keywords": ["extract", "from", "context. Extract recurring business themes. Examples: enterprise, payments, AI, automation, developer platform, CRM, compliance, workflow. Only include terms that appear multiple times or represent strategic focus. Avoid generic words."],
+  "keywords_evidence": [],
+  "keywords_source_url": "",
+  "keywords_confidence": 75,
   "growth_signals": ["extract", "from", "context", "or", "momentum", "analysis"],
   "risk_flags": ["extract", "from", "context"],
   "momentum_score": 7,
   "momentum_evidence": ["preserve", "directly", "from", "momentum", "analysis"],
-  "analyst_note": "One hard-hitting strategic observation summarizing the synthesis"
+  "momentum_negative_factors": ["list negative factors like: No recent product launches", "No hiring activity", "No partnership signals detected"],
+   "momentum_reasoning": "Brief explanation of why this momentum score was assigned, referencing specific signals",
+   "analyst_note": "Key Insight: <1-2 sentences that capture something NOT obvious from the other fields. Do NOT repeat core_offering, icp, momentum_score, risk_flags, or growth_signals. Instead surface a hidden strategic pattern, a contradiction, or a non-obvious implication for a founder/competitor. Be specific and direct."
+ }
 }
+
+analyst_note FORMAT REQUIREMENTS (max 100 words total):
+You MUST format as EXACTLY:
+Key Insight: <1-2 sentences>
+
+CRITICAL — anti-duplication rules:
+- Do NOT repeat the core_offering summary inside analyst_note
+- Do NOT restate strength/risk/outlook — those concepts are already covered by momentum_evidence, momentum_negative_factors, growth_signals, and risk_flags
+- The analyst_note must contain ONLY information that is NOT present in any other field
+- If every observation you have is already in another field, write: "Key Insight: All strategic signals are captured in the structured fields above."
 
 Do NOT invent new interpretations.
 Do NOT override specialist agents.
 Assemble conservatively.
 CRITICAL: You MUST return perfectly valid JSON. Ensure all inner quotes inside strings are properly escaped to prevent Malformed JSON errors.
 """
-from backend.services.llm_service import (
-    call_openrouter
-)
+from backend.services.llm_service import call_openrouter
 
 
 async def synthesize_intelligence(
@@ -84,11 +130,29 @@ async def synthesize_intelligence(
 
     tone_analysis: str,
 
-    icp_analysis: str
+    icp_analysis: str,
+
+    validation: dict = None
 ):
 
+    validation_block = ""
+    if validation:
+        validation_block = f"""
+[COMPANY VALIDATION — Must respect this]
+Company: {validation.get('company_name', 'Unknown')}
+Description: {validation.get('company_description', 'Unknown')}
+Category: {validation.get('category', 'Unknown')}
+Product Type: {validation.get('product_type', 'Unknown')}
+Primary Use Case: {validation.get('primary_use_case', 'Unknown')}
+Confidence Warning: {validation.get('validation_warning', False)}
+
+CRITICAL: The validation above represents the best understanding of what this company actually is.
+Your synthesis MUST be consistent with this validation.
+If validation says this is NOT an IT services or consulting company, do NOT classify it as one.
+"""
+
     user_prompt = f"""
-SYNTHESIZE THESE ANALYSES AND CONTEXT:
+SYNTHESIZE THESE ANALYSES AND CONTEXT:{validation_block}
 
 [SUPPORTING CONTEXT]
 {context}

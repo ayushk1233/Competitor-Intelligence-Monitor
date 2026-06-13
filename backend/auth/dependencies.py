@@ -1,24 +1,19 @@
-from jose import JWTError
-
 from fastapi import (
     Depends,
     HTTPException,
 )
-
 from fastapi.security import (
     OAuth2PasswordBearer,
 )
-
+from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.auth.service import (
     decode_access_token,
 )
-
 from backend.database.connection import (
     get_db,
 )
-
 from backend.database.db_service import (
     DatabaseService,
 )

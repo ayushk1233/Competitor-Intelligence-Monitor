@@ -1,9 +1,8 @@
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from backend.eval.snapshot import EvaluationSnapshot
-
 
 EVAL_RUNS_DIR = Path("evaluation_runs")
 

@@ -1,5 +1,6 @@
 from backend.database.db_service import DatabaseService
 
+
 async def is_suppressed(db_service: DatabaseService, company_name: str, alert_type: str) -> bool:
     """Check if an active suppression exists for this company and alert type."""
     suppression = await db_service.get_active_suppression(company_name, alert_type)

@@ -1,6 +1,5 @@
 from backend.eval.models import EvalExpectation
 
-
 TEST_CASES = [
     {
         "company_name": "Basecamp",
