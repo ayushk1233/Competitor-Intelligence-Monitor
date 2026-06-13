@@ -13,8 +13,8 @@ interface AlertFeedProps {
 
 const severityConfig = {
   HIGH: { class: "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30" as const },
-  MEDIUM: { class: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30" as const },
-  LOW: { class: "bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30" as const },
+  MEDIUM: { class: "bg-[#D97706]/15 text-[#D97706] border-[#D97706]/30" as const },
+  LOW: { class: "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30" as const },
 } as const;
 
 function SeverityBadge({ severity }: { severity: string }) {
@@ -43,11 +43,11 @@ function AlertItem({ alert }: { alert: DashboardAlertResponse }) {
         <p className="truncate text-sm font-medium text-[#F8FAFC]">
           {alert.company_name}
         </p>
-        <p className="mt-0.5 text-xs text-[#94A3B8]">
+        <p className="mt-0.5 text-xs text-[var(--muted-text)]">
           {alert.headline || alert.summary || "No details"}
         </p>
       </div>
-      <span className="shrink-0 text-xs text-[#94A3B8]">{date}</span>
+      <span className="shrink-0 text-xs text-[var(--muted-text)]">{date}</span>
     </div>
   );
 }
@@ -84,7 +84,7 @@ export function AlertFeed({ alerts, isLoading }: AlertFeedProps) {
         ) : !alerts || alerts.length === 0 ? (
           <div className="flex flex-col items-center gap-1 py-8 text-center">
             <Bell className="h-8 w-8 text-[#1A2332]" />
-            <p className="text-sm text-[#94A3B8]">No alerts yet</p>
+            <p className="text-sm text-[var(--muted-text)]">No alerts yet</p>
             <p className="text-xs text-[#6B7280]">
               Alerts appear when competitor drift is detected
             </p>

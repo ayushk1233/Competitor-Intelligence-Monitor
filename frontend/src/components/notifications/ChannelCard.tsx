@@ -90,19 +90,19 @@ export function ChannelCard({ channel }: ChannelCardProps) {
       <Card className="border-[#262626] bg-[#161616]">
         <CardContent className="flex flex-col gap-4 p-5">
           <div className="flex items-center justify-between">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#BC6C50]/10 text-[#BC6C50]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-color-10)] text-[var(--accent-color)]">
               {channelIcons[channel.channel_type] ?? <Mail className="h-4 w-4" />}
             </div>
             <Switch
               checked={channel.enabled}
               onCheckedChange={handleToggle}
               disabled={updateChannel.isPending}
-              className="data-[state=checked]:bg-[#BC6C50]"
+              className="data-[state=checked]:bg-[var(--accent-color)]"
             />
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-[var(--dialog-text)]">
               {channel.label || channelLabels[channel.channel_type] || channel.channel_type}
             </h3>
             <p className="break-all text-xs text-[#A3A3A3]">
@@ -114,7 +114,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
 
           <div className="flex items-center gap-3 border-t border-[#262626] pt-3 text-xs text-[#666666]">
             {channel.verified ? (
-              <span className="flex items-center gap-1 text-[#BC6C50]">
+              <span className="flex items-center gap-1 text-[var(--accent-color)]">
                 <CheckCircle2 className="h-3 w-3" />
                 Verified
               </span>
@@ -127,7 +127,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
             {lastEvent && (
               <span className="flex items-center gap-1">
                 {lastEvent.delivery_status === "DELIVERED" ? (
-                  <CheckCircle2 className="h-3 w-3 text-[#BC6C50]" />
+                  <CheckCircle2 className="h-3 w-3 text-[var(--accent-color)]" />
                 ) : lastEvent.delivery_status === "FAILED" ? (
                   <XCircle className="h-3 w-3 text-[#EF4444]" />
                 ) : (
@@ -160,7 +160,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="border-[#262626] bg-[#0A0A0A] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">Delete Channel</DialogTitle>
+            <DialogTitle className="text-[var(--dialog-text)]">Delete Channel</DialogTitle>
             <DialogDescription className="text-[#666666]">
               Are you sure you want to delete this notification channel? This action cannot be undone.
             </DialogDescription>
@@ -170,7 +170,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
               type="button"
               variant="ghost"
               onClick={() => setDeleteOpen(false)}
-              className="text-[#666666] hover:text-white hover:bg-[#161616]"
+              className="text-[#666666] hover:text-[var(--dialog-text)] hover:bg-[#161616]"
             >
               Cancel
             </Button>
@@ -179,7 +179,7 @@ export function ChannelCard({ channel }: ChannelCardProps) {
               variant="destructive"
               onClick={handleDelete}
               disabled={deleteChannel.isPending}
-              className="bg-[#EF4444] text-white hover:bg-[#EF4444]/90"
+              className="bg-[#EF4444] text-[var(--dialog-text)] hover:bg-[#EF4444]/90"
             >
               {deleteChannel.isPending ? (
                 <>

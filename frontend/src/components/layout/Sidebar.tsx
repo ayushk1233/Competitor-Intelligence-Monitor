@@ -101,43 +101,43 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 <button
                   key={item.href}
                   onClick={() => handleNav(item.href)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
-                      : "text-neutral-400 hover:bg-neutral-800/30 hover:text-white"
-                  }`}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {badge !== undefined && item.isAlert ? (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                      {badge}
-                    </span>
-                  ) : badge !== undefined ? (
-                    <span className="text-xs text-neutral-500">{badge}</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </nav>
+                   className={`flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                     active
+                       ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
+                       : "text-neutral-400 hover:bg-neutral-800/30 hover:text-white"
+                   }`}
+                 >
+                   <item.icon className="h-4 w-4 shrink-0" />
+                   <span className="flex-1 text-left">{item.label}</span>
+                   {badge !== undefined && item.isAlert ? (
+                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                       {badge}
+                     </span>
+                   ) : badge !== undefined ? (
+                     <span className="text-xs text-neutral-500">{badge}</span>
+                   ) : null}
+                 </button>
+               );
+             })}
+           </nav>
 
-          <div className="px-4 mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-              Tools
-            </p>
-          </div>
-          <nav className="space-y-0.5">
-            {toolsItems.map((item) => {
-              const active = isActive(pathname, item.href);
-              return (
-                <button
-                  key={item.href}
-                  onClick={() => handleNav(item.href)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
-                      : "text-neutral-400 hover:bg-neutral-800/30 hover:text-white"
-                  }`}
+           <div className="px-4 mb-2">
+             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+               Tools
+             </p>
+           </div>
+           <nav className="space-y-0.5">
+             {toolsItems.map((item) => {
+               const active = isActive(pathname, item.href);
+               return (
+                 <button
+                   key={item.href}
+                   onClick={() => handleNav(item.href)}
+                   className={`flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                     active
+                       ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
+                       : "text-neutral-400 hover:bg-neutral-800/30 hover:text-white"
+                   }`}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 text-left">{item.label}</span>

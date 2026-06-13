@@ -68,28 +68,28 @@ export function AddCompetitorDialog({ watchlistId }: AddCompetitorDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#BC6C50] text-white hover:bg-[#BC6C50]/90">
+        <Button className="bg-[var(--accent-color)] text-[var(--dialog-text)] hover:bg-[var(--accent-color-90)]">
           <Plus className="mr-1 h-4 w-4" />
           Add Competitor
         </Button>
       </DialogTrigger>
-      <DialogContent className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+      <DialogContent className="border-[var(--dialog-border)] bg-[var(--dialog-bg)]">
         <DialogHeader>
-          <DialogTitle className="text-white">Add Competitor</DialogTitle>
-          <DialogDescription className="text-[#A0A0A0]">
+          <DialogTitle className="text-[var(--dialog-text)]">Add Competitor</DialogTitle>
+          <DialogDescription className="text-[var(--dialog-muted)]">
             Add a competitor to this watchlist.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="company_name" className="text-sm font-medium text-white">
+            <label htmlFor="company_name" className="text-sm font-medium text-[var(--dialog-text)]">
               Company Name
             </label>
             <Input
               id="company_name"
               placeholder="e.g. Acme Corp"
-              className="border-[rgba(255,255,255,0.1)] bg-[#121212] text-white placeholder:text-[#6B7280]"
+              className="border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-text)] placeholder:text-[var(--dialog-placeholder)]"
               {...register("company_name")}
             />
             {errors.company_name && (
@@ -98,19 +98,19 @@ export function AddCompetitorDialog({ watchlistId }: AddCompetitorDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="domain" className="text-sm font-medium text-white">
+            <label htmlFor="domain" className="text-sm font-medium text-[var(--dialog-text)]">
               Domain
             </label>
             <Input
               id="domain"
               placeholder="Optional domain"
-              className="border-[rgba(255,255,255,0.1)] bg-[#121212] text-white placeholder:text-[#6B7280]"
+              className="border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-text)] placeholder:text-[var(--dialog-placeholder)]"
               {...register("domain")}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Priority</label>
+            <label className="text-sm font-medium text-[var(--dialog-text)]">Priority</label>
             <div className="flex gap-2">
               {priorities.map((p) => (
                 <button
@@ -119,8 +119,8 @@ export function AddCompetitorDialog({ watchlistId }: AddCompetitorDialogProps) {
                   onClick={() => setValue("priority", p, { shouldValidate: true })}
                   className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium capitalize transition-colors ${
                     watch("priority") === p
-                      ? "border-[#BC6C50] bg-[#BC6C50]/10 text-[#BC6C50]"
-                      : "border-[rgba(255,255,255,0.1)] bg-[#121212] text-[#A0A0A0] hover:text-white"
+                      ? "border-[var(--accent-color)] bg-[var(--accent-color-10)] text-[var(--accent-color)]"
+                      : "border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)]"
                   }`}
                 >
                   {p}
@@ -137,14 +137,14 @@ export function AddCompetitorDialog({ watchlistId }: AddCompetitorDialogProps) {
                 setOpen(false);
                 reset();
               }}
-              className="text-[#A0A0A0] hover:text-white hover:bg-[#2A2A2A]"
+              className="text-[var(--dialog-muted)] hover:text-[var(--dialog-text)] hover:bg-[var(--dialog-surface)]"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={addCompetitor.isPending}
-              className="bg-[#BC6C50] text-white hover:bg-[#BC6C50]/90"
+              className="bg-[var(--accent-color)] text-[var(--dialog-text)] hover:bg-[var(--accent-color-90)]"
             >
               {addCompetitor.isPending ? (
                 <>

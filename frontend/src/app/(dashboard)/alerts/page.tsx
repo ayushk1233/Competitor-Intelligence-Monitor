@@ -13,6 +13,7 @@ type SeverityStyle = {
   border: string;
   pill: string;
   pillText: string;
+  activeBtn: string;
 };
 
 const severityStyles: Record<SeverityLevel, SeverityStyle> = {
@@ -20,21 +21,25 @@ const severityStyles: Record<SeverityLevel, SeverityStyle> = {
     border: "bg-neutral-500",
     pill: "bg-neutral-100",
     pillText: "text-neutral-800",
+    activeBtn: "bg-neutral-100 text-neutral-800",
   },
   high: {
     border: "bg-red-500",
-    pill: "bg-white",
+    pill: "bg-red-100",
     pillText: "text-red-600",
+    activeBtn: "bg-red-100 text-red-800",
   },
   medium: {
-    border: "bg-amber-500",
+    border: "bg-amber-600",
     pill: "bg-amber-100",
     pillText: "text-amber-800",
+    activeBtn: "bg-amber-100 text-amber-800",
   },
   low: {
-    border: "bg-emerald-500",
-    pill: "bg-emerald-100",
-    pillText: "text-emerald-800",
+    border: "bg-blue-500",
+    pill: "bg-blue-100",
+    pillText: "text-blue-800",
+    activeBtn: "bg-blue-100 text-blue-800",
   },
 };
 
@@ -121,7 +126,7 @@ export default function AlertsPage() {
                   onClick={() => setActiveFilter(tab.value)}
                   className={
                     isActive
-                      ? "bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium"
+                      ? `${severityStyles[tab.value].activeBtn} px-3 py-1 rounded-full text-sm font-medium`
                       : "bg-transparent border border-neutral-700 text-neutral-300 px-3 py-1 rounded-full text-sm hover:bg-neutral-800 transition-colors"
                   }
                 >

@@ -23,7 +23,7 @@ interface CompetitorTableProps {
 
 function SkeletonRow() {
   return (
-    <TableRow className="border-[rgba(255,255,255,0.1)]">
+    <TableRow className="border-[var(--dialog-border)]">
       <TableCell><Skeleton className="h-4 w-32 bg-[#2A2A2A]" /></TableCell>
       <TableCell><Skeleton className="h-4 w-28 bg-[#2A2A2A]" /></TableCell>
       <TableCell><Skeleton className="h-4 w-20 bg-[#2A2A2A]" /></TableCell>
@@ -36,21 +36,21 @@ function SkeletonRow() {
 const priorityColors: Record<string, string> = {
   high: "text-[#EF4444] border-[#EF4444]/30 bg-[#EF4444]/15",
   medium: "text-[#F59E0B] border-[#F59E0B]/30 bg-[#F59E0B]/15",
-  low: "text-[#A0A0A0] border-[rgba(255,255,255,0.1)] bg-[#2A2A2A]",
+  low: "text-[var(--dialog-muted)] border-[var(--dialog-border)] bg-[#2A2A2A]",
 };
 
 export function CompetitorTable({ watchlistId, competitors, isLoading }: CompetitorTableProps) {
   return (
-    <div className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+    <div className="rounded-lg border border-[var(--dialog-border)] bg-[var(--dialog-bg)]">
       {isLoading ? (
         <Table>
           <TableHeader>
-            <TableRow className="border-[rgba(255,255,255,0.1)] hover:bg-transparent">
-              <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Company Name</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Domain</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Priority</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Monitoring</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Status</TableHead>
+            <TableRow className="border-[var(--dialog-border)] hover:bg-transparent">
+              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Company Name</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Domain</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Priority</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Monitoring</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -64,7 +64,7 @@ export function CompetitorTable({ watchlistId, competitors, isLoading }: Competi
       ) : !competitors || competitors.length === 0 ? (
         <div className="flex flex-col items-center gap-1 py-12 text-center">
           <Users className="h-8 w-8 text-[#2A2A2A]" />
-          <p className="text-sm text-[#A0A0A0]">No competitors yet</p>
+          <p className="text-sm text-[var(--dialog-muted)]">No competitors yet</p>
           <p className="text-xs text-[#6B7280]">
             Add your first competitor to start monitoring
           </p>
@@ -73,27 +73,27 @@ export function CompetitorTable({ watchlistId, competitors, isLoading }: Competi
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-[rgba(255,255,255,0.1)] hover:bg-transparent">
-                <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Company Name</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Domain</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Priority</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Monitoring</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#A0A0A0]">Status</TableHead>
+              <TableRow className="border-[var(--dialog-border)] hover:bg-transparent">
+                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Company Name</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Domain</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Priority</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Monitoring</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {competitors.map((c) => (
-                <TableRow key={c.id} className="border-[rgba(255,255,255,0.1)] hover:bg-[#2A2A2A]/50">
+                <TableRow key={c.id} className="border-[var(--dialog-border)] hover:bg-[var(--dialog-surface)]/50">
                   <TableCell className="text-sm font-medium">
                     <Link
                       href={ROUTES.competitorDetail(watchlistId, c.company_name)}
-                      className="flex items-center gap-1.5 text-[#BC6C50] transition-colors hover:text-[#BC6C50]/80 hover:underline"
+                      className="flex items-center gap-1.5 text-[var(--accent-color)] transition-colors hover:text-[var(--accent-color-80)] hover:underline"
                     >
                       {c.company_name}
                       <ExternalLink className="h-3 w-3" />
                     </Link>
                   </TableCell>
-                  <TableCell className="text-sm text-[#A0A0A0]">
+                  <TableCell className="text-sm text-[var(--dialog-muted)]">
                     {c.domain || "—"}
                   </TableCell>
                   <TableCell>
@@ -101,7 +101,7 @@ export function CompetitorTable({ watchlistId, competitors, isLoading }: Competi
                       {c.priority}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-[#A0A0A0]">
+                  <TableCell className="text-sm text-[var(--dialog-muted)]">
                     {c.monitoring_enabled ? (
                       <span className="text-[#22C55E]">Enabled</span>
                     ) : (

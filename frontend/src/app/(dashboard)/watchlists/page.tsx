@@ -32,7 +32,7 @@ export default function WatchlistsPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-[#94A3B8]">Manage your competitor monitoring groups</p>
+          <p className="text-sm text-[var(--muted-text)]">Manage your competitor monitoring groups</p>
         </div>
         {!isLoading && watchlists.length > 0 && <CreateWatchlistDialog />}
       </div>

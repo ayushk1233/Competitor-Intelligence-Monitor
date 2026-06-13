@@ -14,8 +14,8 @@ export function EmptyState({ icon, title, description, cta }: EmptyStateProps) {
         <div className="text-[#6B7280]">{icon}</div>
       </div>
       <div>
-        <p className="text-base font-medium text-[#F8FAFC]">{title}</p>
-        <p className="mt-1 text-sm text-[#94A3B8]">{description}</p>
+        <p className="text-base font-medium text-foreground">{title}</p>
+        <p className="mt-1 text-sm text-[var(--muted-text)]">{description}</p>
       </div>
       {cta}
     </div>

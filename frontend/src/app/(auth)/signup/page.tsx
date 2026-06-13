@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ROUTES } from "@/constants";
 import { signupSchema, type SignupFormValues } from "@/lib/schemas";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/providers/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Eye, EyeOff } from "lucide-react";
@@ -15,6 +16,7 @@ import type { ApiError } from "@/types/api";
 
 export default function SignupPage() {
   const { signup } = useAuth();
+  const { theme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -114,7 +116,12 @@ export default function SignupPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg border border-[var(--orange)] bg-transparent text-sm font-medium font-mono text-[var(--orange)] transition-all hover:bg-[var(--orange)]/10"
+          className={`w-full rounded-lg border bg-transparent text-sm font-medium font-mono transition-all ${
+            theme === "dark"
+              ? "border-[var(--orange)] text-[var(--orange)] hover:bg-[var(--orange)]/10"
+              : "text-[var(--orange)] hover:bg-[var(--orange)]/10"
+          }`}
+          style={theme !== "dark" ? { borderColor: "#000" } : undefined}
         >
           {isSubmitting ? (
             <>

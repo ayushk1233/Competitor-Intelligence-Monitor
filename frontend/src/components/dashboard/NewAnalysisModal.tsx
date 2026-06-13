@@ -69,27 +69,27 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md rounded-xl border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.1)] px-6 py-4">
-          <h2 className="text-base font-semibold text-white">New analysis</h2>
+      <div className="w-full max-w-md rounded-xl border border-[var(--dialog-border)] bg-[var(--dialog-bg)] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[var(--dialog-border)] px-6 py-4">
+          <h2 className="text-base font-semibold text-[var(--dialog-text)]">New analysis</h2>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[#A0A0A0] hover:text-white"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--dialog-muted)] hover:text-[var(--dialog-text)]"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="px-6 py-5">
-          <h3 className="text-sm font-semibold text-white">Add your competitors</h3>
-          <p className="mt-0.5 text-xs text-[#A0A0A0]">
+          <h3 className="text-sm font-semibold text-[var(--dialog-text)]">Add your competitors</h3>
+          <p className="mt-0.5 text-xs text-[var(--dialog-muted)]">
             Enter the companies you want to analyze
           </p>
 
           <div className="mt-5 space-y-4">
             {competitors.map((val, i) => (
-              <div key={i} className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#222222] p-3">
-                <label className="text-xs font-medium text-[#A0A0A0]">
+              <div key={i} className="rounded-lg border border-[var(--dialog-surface-border)] bg-[var(--dialog-surface)] p-3">
+                <label className="text-xs font-medium text-[var(--dialog-muted)]">
                   Competitor {i + 1}
                 </label>
                 <Input
@@ -100,10 +100,10 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
                     setCompetitors(next);
                   }}
                   placeholder={["e.g. Anthropic", "e.g. Vercel", "e.g. Databricks"][i]}
-                  className="mt-1.5 border border-[rgba(255,255,255,0.1)] bg-[#1A1A1A] text-white placeholder:text-[#A0A0A0] focus:border-[#BC6C50] focus:ring-0"
+                  className="mt-1.5 border border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-text)] placeholder:text-[var(--dialog-muted)] focus:border-[var(--accent-color)] focus:ring-0"
                 />
                 <div className="mt-2 flex items-center gap-1.5">
-                  <Link className="h-3 w-3 shrink-0 text-[#6B7280]" />
+                  <Link className="h-3 w-3 shrink-0 text-[var(--dialog-placeholder)]" />
                   <input
                     value={competitorUrls[i] || ""}
                     onChange={(e) => {
@@ -112,15 +112,15 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
                       setCompetitorUrls(next);
                     }}
                     placeholder="Website URL (optional)"
-                    className="w-full border-0 bg-transparent py-1 text-xs text-[#6B7280] placeholder:text-[#4B5563] focus:outline-none focus:text-[#A0A0A0]"
+                    className="w-full border-0 bg-transparent py-1 text-xs text-[var(--dialog-placeholder)] placeholder:text-[var(--dialog-placeholder)] focus:outline-none focus:text-[var(--dialog-muted)]"
                   />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-5 space-y-2 rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#222222] p-4">
-            <p className="text-xs font-medium text-[#A0A0A0]">Include pages</p>
+          <div className="mt-5 space-y-2 rounded-lg border border-[var(--dialog-border)] bg-[var(--dialog-surface)] p-4">
+            <p className="text-xs font-medium text-[var(--dialog-muted)]">Include pages</p>
             {[
               { label: "Careers page", key: "careers", checked: includeCareers, set: setIncludeCareers },
               { label: "Blog posts", key: "blog", checked: includeBlog, set: setIncludeBlog },
@@ -128,32 +128,32 @@ export function NewAnalysisModal({ open, onClose }: NewAnalysisModalProps) {
             ].map((item) => (
               <label
                 key={item.key}
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1 hover:bg-[#2A2A2A]/50"
+                className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1 hover:bg-[var(--dialog-surface)]/50"
               >
                 <div
                   className={`flex h-4 w-4 items-center justify-center rounded border ${
                     item.checked
-                      ? "border-[#BC6C50] bg-[#BC6C50]"
-                      : "border-[rgba(255,255,255,0.2)] bg-transparent"
+                      ? "border-[var(--accent-color)] bg-[var(--accent-color)]"
+                      : "border-[var(--dialog-border)] bg-transparent"
                   }`}
                 >
                   {item.checked && (
-                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-3 w-3 text-[var(--dialog-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </div>
-                <span className="text-xs text-white">{item.label}</span>
+                <span className="text-xs text-[var(--dialog-text)]">{item.label}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="border-t border-[rgba(255,255,255,0.1)] px-6 py-4">
+        <div className="border-t border-[var(--dialog-border)] px-6 py-4">
           <Button
             onClick={handleRun}
             disabled={loading}
-            className="w-full border border-[#BC6C50] bg-transparent text-[#BC6C50] hover:bg-[#BC6C50] hover:text-white transition-colors"
+             className="w-full border border-[var(--accent-color)] bg-transparent text-[var(--accent-color)] hover:bg-[var(--accent-color)] hover:text-[var(--dialog-text)] transition-colors"
           >
             {loading ? (
               <>

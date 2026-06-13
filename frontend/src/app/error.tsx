@@ -29,7 +29,7 @@ export default function ErrorPage({
           <h1 className="text-xl font-semibold text-[#F8FAFC]">
             Something went wrong
           </h1>
-          <p className="mt-1 text-sm text-[#94A3B8]">
+          <p className="mt-1 text-sm text-[var(--muted-text)]">
             {error.message || "An unexpected error occurred"}
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function ErrorPage({
           <Button
             variant="outline"
             onClick={() => router.push(ROUTES.dashboard)}
-            className="border-[#1A2332] text-[#94A3B8] hover:bg-[#1A2332] hover:text-[#F8FAFC]"
+            className="border-[#1A2332] text-[var(--muted-text)] hover:bg-[#1A2332] hover:text-[#F8FAFC]"
           >
             <LayoutDashboard className="mr-1.5 h-4 w-4" />
             Back to Dashboard

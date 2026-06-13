@@ -179,7 +179,7 @@ function MomentumCard({ c }: { c: CompetitorAnalysisReport }) {
   const positiveCount = c.momentum_evidence?.length ?? 0;
   const negativeCount = c.momentum_negative_factors?.length ?? 0;
   return (
-    <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#222222] p-3">
+    <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[var(--dialog-surface)] p-3">
       <div className="flex items-center gap-2">
         <SectionHeading icon={<BarChart3 className="h-3.5 w-3.5 text-[#22C55E]" />} label="Momentum Score" />
       </div>
@@ -311,7 +311,7 @@ function AnalystNoteBlock({ note }: { note: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-[#F59E0B]/30 bg-[#222222] p-3">
+    <div className="rounded-lg border border-[#F59E0B]/30 bg-[var(--dialog-surface)] p-3">
       <SectionHeading icon={<Lightbulb className="h-3.5 w-3.5 text-[#F59E0B]" />} label="Analyst Note" />
       <p className="mt-1 text-sm italic text-[#CBD5E1]">{note}</p>
     </div>
@@ -564,7 +564,7 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
         <div className="border-t border-[rgba(255,255,255,0.06)] pt-3 space-y-3">
           <SectionHeading icon={<Database className="h-3.5 w-3.5 text-[#6B7280]" />} label="Data Quality" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="rounded-lg bg-[#222222] p-2.5">
+            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
               <p className="text-[10px] text-[#6B7280] font-mono">Understanding</p>
               <p className="text-sm font-semibold text-foreground font-mono">
                 {c.confidence_scores ? (
@@ -577,11 +577,11 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
                 ) : "—"}
               </p>
             </div>
-            <div className="rounded-lg bg-[#222222] p-2.5">
+            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
               <p className="text-[10px] text-[#6B7280] font-mono">Sources</p>
               <p className="text-sm font-semibold text-foreground font-mono">{c.pages_analyzed.length} pages</p>
             </div>
-            <div className="rounded-lg bg-[#222222] p-2.5">
+            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
               <p className="text-[10px] text-[#6B7280] font-mono">Evidence</p>
               <p className="text-sm font-semibold text-foreground font-mono">
                 {[
@@ -596,7 +596,7 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
                 snippets
               </p>
             </div>
-            <div className="rounded-lg bg-[#222222] p-2.5">
+            <div className="rounded-lg bg-[var(--dialog-surface)] p-2.5">
               <p className="text-[10px] text-[#6B7280] font-mono">Warnings</p>
               <p className="text-sm font-semibold text-foreground font-mono">
                 {c.validation?.validation_warning ? (
@@ -720,7 +720,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
       )}
 
       {comparison.executive_briefing && (
-        <Card className="border-border bg-[#222222]">
+        <Card className="border-border bg-[var(--dialog-surface)]">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#F59E0B] font-mono">
               <Lightbulb className="h-3.5 w-3.5" /> Executive Briefing
@@ -735,7 +735,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
       )}
 
       {comparison.messaging_gap && (
-        <Card className="border-border bg-[#222222]">
+        <Card className="border-border bg-[var(--dialog-surface)]">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#3B82F6] font-mono">
               <Lightbulb className="h-3.5 w-3.5" /> Messaging Gap (Opportunity)

@@ -111,23 +111,23 @@ export function EditWatchlistDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+      <DialogContent className="border-[var(--dialog-border)] bg-[var(--dialog-bg)]">
         <DialogHeader>
-          <DialogTitle className="text-white">Edit Watchlist</DialogTitle>
-          <DialogDescription className="text-[#A0A0A0]">
+          <DialogTitle className="text-[var(--dialog-text)]">Edit Watchlist</DialogTitle>
+          <DialogDescription className="text-[var(--dialog-muted)]">
             Update your watchlist configuration.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="space-y-2">
-            <label htmlFor="edit-name" className="text-sm font-medium text-white">
+            <label htmlFor="edit-name" className="text-sm font-medium text-[var(--dialog-text)]">
               Name
             </label>
             <Input
               id="edit-name"
               placeholder="e.g. AI Coding Agents"
-              className="border-[rgba(255,255,255,0.1)] bg-[#121212] text-white placeholder:text-[#6B7280]"
+              className="border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-text)] placeholder:text-[var(--dialog-placeholder)]"
               {...register("name")}
             />
             {errors.name && (
@@ -136,19 +136,19 @@ export function EditWatchlistDialog({
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="edit-description" className="text-sm font-medium text-white">
+            <label htmlFor="edit-description" className="text-sm font-medium text-[var(--dialog-text)]">
               Description / Goal
             </label>
             <Input
               id="edit-description"
               placeholder="e.g. Monitor AI coding market evolution"
-              className="border-[rgba(255,255,255,0.1)] bg-[#121212] text-white placeholder:text-[#6B7280]"
+              className="border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-text)] placeholder:text-[var(--dialog-placeholder)]"
               {...register("description")}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Sensitivity</label>
+            <label className="text-sm font-medium text-[var(--dialog-text)]">Sensitivity</label>
             <div className="flex gap-2">
               {sensitivities.map((s) => (
                 <button
@@ -157,8 +157,8 @@ export function EditWatchlistDialog({
                   onClick={() => setValue("sensitivity", s, { shouldValidate: true })}
                   className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium capitalize transition-colors ${
                     watch("sensitivity") === s
-                      ? "border-[#BC6C50] bg-[#BC6C50]/10 text-[#BC6C50]"
-                      : "border-[rgba(255,255,255,0.1)] bg-[#121212] text-[#A0A0A0] hover:text-white"
+                      ? "border-[var(--accent-color)] bg-[var(--accent-color-10)] text-[var(--accent-color)]"
+                      : "border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)]"
                   }`}
                 >
                   {s}
@@ -168,7 +168,7 @@ export function EditWatchlistDialog({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Frequency</label>
+            <label className="text-sm font-medium text-[var(--dialog-text)]">Frequency</label>
             <div className="flex gap-2">
               {frequencies.map((f) => (
                 <button
@@ -177,8 +177,8 @@ export function EditWatchlistDialog({
                   onClick={() => setValue("frequency", f, { shouldValidate: true })}
                   className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium capitalize transition-colors ${
                     watch("frequency") === f
-                      ? "border-[#BC6C50] bg-[#BC6C50]/10 text-[#BC6C50]"
-                      : "border-[rgba(255,255,255,0.1)] bg-[#121212] text-[#A0A0A0] hover:text-white"
+                      ? "border-[var(--accent-color)] bg-[var(--accent-color-10)] text-[var(--accent-color)]"
+                      : "border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)]"
                   }`}
                 >
                   {f}
@@ -188,7 +188,7 @@ export function EditWatchlistDialog({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">Sources</label>
+            <label className="text-sm font-medium text-[var(--dialog-text)]">Sources</label>
             <div className="flex flex-wrap gap-2">
               {sources.map((source) => (
                 <button
@@ -197,8 +197,8 @@ export function EditWatchlistDialog({
                   onClick={() => toggleSource(source)}
                   className={`rounded-md border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                     (selectedSources ?? []).includes(source)
-                      ? "border-[#BC6C50] bg-[#BC6C50]/10 text-[#BC6C50]"
-                      : "border-[rgba(255,255,255,0.1)] bg-[#121212] text-[#A0A0A0] hover:text-white"
+                      ? "border-[var(--accent-color)] bg-[var(--accent-color-10)] text-[var(--accent-color)]"
+                      : "border-[var(--dialog-border)] bg-[var(--input-bg)] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)]"
                   }`}
                 >
                   {source}
@@ -215,14 +215,14 @@ export function EditWatchlistDialog({
               type="button"
               variant="ghost"
               onClick={handleClose}
-              className="text-[#A0A0A0] hover:text-white hover:bg-[#2A2A2A]"
+              className="text-[var(--dialog-muted)] hover:text-[var(--dialog-text)] hover:bg-[var(--dialog-surface)]"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={updateWatchlist.isPending}
-              className="bg-[#BC6C50] text-white hover:bg-[#BC6C50]/90"
+              className="bg-[var(--accent-color)] text-[var(--dialog-text)] hover:bg-[var(--accent-color-90)]"
             >
               {updateWatchlist.isPending ? (
                 <>

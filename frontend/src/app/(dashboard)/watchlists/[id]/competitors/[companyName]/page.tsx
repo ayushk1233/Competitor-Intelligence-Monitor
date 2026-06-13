@@ -189,7 +189,7 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
       </div>
 
       {analysis.analyst_note && (
-        <Card className="border-border bg-[#222222]">
+        <Card className="border-border bg-[var(--dialog-surface)]">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#F59E0B]">
               <Lightbulb className="h-3.5 w-3.5" />

@@ -18,11 +18,11 @@ import { AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, Loader2 } fr
 import type { DashboardAlertResponse, DashboardCompetitor } from "@/types/api";
 
 const toneColors: Record<string, string> = {
-  enterprise: "bg-indigo-500/10 text-indigo-300",
-  startup: "bg-emerald-500/10 text-emerald-300",
-  technical: "bg-cyan-500/10 text-cyan-300",
-  visionary: "bg-amber-500/10 text-amber-300",
-  hybrid: "bg-purple-500/10 text-purple-300",
+  enterprise: "bg-[var(--tone-enterprise-bg)] text-[var(--tone-enterprise-text)]",
+  startup: "bg-[var(--tone-startup-bg)] text-[var(--tone-startup-text)]",
+  technical: "bg-[var(--tone-technical-bg)] text-[var(--tone-technical-text)]",
+  visionary: "bg-[var(--tone-visionary-bg)] text-[var(--tone-visionary-text)]",
+  hybrid: "bg-[var(--tone-hybrid-bg)] text-[var(--tone-hybrid-text)]",
 };
 
 function matchesRunName(companyName: string, domain: string | undefined, candidates: Set<string> | string[]): boolean {

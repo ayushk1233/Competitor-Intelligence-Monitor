@@ -47,7 +47,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 
     return (
       <div className="flex min-h-screen">
-        <div className={`relative hidden w-1/2 flex-col justify-between p-16 font-mono lg:flex ${theme === "dark" ? "bg-[#A2C2AB]" : "bg-[var(--background-secondary)]"}`}>
+        <div className={`relative hidden w-1/2 flex-col justify-between p-16 font-mono lg:flex ${theme === "dark" ? "bg-[#A2C2AB]" : "bg-[var(--primary-light)]"}`}>
           <div className="relative z-10">
             <div className="flex items-center gap-3">
               <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${theme === "dark" ? "bg-[#064A2C]" : "bg-[#0D5E3A]"}`}>
@@ -79,7 +79,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             &copy; 2026 CIM. All rights reserved.
           </p>
         </div>
-        <div className="flex w-full items-center justify-center bg-card px-6 lg:w-1/2">
+        <div className={`flex w-full items-center justify-center px-6 lg:w-1/2 ${theme === "dark" ? "bg-card" : "bg-[#D4C8B0]"}`}>
         <div className="relative w-full max-w-sm">
           <button
             onClick={toggle}

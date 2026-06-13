@@ -34,6 +34,10 @@
 - Prometheus `/metrics` (auto-instrumented). Custom metrics in `backend/metrics.py`
 - Grafana at localhost:3000 (admin / competitor_intel). Dashboards in `monitoring/grafana/`
 
+## Tailwind v4 quirks
+- **JIT does NOT detect** arbitrary color values (`border-[#000]`, `text-[#123456]`) inside template literals (dynamic `className`). Always use inline `style` prop for dynamic colors: `style={theme !== "dark" ? { borderColor: "#000" } : undefined}`.
+- This applies to ALL `#`-prefixed arbitrary values in dynamic className strings, not just border colors.
+
 ## CI (`.github/workflows/ci.yml`)
 - On push to main/develop/feature/* and PRs: `pytest tests -q` → `python scripts/eval_gate.py`
 

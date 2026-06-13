@@ -105,6 +105,32 @@
   --last-run-border: rgba(188, 108, 80, 0.4);
   --last-run-text: #BC6C50;
   --last-run-hover-bg: rgba(188, 108, 80, 0.1);
+  --accent-color: #BC6C50;
+  --accent-color-10: rgba(188, 108, 80, 0.1);
+  --accent-color-40: rgba(188, 108, 80, 0.4);
+  --accent-color-80: rgba(188, 108, 80, 0.8);
+  --accent-color-90: rgba(188, 108, 80, 0.9);
+  --muted-text: #94A3B8;
+  --muted-bg: rgba(148, 163, 184, 0.15);
+  --muted-border: rgba(148, 163, 184, 0.3);
+  --dialog-bg: #1E1E1E;
+  --dialog-border: rgba(255, 255, 255, 0.1);
+  --dialog-surface: #222222;
+  --dialog-surface-border: rgba(255, 255, 255, 0.08);
+  --input-bg: #1A1A1A;
+  --dialog-text: #FFFFFF;
+  --dialog-muted: #A0A0A0;
+  --dialog-placeholder: #6B7280;
+  --tone-enterprise-bg: rgba(99, 102, 241, 0.1);
+  --tone-enterprise-text: #A5B4FC;
+  --tone-startup-bg: rgba(16, 185, 129, 0.1);
+  --tone-startup-text: #6EE7B7;
+  --tone-technical-bg: rgba(6, 182, 212, 0.1);
+  --tone-technical-text: #67E8F9;
+  --tone-visionary-bg: rgba(245, 158, 11, 0.1);
+  --tone-visionary-text: #FCD34D;
+  --tone-hybrid-bg: rgba(168, 85, 247, 0.1);
+  --tone-hybrid-text: #C4B5FD;
 }
 
 * {
@@ -136,7 +162,7 @@ aside {
   --background-secondary: #F5F5F2;
   --surface: #FCF8E8;
   --surface-hover: #F5F5F2;
-  --surface-muted: #F5F5F2;
+  --surface-muted: #E5DCC8;
 
   /* Borders */
   --border: #D4D4D4;
@@ -234,6 +260,32 @@ aside {
   --topbar-bg: #FCF8E8;
   --topbar-icon-hover: #1F2937;
   --status-completed: #D95A33;
+  --accent-color: #4A802A;
+  --accent-color-10: rgba(74, 128, 42, 0.1);
+  --accent-color-40: rgba(74, 128, 42, 0.4);
+  --accent-color-80: rgba(74, 128, 42, 0.8);
+  --accent-color-90: rgba(74, 128, 42, 0.9);
+  --muted-text: #6B7280;
+  --muted-bg: rgba(107, 114, 128, 0.15);
+  --muted-border: rgba(107, 114, 128, 0.3);
+  --dialog-bg: #E5DCC8;
+  --dialog-border: #C8C0B0;
+  --dialog-surface: #EEE8D8;
+  --dialog-surface-border: #C8C0B0;
+  --input-bg: #EEE8D8;
+  --dialog-text: #000000;
+  --dialog-muted: #6B7280;
+  --dialog-placeholder: #9CA3AF;
+  --tone-enterprise-bg: rgba(99, 102, 241, 0.15);
+  --tone-enterprise-text: #4338CA;
+  --tone-startup-bg: rgba(16, 185, 129, 0.15);
+  --tone-startup-text: #047857;
+  --tone-technical-bg: rgba(6, 182, 212, 0.15);
+  --tone-technical-text: #0E7490;
+  --tone-visionary-bg: rgba(245, 158, 11, 0.15);
+  --tone-visionary-text: #B45309;
+  --tone-hybrid-bg: rgba(168, 85, 247, 0.15);
+  --tone-hybrid-text: #6D28D9;
 }
 
 .light body {

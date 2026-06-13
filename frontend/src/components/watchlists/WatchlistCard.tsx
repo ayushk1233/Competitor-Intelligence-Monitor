@@ -43,10 +43,10 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
           onClick={() => router.push(ROUTES.watchlistDetail(watchlist.id))}
           className="w-full text-left"
         >
-          <Card className="cursor-pointer border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] transition-colors hover:border-[#BC6C50]/40">
+          <Card className="cursor-pointer border-[var(--dialog-border)] bg-[var(--dialog-bg)] transition-colors hover:border-[var(--accent-color-40)]">
             <CardContent className="flex flex-col gap-3 p-5">
               <div className="flex items-center justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#BC6C50]/10 text-[#BC6C50]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-color-10)] text-[var(--accent-color)]">
                   <Layers className="h-4 w-4" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -65,24 +65,24 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
                       Inactive
                     </Badge>
                   )}
-                  <Badge variant="outline" className="border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-[10px] text-[#A0A0A0] capitalize">
+                  <Badge variant="outline" className="border-[var(--dialog-border)] bg-[#2A2A2A] text-[10px] text-[var(--dialog-muted)] capitalize">
                     {sensitivity}
                   </Badge>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-[var(--dialog-text)]">
                   {watchlist.name}
                 </h3>
                 {watchlist.description && (
-                  <p className="line-clamp-2 text-xs text-[#A0A0A0]">
+                  <p className="line-clamp-2 text-xs text-[var(--dialog-muted)]">
                     {watchlist.description}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center justify-between border-t border-[rgba(255,255,255,0.1)] pt-3 text-[10px] text-[#6B7280]">
+              <div className="flex items-center justify-between border-t border-[var(--dialog-border)] pt-3 text-[10px] text-[#6B7280]">
                 <span className="capitalize">{freq}</span>
                 {sources.length > 0 && (
                   <span>{sources.length} sources</span>
@@ -106,7 +106,7 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
               e.stopPropagation();
               setEditOpen(true);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-[#A0A0A0] hover:text-white transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--dialog-border)] bg-[#2A2A2A] text-[var(--dialog-muted)] hover:text-[var(--dialog-text)] transition-colors"
             title="Edit watchlist"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -116,7 +116,7 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
               e.stopPropagation();
               setShowDeleteConfirm(true);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-[rgba(255,255,255,0.1)] bg-[#2A2A2A] text-[#A0A0A0] hover:text-red-500 transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--dialog-border)] bg-[#2A2A2A] text-[var(--dialog-muted)] hover:text-red-500 transition-colors"
             title="Delete watchlist"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -138,24 +138,24 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div
-            className="w-full max-w-sm rounded-xl border border-[rgba(255,255,255,0.1)] bg-[#1E1E1E] p-6 shadow-xl"
+            className="w-full max-w-sm rounded-xl border border-[var(--dialog-border)] bg-[var(--dialog-bg)] p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-white">Delete Watchlist</h3>
-            <p className="mt-2 text-sm text-[#A0A0A0]">
-              Are you sure you want to delete <span className="text-white font-medium">&ldquo;{watchlist.name}&rdquo;</span>? This will also remove all competitors and run history. This action cannot be undone.
+            <h3 className="text-lg font-semibold text-[var(--dialog-text)]">Delete Watchlist</h3>
+            <p className="mt-2 text-sm text-[var(--dialog-muted)]">
+              Are you sure you want to delete <span className="text-[var(--dialog-text)] font-medium">&ldquo;{watchlist.name}&rdquo;</span>? This will also remove all competitors and run history. This action cannot be undone.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-transparent px-4 py-2 text-sm text-[#A0A0A0] hover:text-white transition-colors"
+                className="rounded-lg border border-[var(--dialog-border)] bg-transparent px-4 py-2 text-sm text-[var(--dialog-muted)] hover:text-[var(--dialog-text)] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteWatchlist.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-[var(--dialog-text)] hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {deleteWatchlist.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -174,7 +174,7 @@ export function WatchlistCard({ watchlist }: WatchlistCardProps) {
 
 export function WatchlistCardSkeleton() {
   return (
-    <Card className="border-[rgba(255,255,255,0.1)] bg-[#1E1E1E]">
+    <Card className="border-[var(--dialog-border)] bg-[var(--dialog-bg)]">
       <CardContent className="flex flex-col gap-3 p-5">
         <div className="flex items-center justify-between">
           <Skeleton className="h-9 w-9 rounded-lg bg-[#2A2A2A]" />
@@ -184,7 +184,7 @@ export function WatchlistCardSkeleton() {
           <Skeleton className="h-4 w-3/4 bg-[#2A2A2A]" />
           <Skeleton className="h-3 w-full bg-[#2A2A2A]" />
         </div>
-        <div className="flex items-center justify-between border-t border-[rgba(255,255,255,0.1)] pt-3">
+        <div className="flex items-center justify-between border-t border-[var(--dialog-border)] pt-3">
           <Skeleton className="h-3 w-20 bg-[#2A2A2A]" />
           <Skeleton className="h-3 w-24 bg-[#2A2A2A]" />
         </div>

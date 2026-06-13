@@ -6,15 +6,15 @@ import { X, TrendingUp, MessageSquare, Lightbulb, Target, Zap } from "lucide-rea
 
 const severityConfig: Record<string, { label: string; dot: string }> = {
   high: { label: "High", dot: "bg-[#EF4444]" },
-  medium: { label: "Medium", dot: "bg-[#F59E0B]" },
-  low: { label: "Low", dot: "bg-[#BC6C50]" },
+  medium: { label: "Medium", dot: "bg-[#D97706]" },
+  low: { label: "Low", dot: "bg-[#3B82F6]" },
 };
 
 const sevBg: Record<string, string> = {
   CRITICAL: "bg-[#2D1A1A] text-[#EF4444]",
   HIGH: "bg-[#2D1A1A] text-[#EF4444]",
-  MEDIUM: "bg-[#2D2214] text-[#F59E0B]",
-  LOW: "bg-[#142D20] text-[#BC6C50]",
+  MEDIUM: "bg-[#2D2214] text-[#D97706]",
+  LOW: "bg-[#142D20] text-[#3B82F6]",
 };
 
 function CompetitorView({ data, onBack }: { data: DetailPanelData; onBack: () => void }) {

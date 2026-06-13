@@ -86,7 +86,7 @@ export default function WatchlistDetailPage({
         <Button
           onClick={handleTriggerRun}
           disabled={createRun.isPending}
-          className="bg-[#BC6C50] text-white hover:bg-[#BC6C50]/90"
+          className="bg-[var(--accent-color)] text-white hover:bg-[var(--accent-color-90)]"
         >
           {createRun.isPending ? (
             <>

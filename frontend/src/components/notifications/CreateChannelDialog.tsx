@@ -78,7 +78,7 @@ export function CreateChannelDialog() {
       <DialogContent className="border-[#1A2332] bg-[#121826]">
         <DialogHeader>
           <DialogTitle className="text-[#F8FAFC]">Add Notification Channel</DialogTitle>
-          <DialogDescription className="text-[#94A3B8]">
+          <DialogDescription className="text-[var(--muted-text)]">
             Configure a channel to receive alerts and notifications.
           </DialogDescription>
         </DialogHeader>
@@ -142,7 +142,7 @@ export function CreateChannelDialog() {
                     ? "https://hooks.slack.com/..."
                     : "https://..."
               }
-              className="border-[#1A2332] bg-[#0B1020] text-[#F8FAFC] placeholder:text-[#6B7280]"
+              className="border-[#1A2332] bg-[#0B1020] text-[#F8FAFC] placeholder:text-[var(--dialog-placeholder)]"
               {...register("destination")}
             />
             {errors.destination && (
@@ -162,7 +162,7 @@ export function CreateChannelDialog() {
             <Input
               id="label"
               placeholder="Optional label"
-              className="border-[#1A2332] bg-[#0B1020] text-[#F8FAFC] placeholder:text-[#6B7280]"
+              className="border-[#1A2332] bg-[#0B1020] text-[#F8FAFC] placeholder:text-[var(--dialog-placeholder)]"
               {...register("label")}
             />
           </div>
@@ -175,7 +175,7 @@ export function CreateChannelDialog() {
                 setOpen(false);
                 reset();
               }}
-              className="text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A2332]"
+              className="text-[var(--muted-text)] hover:text-[#F8FAFC] hover:bg-[#1A2332]"
             >
               Cancel
             </Button>

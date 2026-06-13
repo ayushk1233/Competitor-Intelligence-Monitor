@@ -39,7 +39,7 @@ const statusConfig: Record<string, { class: string; label: string }> = {
 
 function StatusBadge({ status }: { status: string }) {
   const config = statusConfig[status] ?? {
-    class: "bg-[#94A3B8]/15 text-[#94A3B8] border-[#94A3B8]/30",
+    class: "bg-[var(--muted-bg)] text-[var(--muted-text)] border-[var(--muted-border)]",
     label: status,
   };
   return (
@@ -69,12 +69,12 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="border-[#1A2332] hover:bg-transparent">
-              <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Status</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Trigger</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Checked</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Alerts</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Sent</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Created</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Status</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Trigger</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Checked</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Alerts</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Sent</TableHead>
+              <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,7 +88,7 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
       ) : !runs || runs.length === 0 ? (
         <div className="flex flex-col items-center gap-1 py-12 text-center">
           <Activity className="h-8 w-8 text-[#1A2332]" />
-          <p className="text-sm text-[#94A3B8]">No monitoring runs yet</p>
+          <p className="text-sm text-[var(--muted-text)]">No monitoring runs yet</p>
           <p className="text-xs text-[#6B7280]">
             Trigger a monitoring run to see results here
           </p>
@@ -98,12 +98,12 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
           <Table>
             <TableHeader>
               <TableRow className="border-[#1A2332] hover:bg-transparent">
-                <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Status</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Trigger</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Checked</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Alerts</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Sent</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[#94A3B8]">Created</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Status</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Trigger</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Checked</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Alerts</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Sent</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-[var(--muted-text)]">Created</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -124,7 +124,7 @@ export function RunHistoryTable({ runs, isLoading }: RunHistoryTableProps) {
                   <TableCell className="text-sm text-[#CBD5E1]">
                     {run.notifications_sent}
                   </TableCell>
-                  <TableCell className="text-sm text-[#94A3B8]">
+                  <TableCell className="text-sm text-[var(--muted-text)]">
                     {new Date(run.created_at).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",

@@ -22,7 +22,7 @@ function ActivityDot({ type }: { type: string }) {
   return (
     <div
       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-        activityBg[type] ?? "bg-[#1A2332] text-[#94A3B8]"
+        activityBg[type] ?? "bg-[#1A2332] text-[var(--muted-text)]"
       }`}
     >
       {activityIcons[type] ?? <History className="h-3.5 w-3.5" />}
@@ -51,7 +51,7 @@ function ActivityItem({ item }: { item: DashboardActivityItem }) {
         <p className="text-sm font-medium text-[#F8FAFC]">
           {label[item.activity_type] ?? item.activity_type}
         </p>
-        <p className="truncate text-xs text-[#94A3B8]">{item.title}</p>
+        <p className="truncate text-xs text-[var(--muted-text)]">{item.title}</p>
       </div>
       <span className="shrink-0 text-xs text-[#6B7280]">{date}</span>
     </div>
@@ -90,7 +90,7 @@ export function ActivityTimeline({ activities, isLoading }: ActivityTimelineProp
         ) : !activities || activities.length === 0 ? (
           <div className="flex flex-col items-center gap-1 py-8 text-center">
             <History className="h-8 w-8 text-[#1A2332]" />
-            <p className="text-sm text-[#94A3B8]">No activity yet</p>
+            <p className="text-sm text-[var(--muted-text)]">No activity yet</p>
             <p className="text-xs text-[#6B7280]">
               Activity appears when you create watchlists
             </p>
