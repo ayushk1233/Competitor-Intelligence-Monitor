@@ -14,7 +14,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardOverview, MomentumRanking, RecentRunsWidget } from "@/components/dashboard/DashboardOverview";
 import { NewAnalysisModal } from "@/components/dashboard/NewAnalysisModal";
 import { RecentRunsTable } from "@/components/dashboard/RecentRunsTable";
-import { AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, Loader2 } from "lucide-react";
+import { AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, Loader2, XCircle } from "lucide-react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { toast } from "sonner";
 import type { DashboardAlertResponse, DashboardCompetitor } from "@/types/api";
 
 const toneColors: Record<string, string> = {
@@ -176,6 +179,21 @@ export default function DashboardPage() {
   const latestCompletedRun = completedRuns[0];
   const latestCompletedRunId = latestCompletedRun?.run_id;
 
+  const queryClient = useQueryClient();
+  const cancelMutation = useMutation({
+    mutationFn: () => apiClient.post(`/api/runs/${summary?.active_run_id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-recent-alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-competitors"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-recent-runs"] });
+      queryClient.invalidateQueries({ queryKey: ["recent-analysis-runs"] });
+      queryClient.invalidateQueries({ queryKey: ["run-status", summary?.active_run_id] });
+      toast.success("Analysis cancelled");
+    },
+    onError: () => toast.error("Failed to cancel analysis"),
+  });
+
   const isRunning = summary?.has_active_run;
   const runStatus = activeRunStatus?.status || summary?.active_run_status;
 
@@ -206,7 +224,6 @@ export default function DashboardPage() {
   const gridCompetitors = competitors?.items
     ? [...competitors.items]
         .sort((a, b) => new Date(b.last_analyzed_at ?? 0).getTime() - new Date(a.last_analyzed_at ?? 0).getTime())
-        .slice(0, 6)
     : [];
 
   return (
@@ -249,10 +266,35 @@ export default function DashboardPage() {
             </div>
             <div className="ml-auto flex items-center gap-2">
               {activeRunStatus && (
-                <span className="text-xs text-muted-foreground">
-                  {activeRunStatus.pages_fetched} page{activeRunStatus.pages_fetched !== 1 ? "s" : ""} fetched
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    {activeRunStatus.pages_fetched} page{activeRunStatus.pages_fetched !== 1 ? "s" : ""} fetched
+                  </span>
+                  <span className="text-xs font-semibold mr-1"
+                    style={{ color: stageConfig[runStatus || ""]?.color || "#22C55E" }}
+                  >
+                    {activeRunStatus.progress_percent}%
+                  </span>
+                </div>
               )}
+              <button
+                onClick={() => {
+                  if (confirm("Cancel this analysis?")) {
+                    cancelMutation.mutate();
+                  }
+                }}
+                disabled={cancelMutation.isPending}
+                className="flex h-8 px-3 items-center justify-center rounded-md border border-[var(--progress-border)] bg-transparent text-xs font-semibold text-foreground hover:bg-card hover:text-[#EF4444] transition-colors"
+              >
+                {cancelMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                    Cancel
+                  </>
+                )}
+              </button>
             </div>
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--muted)]">

@@ -767,7 +767,7 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
         </Card>
       )}
 
-      {comparison.messaging_gap && (
+      {comparison.messaging_gap ? (
         <Card className="border-border bg-[var(--dialog-surface)]">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#3B82F6] font-mono">
@@ -805,7 +805,20 @@ function ComparisonSection({ comparison }: { comparison: ComparisonResult }) {
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : comparison.messaging_gaps ? (
+        <Card className="border-border bg-[var(--dialog-surface)]">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#3B82F6] font-mono">
+              <Lightbulb className="h-3.5 w-3.5" /> Messaging Gaps & Opportunities
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-foreground">
+              {comparison.messaging_gaps}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }
