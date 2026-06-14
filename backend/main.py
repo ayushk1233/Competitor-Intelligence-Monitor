@@ -1,8 +1,11 @@
 # ✅ FIX 1: single clean import block — no duplicates
 import glob
+import json
 import logging
 import os
+import shutil
 import time
+from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,6 +32,7 @@ from backend.database.models import (
 )
 from backend.drift.diff_service import compare_analysis
 from backend.metrics import active_pipeline_runs
+from backend.celery_app import celery_app
 from backend.models.schemas import (
     AnalysisRequest,
     ComparisonResult,
@@ -168,7 +172,7 @@ async def analyze(
     
     # Track active runs
     active_pipeline_runs.inc()
-    run_analysis_task.delay(run_id, request.competitors, request.competitor_urls)
+    run_analysis_task.apply_async(args=[run_id, request.competitors, request.competitor_urls], task_id=run_id)
 
     logger.info(
         "Enqueued run %s for %s",
@@ -292,7 +296,9 @@ async def get_report(
                 pass
 
         if ca.domain and not ca.logo_url:
-            ca.logo_url = f"https://icons.duckduckgo.com/ip3/{ca.domain}.ico"
+            raw_url = ca.domain if ca.domain.startswith("http") else f"https://{ca.domain}"
+            hostname = urlparse(raw_url).hostname or ca.domain
+            ca.logo_url = f"https://icons.duckduckgo.com/ip3/{hostname}.ico"
         competitors.append(ca)
     if not comparison_record or not comparison_record.full_comparison:
         raise HTTPException(
@@ -733,3 +739,13 @@ async def run_intelligence_pipeline(
 
     finally:
         await scraper.close()
+@app.post("/api/runs/{run_id}/cancel")
+async def cancel_run(run_id: str, db: AsyncSession = Depends(get_db)):
+    db_service = DatabaseService(db)
+    run = await db_service.get_run_by_id(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    
+    celery_app.control.revoke(run_id, terminate=True)
+    await db_service.update_run_status(run_id, "cancelled")
+    return {"status": "cancelled"}

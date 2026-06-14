@@ -262,41 +262,41 @@ async def _scheduled_monitoring_impl():
         async with SessionLocal() as session:
             db = DatabaseService(session)
 
-            due_watchlists = await db.get_due_watchlists()
+        due_watchlists = await db.get_due_watchlists()
 
-            print(
-                f"[scheduler] Found "
-                f"{len(due_watchlists)} due watchlists"
+        print(
+            f"[scheduler] Found "
+            f"{len(due_watchlists)} due watchlists"
+        )
+
+        for watchlist in due_watchlists:
+
+            run = MonitoringRun(
+                watchlist_id=watchlist.id,
+                trigger_type="AUTOMATED",
+                status="QUEUED",
             )
 
-            for watchlist in due_watchlists:
+            session.add(run)
 
-                run = MonitoringRun(
-                    watchlist_id=watchlist.id,
-                    trigger_type="AUTOMATED",
-                    status="QUEUED",
-                )
+            await session.flush()
 
-                session.add(run)
+            task = monitor_watchlist_task.delay(
+                run.id
+            )
 
-                await session.flush()
+            run.celery_task_id = task.id
 
-                task = monitor_watchlist_task.delay(
-                    run.id
-                )
+            next_run = calculate_next_run(
+                watchlist.monitoring_frequency
+            )
 
-                run.celery_task_id = task.id
+            await db.update_watchlist_schedule(
+                watchlist.id,
+                next_run,
+            )
 
-                next_run = calculate_next_run(
-                    watchlist.monitoring_frequency
-                )
-
-                await db.update_watchlist_schedule(
-                    watchlist.id,
-                    next_run,
-                )
-
-            await session.commit()
+        await session.commit()
     finally:
         await engine.dispose()
 

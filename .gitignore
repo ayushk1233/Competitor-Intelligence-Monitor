@@ -35,3 +35,5 @@ backend/utils/__init__.py
 evaluation_runs/
 logs/
 alert_runs/
+
+tree_output.txt

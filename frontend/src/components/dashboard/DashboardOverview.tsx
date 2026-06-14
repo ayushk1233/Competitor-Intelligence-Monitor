@@ -178,14 +178,9 @@ function KpiCards({ summary, competitors, monitoringRuns, competitorItems, isLoa
         )}
         <button
           onClick={onRunAnalysis}
-          disabled={isRunning}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--run-btn-bg)] px-4 py-2.5 text-sm font-medium text-[var(--run-btn-text)] transition-colors hover:bg-[var(--run-btn-hover)] disabled:cursor-not-allowed disabled:opacity-60 font-mono"
         >
-          {isRunning ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing...</>
-          ) : (
-            <><Play className="h-4 w-4" /> Run Analysis</>
-          )}
+          <Play className="h-4 w-4" /> {isRunning ? "Queue Another Analysis" : "Run Analysis"}
         </button>
       </div>
     </div>

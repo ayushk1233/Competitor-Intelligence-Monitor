@@ -16,6 +16,8 @@ from backend.database.db_service import (
 from backend.database.models import (
     User,
 )
+from urllib.parse import urlparse
+
 from backend.models.schemas import (
     DashboardActivityResponse,
     DashboardCompetitorResponse,
@@ -24,6 +26,14 @@ from backend.models.schemas import (
     DashboardRecentRunsResponse,
     DashboardSummaryResponse,
 )
+
+def _extract_hostname(url: str) -> str:
+    if not url:
+        return ""
+    if not url.startswith("http"):
+        url = "https://" + url
+    parsed = urlparse(url)
+    return parsed.hostname or ""
 
 router = APIRouter(
     prefix="/api/dashboard",
@@ -220,7 +230,7 @@ async def get_dashboard_competitors(
             DashboardCompetitorResponse(
                 company_name=r.competitor_name,
                 domain=r.domain,
-                logo_url=f"https://icons.duckduckgo.com/ip3/{r.domain}.ico" if r.domain else None,
+                logo_url=f"https://icons.duckduckgo.com/ip3/{_extract_hostname(r.domain)}.ico" if r.domain else None,
                 messaging_tone=r.messaging_tone,
                 momentum_score=r.momentum_score,
                 last_analyzed_at=r.created_at,
