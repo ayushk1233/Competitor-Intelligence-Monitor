@@ -21,6 +21,7 @@ const statusConfig: Record<string, { label: string; icon: typeof Loader2; class:
   comparing:  { label: "Comparing",  icon: Loader2,      class: "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/15" },
   completed:  { label: "Completed",  icon: CheckCircle2, class: "text-[var(--status-completed)] border-[var(--status-completed)]/30 bg-[var(--status-completed)]/15" },
   failed:     { label: "Failed",     icon: XCircle,      class: "text-[#DC2626] border-[#DC2626]/40 bg-[#DC2626]/25" },
+  cancelled:  { label: "Cancelled",  icon: XCircle,      class: "text-neutral-500 border-neutral-500/40 bg-neutral-500/15" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -41,10 +42,23 @@ function RunRow({ run }: { run: RunListItem }) {
     mutationFn: () => apiClient.delete(`/api/runs/${run.run_id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recent-analysis-runs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-competitors"] });
       toast.success("Analysis deleted");
     },
     onError: () => toast.error("Failed to delete analysis"),
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: () => apiClient.post(`/api/runs/${run.run_id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recent-analysis-runs"] });
+      toast.success("Analysis cancelled");
+    },
+    onError: () => toast.error("Failed to cancel analysis"),
+  });
+
+  const isRunning = ["queued", "scraping", "analyzing", "comparing"].includes(run.status);
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
@@ -72,6 +86,23 @@ function RunRow({ run }: { run: RunListItem }) {
           >
             <FileText className="h-4 w-4" />
           </Link>
+        )}
+        {isRunning && (
+          <button
+            onClick={() => {
+              if (confirm("Cancel this analysis?")) {
+                cancelMutation.mutate();
+              }
+            }}
+            disabled={cancelMutation.isPending}
+            className="flex h-8 px-2 items-center justify-center rounded-md border border-border bg-muted text-xs font-semibold text-muted-foreground hover:text-[#EF4444]"
+          >
+            {cancelMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Cancel"
+            )}
+          </button>
         )}
         <button
           onClick={() => {
