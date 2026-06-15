@@ -312,10 +312,20 @@ async def run_intelligence_pipeline(
     # This guarantees the field is present even when the synthesis LLM omits it.
     existing_dna = final_data.get("competitor_dna") or {}
     winner = calibrated_archetype.get("winner", {})
+    hypotheses = calibrated_archetype.get("hypotheses", {})
+    
     existing_dna["archetype"] = winner.get("archetype", existing_dna.get("archetype"))
     existing_dna["confidence"] = winner.get("confidence", existing_dna.get("confidence"))
-    existing_dna["alternative_archetypes"] = calibrated_archetype.get("candidates", existing_dna.get("alternative_archetypes", []))
+    existing_dna["growth_model"] = winner.get("growth_model", existing_dna.get("growth_model"))
+    existing_dna["primary_moat"] = winner.get("primary_moat", existing_dna.get("primary_moat"))
+    existing_dna["strategic_risk"] = winner.get("strategic_risk", existing_dna.get("strategic_risk"))
     existing_dna["supporting_signals"] = winner.get("supporting_signals", existing_dna.get("supporting_signals", []))
+    
+    existing_dna["expansion_vector"] = hypotheses.get("expansion_vector", existing_dna.get("expansion_vector"))
+    existing_dna["likely_next_moves"] = hypotheses.get("likely_next_moves", existing_dna.get("likely_next_moves", []))
+    
+    existing_dna["alternative_archetypes"] = calibrated_archetype.get("candidates", existing_dna.get("alternative_archetypes", []))
+    
     final_data["competitor_dna"] = existing_dna
 
     final_result_str = json.dumps(final_data)

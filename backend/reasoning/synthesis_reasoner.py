@@ -57,27 +57,7 @@ Return ONLY valid JSON with EXACTLY these fields:
   "momentum_negative_factors": ["list negative factors (max 2)"],
   "momentum_reasoning": "Brief explanation of momentum score",
   "analyst_note": "Explain WHY the signals matter strategically. Surface hidden strategic patterns, defensibility maneuvers, and ecosystem expansion tactics.",
-  "competitor_dna": {
-    "archetype": "Extract from archetype analysis winner",
-    "confidence": 0.0,
-    "supporting_signals": ["Extract from archetype analysis winner"],
-    "alternative_archetypes": [
-      {
-        "archetype": "Extract from candidates",
-        "confidence": 0.0
-      }
-    ],
-    "growth_model": "Extract from archetype analysis winner",
-    "primary_moat": "Extract from archetype analysis winner",
-    "strategic_risk": "Extract from archetype analysis winner",
-    "expansion_vector": "Extract from archetype analysis hypotheses",
-    "likely_next_moves": [
-      {
-        "hypothesis": "Extract from archetype analysis hypotheses",
-        "confidence": "high|medium|low"
-      }
-    ]
-  },
+
   "strategic_interpretation": {
     "strategic_direction": "From strategy analysis",
     "commercial_signal": "From strategy analysis",

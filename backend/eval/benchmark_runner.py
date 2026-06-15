@@ -31,7 +31,7 @@ class BenchmarkTracker:
             json.dump(data, f, indent=2)
 
 def mock_llm_hook(tracker, real_call):
-    async def wrapper(prompt, *, system_prompt=None, model=None, temperature=0.0, max_tokens=4000, call_type="analysis"):
+    async def wrapper(prompt, *, system_prompt=None, model=None, temperature=0.0, max_tokens=8000, call_type="analysis"):
         # Identify agent
         agent_name = "unknown"
         if "validation" in str(system_prompt).lower() or "validation" in str(prompt).lower() or "company identification" in str(system_prompt).lower():

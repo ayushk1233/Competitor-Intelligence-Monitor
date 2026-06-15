@@ -55,7 +55,7 @@ async def call_openrouter(
     system_prompt: str | None = None,
     model: str | None = None,
     temperature: float = 0.0,
-    max_tokens: int = 4000,
+    max_tokens: int = 8000,
     call_type: str = "analysis",
 ) -> str | None:
     """
