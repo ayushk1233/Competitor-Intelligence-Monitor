@@ -210,10 +210,9 @@ async def get_dashboard_competitors(
 ):
     service = DatabaseService(db)
 
-    names_from_watchlists = await service.get_user_competitor_names(current_user.id)
     names_from_runs = await service.get_run_competitor_names(str(current_user.id))
 
-    user_competitor_names = list(set(names_from_watchlists) | set(names_from_runs))
+    user_competitor_names = list(set(names_from_runs))
     if not user_competitor_names:
         return DashboardCompetitorsResponse(items=[])
 
