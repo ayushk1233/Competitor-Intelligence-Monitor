@@ -118,6 +118,41 @@ function SectionHeading({ icon, label }: { icon: React.ReactNode; label: string 
   );
 }
 
+function CollapsibleSection({
+  icon,
+  label,
+  summary,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  summary?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-border pt-4">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between gap-2 text-left group"
+      >
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground font-mono flex items-center gap-1.5">
+            {icon}{label}
+          </span>
+          {!open && summary && (
+            <span className="hidden sm:flex items-center gap-1.5 truncate max-w-xs">{summary}</span>
+          )}
+        </span>
+        <span className="text-[var(--muted-text)] group-hover:text-foreground transition-colors">
+          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        </span>
+      </button>
+      {open && <div className="mt-3">{children}</div>}
+    </div>
+  );
+}
+
 function StarRating({ score }: { score: number }) {
   const filled = Math.round(score);
   const total = 10;
@@ -592,6 +627,222 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
 
         {/* ── MOMENTUM SCORE HERO ── */}
         <MomentumHero c={c} />
+
+        {/* ── COMPETITOR DNA (v1.2.x) — collapsed by default ── */}
+        {c.competitor_dna?.archetype && (
+          <CollapsibleSection
+            icon={<Swords className="h-3.5 w-3.5 text-[#8B5CF6]" />}
+            label="Competitor DNA"
+            summary={
+              <span className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] font-mono bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/30">
+                  {c.competitor_dna.archetype}
+                </Badge>
+                {c.competitor_dna.confidence !== undefined && (
+                  <span className="text-[10px] text-[var(--muted-text)] font-mono">
+                    {Math.round(c.competitor_dna.confidence * 100)}% confidence
+                  </span>
+                )}
+              </span>
+            }
+          >
+            <div className="space-y-4 pt-1">
+              {/* Archetype + Confidence bar */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <Badge variant="outline" className="text-xs font-semibold bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/30 px-3 py-1">
+                  {c.competitor_dna.archetype}
+                </Badge>
+                {c.competitor_dna.confidence !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#8B5CF6]"
+                        style={{ width: `${Math.round(c.competitor_dna.confidence * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-mono text-[var(--muted-text)]">
+                      {Math.round(c.competitor_dna.confidence * 100)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Supporting Signals */}
+              {c.competitor_dna.supporting_signals && c.competitor_dna.supporting_signals.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] mb-1.5">Supporting Signals</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {c.competitor_dna.supporting_signals.map((sig, i) => (
+                      <Badge key={i} variant="outline" className="text-[10px] font-mono bg-[#2DD4BF]/10 text-[#2DD4BF] border-[#2DD4BF]/20">
+                        {sig}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* DNA Attribute Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {c.competitor_dna.growth_model && (
+                  <div className="rounded-lg bg-muted border border-border p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Growth Model</p>
+                    <p className="text-xs text-foreground mt-0.5">{c.competitor_dna.growth_model}</p>
+                  </div>
+                )}
+                {c.competitor_dna.primary_moat && (
+                  <div className="rounded-lg bg-muted border border-border p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Primary Moat</p>
+                    <p className="text-xs text-foreground mt-0.5">{c.competitor_dna.primary_moat}</p>
+                  </div>
+                )}
+                {c.competitor_dna.strategic_risk && (
+                  <div className="rounded-lg bg-muted border border-border p-3">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Strategic Risk</p>
+                    <p className="text-xs text-foreground mt-0.5">{c.competitor_dna.strategic_risk}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Expansion Vector */}
+              {c.competitor_dna.expansion_vector && (
+                <div className="rounded-lg border border-[#8B5CF6]/20 bg-[#8B5CF6]/5 p-3">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[#8B5CF6] mb-1">Expansion Vector</p>
+                  <p className="text-xs text-foreground leading-relaxed">{c.competitor_dna.expansion_vector}</p>
+                </div>
+              )}
+
+              {/* Likely Next Moves */}
+              {c.competitor_dna.likely_next_moves && c.competitor_dna.likely_next_moves.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] mb-1.5">Likely Next Moves</p>
+                  <div className="space-y-1.5">
+                    {c.competitor_dna.likely_next_moves.map((move, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-foreground">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8B5CF6]" />
+                        <span className="flex-1">{move.hypothesis}</span>
+                        <Badge variant="outline" className="text-[9px] font-mono shrink-0 capitalize">
+                          {move.confidence}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Alternative Archetypes */}
+              {c.competitor_dna.alternative_archetypes && c.competitor_dna.alternative_archetypes.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] mb-1.5">Alternative Archetypes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {c.competitor_dna.alternative_archetypes.map((alt, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <Badge variant="outline" className="text-[10px] font-mono bg-muted text-muted-foreground border-border">
+                          {alt.archetype}
+                        </Badge>
+                        <span className="text-[10px] text-[var(--muted-text)] font-mono">
+                          {Math.round(alt.confidence * 100)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* ── STRATEGIC INTERPRETATION (v1.2.x) — collapsed by default ── */}
+        {c.strategic_interpretation && Object.keys(c.strategic_interpretation).length > 0 && (
+          <CollapsibleSection
+            icon={<Lightbulb className="h-3.5 w-3.5 text-[#F59E0B]" />}
+            label="Strategic Interpretation"
+            summary={
+              c.strategic_interpretation.strategic_direction
+                ? <span className="text-[10px] text-[var(--muted-text)] font-mono truncate">{c.strategic_interpretation.strategic_direction}</span>
+                : undefined
+            }
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+              {c.strategic_interpretation.strategic_direction && (
+                <div className="rounded-lg bg-muted border border-border p-3 md:col-span-2">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[#F59E0B]">Strategic Direction</p>
+                  <p className="text-xs text-foreground mt-0.5 leading-relaxed">{c.strategic_interpretation.strategic_direction}</p>
+                </div>
+              )}
+              {c.strategic_interpretation.commercial_signal && (
+                <div className="rounded-lg bg-muted border border-border p-3">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Commercial Signal</p>
+                  <p className="text-xs text-foreground mt-0.5 leading-relaxed">{c.strategic_interpretation.commercial_signal}</p>
+                </div>
+              )}
+              {c.strategic_interpretation.expansion_signal && (
+                <div className="rounded-lg bg-muted border border-border p-3">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Expansion Signal</p>
+                  <p className="text-xs text-foreground mt-0.5 leading-relaxed">{c.strategic_interpretation.expansion_signal}</p>
+                </div>
+              )}
+              {c.strategic_interpretation.defensibility_signal && (
+                <div className="rounded-lg bg-muted border border-border p-3">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Defensibility Signal</p>
+                  <p className="text-xs text-foreground mt-0.5 leading-relaxed">{c.strategic_interpretation.defensibility_signal}</p>
+                </div>
+              )}
+              {c.strategic_interpretation.market_position && (
+                <div className="rounded-lg bg-muted border border-border p-3">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)]">Market Position</p>
+                  <p className="text-xs text-foreground mt-0.5 leading-relaxed">{c.strategic_interpretation.market_position}</p>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* ── INTELLIGENCE CONFIDENCE (v1.2.3) — collapsed by default ── */}
+        {c.confidence_metrics && Object.keys(c.confidence_metrics).length > 0 && (() => {
+          const metricEntries = Object.entries(c.confidence_metrics).filter(([, m]) => m.evidence_count > 0);
+          if (metricEntries.length === 0) return null;
+          const avgConf = Math.round(
+            metricEntries.reduce((sum, [, m]) => sum + m.confidence, 0) / metricEntries.length * 100
+          );
+          return (
+            <CollapsibleSection
+              icon={<BarChart3 className="h-3.5 w-3.5 text-[#2DD4BF]" />}
+              label="Intelligence Confidence"
+              summary={
+                <span className="text-[10px] text-[var(--muted-text)] font-mono">
+                  avg {avgConf}% · {metricEntries.length} fields with evidence
+                </span>
+              }
+            >
+              <div className="pt-1 overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] pb-2 pr-4">Field</th>
+                      <th className="text-right text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] pb-2 pr-4">Confidence</th>
+                      <th className="text-right text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] pb-2 pr-4">Evidence</th>
+                      <th className="text-right text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] pb-2 pr-4">Sources</th>
+                      <th className="text-right text-[10px] font-mono uppercase tracking-wider text-[var(--muted-text)] pb-2">Agreement</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {metricEntries.map(([field, m]) => (
+                      <tr key={field} className="hover:bg-muted/50 transition-colors">
+                        <td className="py-2 pr-4 font-mono text-foreground capitalize">{field.replace(/_/g, " ")}</td>
+                        <td className="py-2 pr-4 text-right">
+                          <ConfidenceBadge confidence={Math.round(m.confidence * 100)} />
+                        </td>
+                        <td className="py-2 pr-4 text-right font-mono text-[var(--muted-text)]">{m.evidence_count}</td>
+                        <td className="py-2 pr-4 text-right font-mono text-[var(--muted-text)]">{m.source_count}</td>
+                        <td className="py-2 text-right font-mono text-[var(--muted-text)]">{Math.round(m.agreement_score * 100)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleSection>
+          );
+        })()}
 
         {/* ── DATA QUALITY + SOURCES ── */}
         <div className="border-t border-border pt-4 space-y-4">

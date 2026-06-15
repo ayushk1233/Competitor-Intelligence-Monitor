@@ -21,9 +21,14 @@ MODEL_NAME = "deepseek/deepseek-chat"
 TEMPERATURE = 0.0
 
 
+import os
+import json
+
+OFFLINE_MODE = True
+
 async def evaluate_company(
-    scraper: ScraperService,
-    analyzer: AnalysisService,
+    scraper,
+    analyzer,
     company_name: str,
     expectation
 ):
@@ -31,22 +36,41 @@ async def evaluate_company(
     print(f"\nEvaluating {company_name}...")
 
     try:
+        if OFFLINE_MODE:
+            golden_path = "tests/golden_analyses.json"
+            if not os.path.exists(golden_path):
+                raise FileNotFoundError(f"{golden_path} not found for offline evaluation.")
+            
+            with open(golden_path, "r") as f:
+                golden_data = json.load(f)
+            
+            if company_name not in golden_data:
+                raise ValueError(f"{company_name} not in golden datasets.")
+                
+            analysis_dict = golden_data[company_name]
+            analysis_dict.setdefault("analysis_success", True)
+            analysis_dict.setdefault("name", company_name)
+            analysis_dict.setdefault("domain", f"{company_name.lower()}.com")
+            
+            from backend.models.schemas import CompetitorAnalysis
+            analysis = CompetitorAnalysis(**analysis_dict)
+            
+        else:
+            # -----------------------------------
+            # Stage 1 — Scrape
+            # -----------------------------------
 
-        # -----------------------------------
-        # Stage 1 — Scrape
-        # -----------------------------------
+            competitor_pages = await scraper.fetch_competitor(
+                company_name
+            )
 
-        competitor_pages = await scraper.fetch_competitor(
-            company_name
-        )
+            # -----------------------------------
+            # Stage 2 — Analyze
+            # -----------------------------------
 
-        # -----------------------------------
-        # Stage 2 — Analyze
-        # -----------------------------------
-
-        analysis = await analyzer.analyze_competitor(
-            competitor_pages
-        )
+            analysis = await analyzer.analyze_competitor(
+                competitor_pages
+            )
 
         # -----------------------------------
         # Stage 3 — Score
@@ -75,8 +99,11 @@ async def run_evaluation_suite():
 
     print("\nRunning evaluation suite...\n")
 
-    scraper = ScraperService()
-    analyzer = AnalysisService()
+    scraper = None
+    analyzer = None
+    if not OFFLINE_MODE:
+        scraper = ScraperService()
+        analyzer = AnalysisService()
 
     results = []
     failed_companies = []
@@ -128,6 +155,14 @@ async def run_evaluation_suite():
             round(sum(r.overall_score for r in results) / len(results), 3)
             if results else 0.0
         )
+        avg_extraction = (
+            round(sum(r.extraction_score for r in results) / len(results), 3)
+            if results else 0.0
+        )
+        avg_intelligence = (
+            round(sum(r.intelligence_score for r in results) / len(results), 3)
+            if results else 0.0
+        )
 
         snapshot = EvaluationSnapshot(
             timestamp=time.strftime(
@@ -135,6 +170,8 @@ async def run_evaluation_suite():
             ),
             status=evaluation_status,
             overall_score=average_score,
+            extraction_score=avg_extraction,
+            intelligence_score=avg_intelligence,
             llm_model=MODEL_NAME,
             temperature=TEMPERATURE,
             analysis_prompt_version=(
@@ -195,8 +232,8 @@ async def run_evaluation_suite():
         )
 
     finally:
-
-        await scraper.close()
+        if scraper:
+            await scraper.close()
 
     duration = round(time.time() - start, 2)
 

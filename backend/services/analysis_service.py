@@ -10,6 +10,7 @@ from backend.reasoning.orchestrator import run_intelligence_pipeline
 from backend.retrieval.context_builder import build_ranked_context
 from backend.retrieval.signal_compressor import compress_signals
 from backend.retrieval.signal_extractor import extract_signals
+from backend.intelligence.content_quality import clean_content
 from backend.services.llm_service import call_openrouter
 from backend.utils.json_utils import safe_json_loads
 
@@ -358,16 +359,30 @@ class AnalysisService:
                 "No pages were successfully fetched"
             )
 
-        merged_chunks = build_ranked_context(pages_as_dicts)
-        merged_content_str = "\n\n".join(merged_chunks)
+        # Phase 2: Create explicit cleaned page pipeline
+        cleaned_pages_as_dicts = []
+        for p in pages_as_dicts:
+            cleaned_content, _ = clean_content(p["content"])
+            cleaned_pages_as_dicts.append({
+                "url": p["url"],
+                "page_type": p["page_type"],
+                "content": cleaned_content
+            })
+
+        # Phase 1: Extract signals from full cleaned content BEFORE ranking/truncation
+        full_cleaned_content_str = "\n\n".join([p["content"] for p in cleaned_pages_as_dicts if p["content"]])
 
         raw_signals = extract_signals(
-            merged_content_str
+            full_cleaned_content_str
         )
 
         compressed_signals = compress_signals(
             raw_signals
         )
+
+        # Build ranked context strictly from CLEANED pages
+        cleaned_chunks = build_ranked_context(cleaned_pages_as_dicts)
+        cleaned_content_str = "\n\n".join(cleaned_chunks)
 
         print("\n=== SIGNALS ===")
         import pprint
@@ -381,43 +396,18 @@ class AnalysisService:
         print(
             f"  [analysis] Built ranked "
             f"context: "
-            f"{len(merged_content_str)} chars"
+            f"{len(cleaned_content_str)} chars"
         )
+        print("==================\n")
 
-        if len(merged_content_str) > MAX_CONTEXT_CHARS:
-            print(f"  [analysis] Truncating context from {len(merged_content_str)} to {MAX_CONTEXT_CHARS} chars")
-            merged_content_str = merged_content_str[:MAX_CONTEXT_CHARS]
+        # -------------------------------------------------------------------
+        # Multi-Agent Synthesis
+        # -------------------------------------------------------------------
+        print("[analysis] Starting multi-agent synthesis...")
 
-        page_types = [p["page_type"] for p in pages_as_dicts]
-
-        signal_summary = ""
-
-        for (
-            signal_type,
-            evidence_list
-        ) in compressed_signals.items():
-
-            signal_summary += (
-                f"\n[{signal_type.upper()}]\n"
-            )
-
-            for evidence in evidence_list:
-
-                signal_summary += (
-                    f"- {evidence}\n"
-                )
-
-        signal_summary_chunk = f"STRUCTURED STRATEGIC SIGNALS:\n{signal_summary}"
-        
-        # Prepend the structured signals to the chunks list
-        final_chunks_for_pipeline = [signal_summary_chunk] + merged_chunks
-
-        print(
-            "[analysis] Running multi-agent orchestration..."
-        )
-
+        # Run intelligence pipeline with CLEANED chunks
         agent_result = await run_intelligence_pipeline(
-            final_chunks_for_pipeline,
+            cleaned_chunks,
             compressed_signals,
             validation
         )
@@ -439,14 +429,17 @@ class AnalysisService:
             "momentum": agent_result["momentum"],
             "tone": agent_result["tone"],
             "icp": agent_result["icp"],
-            "final": agent_result["final"]
+            "strategy": agent_result.get("strategy"),
+            "archetype": agent_result.get("archetype", {}),
+            "final": agent_result["final"],
+            "preservation_metrics": agent_result.get("preservation_metrics", {})
         }
 
         return self._parse_response(
             final_analysis,
             competitor_pages.name,
             competitor_pages.domain,
-            page_types,
+            [p["page_type"] for p in pages_as_dicts],
             agent_outputs,
             validation
         )

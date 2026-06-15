@@ -1,12 +1,11 @@
 SYNTHESIS_PROMPT = """
-You are an intelligence assembler.
-
-Your job is NOT to reinterpret analyses.
+You are a master intelligence assembler and strategic analyst.
 
 Your job is to:
 - preserve specialist conclusions
 - preserve evidence richness
 - structurally assemble final intelligence
+- interpret the WHY behind the signals
 
 IMPORTANT:
 - do NOT flatten companies into generic enterprise profiles
@@ -19,136 +18,97 @@ Use ONLY information present in:
 - tone evidence
 - ICP evidence
 - momentum evidence
+- strategy evidence
 - supporting context
 
-Do not invent:
-- partnerships
-- funding
-- growth percentages
-- office expansions
-- hiring numbers
+CRITICAL - AGENT TRUST RULES:
+- You MUST trust the outputs of the specialist agents (Momentum, Tone, ICP, Strategy).
+- Do NOT bypass the momentum agent for launches.
+- For recent_launches, growth_signals, and momentum_evidence, copy them primarily from the Momentum Analysis.
 
-If evidence is absent, use one of:
-- "No public evidence found" (for a section where content was available but no signal detected)
-- "Insufficient information available" (for a section where the relevant page was not accessible)
-
-Do NOT use "Not detected" — it sounds unprofessional.
-
-FOR EVERY MAJOR SECTION you MUST provide:
-- extracted_value (the analytical conclusion)
-- evidence (a verbatim quote or specific observation from the content that supports this conclusion)
-- source (which page/section the evidence came from, e.g. "homepage", "pricing page", "about page")
-- source_url (the actual URL or path where the evidence was found, e.g. "/pricing", "/about", "/blog/new-feature")
-- confidence (integer 0–100 — how certain you are based on evidence strength)
-
-Confidence calibration:
-- 90-100: Direct statement from official source (e.g., pricing page shows "$29/month")
-- 70-89: Strongly implied by multiple pieces of evidence
-- 50-69: Reasonable inference from available content
-- 30-49: Weak signal or ambiguous wording
-- 0-29: No evidence, educated guess only
-
-Use specialist outputs heavily.
-
-EXAMPLES:
-
-Basecamp
-tone=startup
-momentum=2
-
-Stripe
-tone=technical
-momentum=8
-
-IBM
-tone=enterprise
-momentum=5
-
-Return ONLY valid JSON with exactly these fields:
+Return ONLY valid JSON with EXACTLY these fields:
 
 {
   "core_offering": "One sentence — what specific problem they solve and for whom",
-  "core_offering_evidence": ["verbatim quote from content supporting this"],
+  "core_offering_evidence": ["verbatim quote (max 2)"],
   "core_offering_source": "homepage",
   "core_offering_source_url": "/",
-  "core_offering_confidence": 92,
-  "icp": "Synthesize from the ICP analysis",
+  "icp": "Synthesize from the ICP analysis. Format as a clean string combining industry, company size, buyer, and user.",
   "icp_keywords": ["preserve", "directly", "from", "icp", "analysis"],
-  "icp_evidence": ["preserve", "directly", "from", "icp", "analysis"],
-  "icp_confidence": 88,
-  "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid (from Tone analysis)",
-  "tone_evidence": ["preserve", "directly", "from", "tone", "analysis"],
-  "tone_confidence": 85,
+  "icp_evidence": ["max 2 quotes directly from icp analysis"],
+  "messaging_tone": "Pick the primary tone from Tone analysis (e.g. Developer-First, Enterprise-First, etc.)",
+  "tone_evidence": ["max 2 quotes directly from tone analysis"],
   "pricing_signals": "Extract from context. Use 'No public evidence found' if unavailable.",
-  "pricing_evidence": [],
+  "pricing_evidence": ["max 2 quotes"],
   "pricing_source": "",
   "pricing_source_url": "",
-  "pricing_confidence": 0,
   "hiring_signals": "Extract from context. Use 'No public evidence found' if unavailable.",
-  "hiring_evidence": [],
+  "hiring_evidence": ["max 2 quotes"],
   "hiring_source": "",
   "hiring_source_url": "",
-  "hiring_confidence": 0,
-  "recent_launches": ["extract", "from", "context", "or", "momentum", "analysis"],
-  "strategic_keywords": ["extract", "from", "context. Extract recurring business themes. Examples: enterprise, payments, AI, automation, developer platform, CRM, compliance, workflow. Only include terms that appear multiple times or represent strategic focus. Avoid generic words."],
-  "keywords_evidence": [],
+  "recent_launches": ["extract ONLY from momentum analysis (max 2)"],
+  "strategic_keywords": ["extract recurring business themes (max 3)"],
+  "keywords_evidence": ["max 2 quotes"],
   "keywords_source_url": "",
-  "keywords_confidence": 75,
-  "growth_signals": ["extract", "from", "context", "or", "momentum", "analysis"],
-  "risk_flags": ["extract", "from", "context"],
+  "growth_signals": ["extract from momentum analysis (max 2)"],
+  "risk_flags": ["extract from context (max 2)"],
   "momentum_score": 7,
-  "momentum_evidence": ["preserve", "directly", "from", "momentum", "analysis"],
-  "momentum_negative_factors": ["list negative factors like: No recent product launches", "No hiring activity", "No partnership signals detected"],
-   "momentum_reasoning": "Brief explanation of why this momentum score was assigned, referencing specific signals",
-   "analyst_note": "Key Insight: <1-2 sentences that capture something NOT obvious from the other fields. Do NOT repeat core_offering, icp, momentum_score, risk_flags, or growth_signals. Instead surface a hidden strategic pattern, a contradiction, or a non-obvious implication for a founder/competitor. Be specific and direct."
- }
+  "momentum_evidence": ["max 2 quotes directly from momentum analysis"],
+  "momentum_negative_factors": ["list negative factors (max 2)"],
+  "momentum_reasoning": "Brief explanation of momentum score",
+  "analyst_note": "Explain WHY the signals matter strategically. Surface hidden strategic patterns, defensibility maneuvers, and ecosystem expansion tactics.",
+  "competitor_dna": {
+    "archetype": "Extract from archetype analysis winner",
+    "confidence": 0.0,
+    "supporting_signals": ["Extract from archetype analysis winner"],
+    "alternative_archetypes": [
+      {
+        "archetype": "Extract from candidates",
+        "confidence": 0.0
+      }
+    ],
+    "growth_model": "Extract from archetype analysis winner",
+    "primary_moat": "Extract from archetype analysis winner",
+    "strategic_risk": "Extract from archetype analysis winner",
+    "expansion_vector": "Extract from archetype analysis hypotheses",
+    "likely_next_moves": [
+      {
+        "hypothesis": "Extract from archetype analysis hypotheses",
+        "confidence": "high|medium|low"
+      }
+    ]
+  },
+  "strategic_interpretation": {
+    "strategic_direction": "From strategy analysis",
+    "commercial_signal": "From strategy analysis",
+    "expansion_signal": "From strategy analysis",
+    "defensibility_signal": "From strategy analysis",
+    "market_position": "From strategy analysis"
+  }
 }
 
-analyst_note FORMAT REQUIREMENTS (max 100 words total):
-You MUST format as EXACTLY:
-Key Insight: <1-2 sentences>
-
-CRITICAL — anti-duplication rules:
-- Do NOT repeat the core_offering summary inside analyst_note
-- Do NOT restate strength/risk/outlook — those concepts are already covered by momentum_evidence, momentum_negative_factors, growth_signals, and risk_flags
-- The analyst_note must contain ONLY information that is NOT present in any other field
-- If every observation you have is already in another field, write: "Key Insight: All strategic signals are captured in the structured fields above."
-
-Do NOT invent new interpretations.
-Do NOT override specialist agents.
-Assemble conservatively.
 CRITICAL: You MUST return perfectly valid JSON. Ensure all inner quotes inside strings are properly escaped to prevent Malformed JSON errors.
 """
 from backend.services.llm_service import call_openrouter
 
-
 async def synthesize_intelligence(
-
     context: str,
-
     momentum_analysis: str,
-
     tone_analysis: str,
-
     icp_analysis: str,
-
+    strategy_analysis: str = "",
+    archetype_analysis: str = "",
     validation: dict = None
 ):
-
     validation_block = ""
     if validation:
         validation_block = f"""
-[COMPANY VALIDATION — Must respect this]
+[COMPANY VALIDATION]
 Company: {validation.get('company_name', 'Unknown')}
 Description: {validation.get('company_description', 'Unknown')}
 Category: {validation.get('category', 'Unknown')}
 Product Type: {validation.get('product_type', 'Unknown')}
 Primary Use Case: {validation.get('primary_use_case', 'Unknown')}
-Confidence Warning: {validation.get('validation_warning', False)}
-
-CRITICAL: The validation above represents the best understanding of what this company actually is.
-Your synthesis MUST be consistent with this validation.
-If validation says this is NOT an IT services or consulting company, do NOT classify it as one.
 """
 
     user_prompt = f"""
@@ -165,50 +125,27 @@ SYNTHESIZE THESE ANALYSES AND CONTEXT:{validation_block}
 
 [ICP ANALYSIS]
 {icp_analysis}
+
+[STRATEGY ANALYSIS]
+{strategy_analysis}
+
+[ARCHETYPE ANALYSIS]
+{archetype_analysis}
 """
 
     response = await call_openrouter(
-
         prompt=user_prompt,
-
-        system_prompt=SYNTHESIS_PROMPT
+        system_prompt=SYNTHESIS_PROMPT,
+        call_type="synthesis"
     )
 
     return response
 
 import asyncio
 
-
 async def main():
-
-    momentum = """
-    Momentum score: 8
-    Strong AI launches and hiring.
-    """
-
-    tone = """
-    Tone: enterprise technical.
-    Strong developer positioning.
-    """
-
-    icp = """
-    ICP: enterprise engineering teams.
-    """
-
-    result = await synthesize_intelligence(
-
-        "Sample context string",
-
-        momentum,
-
-        tone,
-
-        icp
-    )
-
+    result = await synthesize_intelligence("Context", "Momentum", "Tone", "ICP", "Strategy")
     print(result)
 
-
 if __name__ == "__main__":
-
     asyncio.run(main())

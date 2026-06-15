@@ -38,10 +38,25 @@ def generate_report(
     lines.append("")
 
     total_score = 0.0
+    total_extraction = 0.0
+    total_intelligence = 0.0
 
     for result in results:
 
         total_score += result.overall_score
+        
+        tone_score = 1.0 if result.tone_match else 0.0
+        momentum_score = 1.0 if result.momentum_in_range else 0.0
+        
+        extr = (tone_score * 0.10) + (momentum_score * 0.10) + (result.keyword_overlap_score * 0.15) + (result.icp_recall_score * 0.10)
+        # Normalize to 1.0
+        extr_normalized = extr / 0.45
+        total_extraction += extr_normalized
+        
+        intel = (result.company_understanding_score * 0.20) + (result.strategic_accuracy_score * 0.20) + (result.confidence_calibration_score * 0.05) + (result.false_negative_score * 0.05) + (result.evidence_quality_score * 0.05)
+        # Normalize to 1.0
+        intel_normalized = intel / 0.55
+        total_intelligence += intel_normalized
 
         lines.append(f"Company: {result.company_name}")
 
@@ -64,10 +79,20 @@ def generate_report(
             f"ICP Recall: "
             f"{result.icp_recall_score}"
         )
+        
+        lines.append(
+            f"Extraction Quality: "
+            f"{round(extr_normalized * 100, 1)}%"
+        )
+        
+        lines.append(
+            f"Intelligence Quality: "
+            f"{round(intel_normalized * 100, 1)}%"
+        )
 
         lines.append(
             f"Overall Score: "
-            f"{result.overall_score}"
+            f"{round(result.overall_score * 100, 1)}%"
         )
 
         lines.append(
@@ -87,11 +112,10 @@ def generate_report(
 
         lines.append("-" * 60)
 
-    average_score = (
-        total_score / len(results)
-        if results
-        else 0.0
-    )
+    count = len(results) if results else 1
+    average_score = total_score / count
+    avg_extr = total_extraction / count
+    avg_intel = total_intelligence / count
 
     lines.append("")
     lines.append("=" * 60)
@@ -99,10 +123,9 @@ def generate_report(
         lines.append("OVERALL SUITE SCORE: N/A")
         lines.append("(No successful evaluations)")
     else:
-        lines.append(
-            f"OVERALL SUITE SCORE: "
-            f"{round(average_score, 3)}"
-        )
+        lines.append(f"EXTRACTION QUALITY SCORE: {round(avg_extr * 100, 1)}%")
+        lines.append(f"INTELLIGENCE QUALITY SCORE: {round(avg_intel * 100, 1)}%")
+        lines.append(f"OVERALL SUITE SCORE: {round(average_score * 100, 1)}%")
     lines.append("=" * 60)
 
     return "\n".join(lines)

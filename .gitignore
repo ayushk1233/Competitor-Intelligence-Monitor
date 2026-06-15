@@ -37,3 +37,7 @@ logs/
 alert_runs/
 
 tree_output.txt
+
+artifacts/
+
+backend/eval/reports/

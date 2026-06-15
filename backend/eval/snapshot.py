@@ -12,6 +12,8 @@ class EvaluationSnapshot(BaseModel):
     status: str
 
     overall_score: float
+    extraction_score: float = 0.0
+    intelligence_score: float = 0.0
 
     llm_model: str
 

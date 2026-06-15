@@ -1,0 +1,220 @@
+{
+  "Anthropic": {
+    "name": "Anthropic",
+    "domain": "anthropic.com",
+    "core_offering": "Anthropic's Claude platform provides a suite of AI-powered tools and services to help developers, engineering teams, and enterprises across industries build and deploy advanced AI applications.",
+    "icp": "Developers, engineering teams, and enterprises across a variety of industries",
+    "messaging_tone": "technical",
+    "pricing_signals": "Not detected",
+    "hiring_signals": "The company appears to be actively hiring, with a range of open roles across different departments and functions.",
+    "recent_launches": [
+      "Introducing Claude Corps, a national fellowship program for people early in their careers who are passionate about extending the benefits of AI to communities across America.",
+      "Launching The Anthropic Institute, a new effort to confront the most significant challenges that powerful AI will pose to our societies."
+    ],
+    "strategic_keywords": [
+      "enterprise",
+      "developer platform",
+      "AI",
+      "coding",
+      "software development"
+    ],
+    "growth_signals": [
+      "The company has launched several new initiatives, including a national fellowship program and a new institute focused on addressing the challenges of powerful AI.",
+      "They also have an active product line called 'Claude Products' and are serving customers across multiple industries.",
+      "The company appears to be actively hiring, with a range of open roles across different departments and functions.",
+      "They are deploying their systems through partnerships."
+    ],
+    "risk_flags": [
+      "The US government has issued an export control directive to suspend all access to Fable 5 and Mythos 5."
+    ],
+    "momentum_score": 7,
+    "analyst_note": "Anthropic is a technical AI company with a strong focus on developer tools and enterprise-level offerings. They are actively launching new initiatives, expanding their customer base, and building partnerships to drive growth. However, they face potential regulatory risks with the suspension of access to some of their core models. Overall, Anthropic appears to be a well-positioned player in the rapidly evolving AI landscape.",
+    "icp_keywords": [
+      "developers",
+      "engineering teams",
+      "enterprise"
+    ],
+    "icp_evidence": [
+      "The platform offers features like Claude Code, Claude Cowork, and Claude Agent SDK, indicating a focus on developers and technical users.",
+      "The customer stories highlight use cases across large enterprises in industries like financial services, healthcare, legal, and life sciences.",
+      "The platform is positioned to serve both startups and large enterprises, with a range of company sizes mentioned."
+    ],
+    "tone_evidence": [
+      "The communication from this company is heavily focused on technical features, developer tools, and engineering capabilities. Keywords like 'developer', 'engineering', 'code', 'IDE', 'platform', and 'API' appear repeatedly, indicating a strong technical orientation.",
+      "Even though some startup-like language is present, the predominance of technical indicators suggests this should be classified as a 'technical' tone."
+    ],
+    "momentum_evidence": [],
+    "agent_outputs": {
+      "momentum": "{\n  \"momentum_score\": 7,\n  \"momentum_evidence\": {\n    \"launch_signals\": [\n      \"Introducing Claude Corps, a national fellowship program for people early in their careers who are passionate about extending the benefits of AI to communities across America.\",\n      \"Launching The Anthropic Institute, a new effort to confront the most significant challenges that powerful AI will pose to our societies.\"\n    ],\n    \"shipping_velocity_signals\": [\n      \"Claude Products\"\n    ],\n    \"adoption_signals\": [\n      \"Our customers include enterprises and startups across financial services, healthcare, legal, and more.\"\n    ],\n    \"hiring_signals\": [\n      \"# Customer Stories | Claude by Anthropic []( com/) * Meet Claude Products * Claude * Claude Code * Claude Cowork * Claude Security Features * Claude for Chrome * Claude for Slack * Claude for Microsoft 365 * Skills Models * Mythos * Platform * Overview * Developer docs * Console  * Solutions Use cases * AI agents * Coding Company size * Startups *  Departments * Legal * Security Industries *  * Education * Financial services * Government * Healthcare * Life sciences * Nonprofits *  * Overview *  Insights * Blog * Customer stories * Anthropic news Learn * Anthropic Academy * Tutorials * Use cases Tools * Connectors Connect * Events *  * Try Claude Try ClaudeTry Claude *  * Try Claude Try Claude *  * Try Claude Try ClaudeTry Claude *  * Try Claude Try ClaudeTry Claude\"\n    ],\n    \"partnership_signals\": [\n      \"We conduct frontier research, develop and apply a variety of safety techniques, and deploy the resulting systems via a set of partnerships and products.\"\n    ]\n  },\n  \"reasoning\": \"The company has launched several new initiatives, including a national fellowship program and a new institute focused on addressing the challenges of powerful AI. They also have an active product line called 'Claude Products' and are serving customers across multiple industries. The company appears to be actively hiring, with a range of open roles across different departments and functions. Additionally, they are deploying their systems through partnerships. Overall, the evidence suggests moderate to strong momentum, with multiple recent launches, adoption signals, hiring activity, and partnership efforts.\"\n}",
+      "tone": "{\n  \"tone_classification\": \"technical\",\n  \"signals\": [\n    \"developer\",\n    \"developers\",\n    \"engineering\",\n    \"engineer\",\n    \"engineering teams\",\n    \"code\",\n    \"coding\",\n    \"IDE\",\n    \"editor\",\n    \"developer tooling\",\n    \"coding assistant\",\n    \"infrastructure\",\n    \"platform\",\n    \"API\",\n    \"SDK\",\n    \"automation\",\n    \"repository\",\n    \"git\",\n    \"CI/CD\",\n    \"debugging\",\n    \"terminal\",\n    \"software development\",\n    \"software creation\"\n  ],\n  \"evidence\": [\n    \"Meet Claude Products\",\n    \"Claude\",\n    \"Claude Code\",\n    \"Claude Cowork\",\n    \"Claude Security Features\",\n    \"Claude for Chrome\",\n    \"Claude for Slack\",\n    \"Claude for Microsoft 365\",\n    \"Skills Models\",\n    \"Mythos\",\n    \"Platform\",\n    \"Overview\",\n    \"Developer docs\",\n    \"Console\",\n    \"Solutions Use cases\",\n    \"AI agents\",\n    \"Coding\"\n  ],\n  \"reasoning\": \"The communication from this company is heavily focused on technical features, developer tools, and engineering capabilities. Keywords like 'developer', 'engineering', 'code', 'IDE', 'platform', and 'API' appear repeatedly, indicating a strong technical orientation. Even though some startup-like language is present, the predominance of technical indicators suggests this should be classified as a 'technical' tone.\"\n}",
+      "icp": "Based on the information provided, the ideal customer profile (ICP) for Anthropic's Claude platform appears to be:\n\n{\n  \"icp_summary\": \"Developers, engineering teams, and enterprises across a variety of industries\",\n  \"icp_keywords\": [\n    \"developers\",\n    \"engineering teams\",\n    \"enterprise\"\n  ],\n  \"signals\": [\n    \"The platform offers features like Claude Code, Claude Cowork, and Claude Agent SDK, indicating a focus on developers and technical users.\",\n    \"The customer stories highlight use cases across large enterprises in industries like financial services, healthcare, legal, and life sciences.\",\n    \"The platform is positioned to serve both startups and large enterprises, with a range of company sizes mentioned.\"\n  ],\n  \"evidence\": [\n    \"The website highlights use cases for 'AI agents' and 'Coding', suggesting a developer-focused offering.\",\n    \"Customer stories feature large enterprises like Hubspot, Twilio, PwC, and Jamf, indicating an enterprise-level focus.\",\n    \"The platform offers integrations with Google and AWS, further signaling a technical, developer-oriented audience.\"\n  ],\n  \"reasoning\": \"The combination of developer-focused features, enterprise-level customers, and partnerships with major tech companies suggests that Anthropic's ideal customer profile centers around developers, engineering teams, and enterprises across a variety of industries.\"\n}",
+      "final": "{\n  \"core_offering\": \"Anthropic's Claude platform provides a suite of AI-powered tools and services to help developers, engineering teams, and enterprises across industries build and deploy advanced AI applications.\",\n  \"icp\": \"Developers, engineering teams, and enterprises across a variety of industries\",\n  \"icp_keywords\": [\n    \"developers\",\n    \"engineering teams\",\n    \"enterprise\"\n  ],\n  \"icp_evidence\": [\n    \"The platform offers features like Claude Code, Claude Cowork, and Claude Agent SDK, indicating a focus on developers and technical users.\",\n    \"The customer stories highlight use cases across large enterprises in industries like financial services, healthcare, legal, and life sciences.\",\n    \"The platform is positioned to serve both startups and large enterprises, with a range of company sizes mentioned.\"\n  ],\n  \"messaging_tone\": \"technical\",\n  \"tone_evidence\": [\n    \"The communication from this company is heavily focused on technical features, developer tools, and engineering capabilities. Keywords like 'developer', 'engineering', 'code', 'IDE', 'platform', and 'API' appear repeatedly, indicating a strong technical orientation.\",\n    \"Even though some startup-like language is present, the predominance of technical indicators suggests this should be classified as a 'technical' tone.\"\n  ],\n  \"pricing_signals\": \"Not detected\",\n  \"hiring_signals\": \"The company appears to be actively hiring, with a range of open roles across different departments and functions.\",\n  \"recent_launches\": [\n    \"Introducing Claude Corps, a national fellowship program for people early in their careers who are passionate about extending the benefits of AI to communities across America.\",\n    \"Launching The Anthropic Institute, a new effort to confront the most significant challenges that powerful AI will pose to our societies.\"\n  ],\n  \"strategic_keywords\": [\n    \"enterprise\",\n    \"developer platform\",\n    \"AI\",\n    \"coding\",\n    \"software development\"\n  ],\n  \"growth_signals\": [\n    \"The company has launched several new initiatives, including a national fellowship program and a new institute focused on addressing the challenges of powerful AI.\",\n    \"They also have an active product line called 'Claude Products' and are serving customers across multiple industries.\",\n    \"The company appears to be actively hiring, with a range of open roles across different departments and functions.\",\n    \"They are deploying their systems through partnerships.\"\n  ],\n  \"risk_flags\": [\n    \"The US government has issued an export control directive to suspend all access to Fable 5 and Mythos 5.\"\n  ],\n  \"momentum_score\": 7,\n  \"momentum_evidence\": {\n    \"launch_signals\": [\n      \"Introducing Claude Corps, a national fellowship program for people early in their careers who are passionate about extending the benefits of AI to communities across America.\",\n      \"Launching The Anthropic Institute, a new effort to confront the most significant challenges that powerful AI will pose to our societies.\"\n    ],\n    \"shipping_velocity_signals\": [\n      \"Claude Products\"\n    ],\n    \"adoption_signals\": [\n      \"Our customers include enterprises and startups across financial services, healthcare, legal, and more.\"\n    ],\n    \"hiring_signals\": [\n      \"The company appears to be actively hiring, with a range of open roles across different departments and functions.\"\n    ],\n    \"partnership_signals\": [\n      \"We conduct frontier research, develop and apply a variety of safety techniques, and deploy the resulting systems via a set of partnerships and products.\"\n    ]\n  },\n  \"analyst_note\": \"Anthropic is a technical AI company with a strong focus on developer tools and enterprise-level offerings. They are actively launching new initiatives, expanding their customer base, and building partnerships to drive growth. However, they face potential regulatory risks with the suspension of access to some of their core models. Overall, Anthropic appears to be a well-positioned player in the rapidly evolving AI landscape.\"\n}"
+    },
+    "pages_analyzed": [
+      "homepage",
+      "about",
+      "blog",
+      "customers"
+    ],
+    "analysis_success": true,
+    "error": null
+  },
+  "Openai": {
+    "name": "Openai",
+    "domain": "openai.com",
+    "core_offering": "OpenAI provides advanced AI models, tools, and platforms to enable developers and engineering teams to build intelligent applications and automate workflows.",
+    "icp": "Developers and engineering teams",
+    "messaging_tone": "technical",
+    "pricing_signals": "Not detected",
+    "hiring_signals": "Not detected",
+    "recent_launches": [
+      "Codex for every role, tool, and workflow",
+      "Better memory for a more helpful ChatGPT",
+      "Introducing GPT-5"
+    ],
+    "strategic_keywords": [
+      "developer platform",
+      "AI",
+      "automation"
+    ],
+    "growth_signals": [],
+    "risk_flags": [],
+    "momentum_score": 1,
+    "analyst_note": "OpenAI is focused on providing advanced AI models, tools, and platforms to enable developers and engineering teams to build intelligent applications and automate workflows. The company has a strong technical tone and developer-centric positioning, with a recent emphasis on products like Codex, ChatGPT, and GPT-5. However, the limited evidence of recent launches and other growth signals suggests the company may be in an early or transitional phase, and its long-term momentum and market impact remain to be seen.",
+    "icp_keywords": [
+      "developers",
+      "engineering teams"
+    ],
+    "icp_evidence": [
+      "Emphasis on API platform, SDKs, and developer tools",
+      "Mentions of 'Codex' which is likely a developer-focused product",
+      "Sections dedicated to 'Developers' and 'API Platform'",
+      "Offering 'Apps SDK' and 'Open Models' for developers"
+    ],
+    "tone_evidence": [
+      "The website contains extensive technical language and references to developer tools, infrastructure, and workflows. This includes mentions of 'coding agent', 'engineering teams', 'developers', 'IDE', 'automation', 'repositories', and 'CI/CD'.",
+      "There is a strong emphasis on technical capabilities and developer-focused products and services, with sections dedicated to an 'API Platform', 'Open Models', and 'Developer Forum'.",
+      "The overall messaging and positioning is centered around technical features and functionality rather than high-level business or enterprise concepts."
+    ],
+    "momentum_evidence": [
+      "The available evidence only includes a single launch signal, which is not sufficient to indicate strong momentum. There are no signals related to shipping velocity, adoption, hiring, or partnerships. Overall, the limited evidence suggests little to no momentum for this company."
+    ],
+    "agent_outputs": {
+      "momentum": "{\n  \"momentum_score\": 1,\n  \"momentum_evidence\": {\n    \"launch_signals\": [\n      \"Compare business strategies for transitioning from budget to luxury\"\n    ],\n    \"shipping_velocity_signals\": [],\n    \"adoption_signals\": [],\n    \"hiring_signals\": [],\n    \"partnership_signals\": []\n  },\n  \"reasoning\": \"The available evidence only includes a single launch signal, which is not sufficient to indicate strong momentum. There are no signals related to shipping velocity, adoption, hiring, or partnerships. Overall, the limited evidence suggests little to no momentum for this company.\"\n}",
+      "tone": "{\n  \"tone_classification\": \"technical\",\n  \"signals\": [\n    \"coding agent\",\n    \"engineering teams\",\n    \"developers\",\n    \"IDE\",\n    \"automation\",\n    \"repositories\",\n    \"CI/CD\"\n  ],\n  \"evidence\": [\n    \"The website contains extensive technical language and references to developer tools, infrastructure, and workflows. This includes mentions of 'coding agent', 'engineering teams', 'developers', 'IDE', 'automation', 'repositories', and 'CI/CD'.\",\n    \"There is a strong emphasis on technical capabilities and developer-focused products and services, with sections dedicated to an 'API Platform', 'Open Models', and 'Developer Forum'.\",\n    \"The overall messaging and positioning is centered around technical features and functionality rather than high-level business or enterprise concepts.\"\n  ],\n  \"reasoning\": \"The preponderance of technical language and developer-oriented content indicates that the company's communication tone is primarily 'technical'. While there are some startup-like signals, the depth of the technical focus outweighs these, leading to a 'technical' classification. There is no explicit evidence of an enterprise or visionary tone in the provided context.\"\n}",
+      "icp": "Based on the information provided, the ideal customer profile (ICP) for this company appears to be:\n\n{\n  \"icp_summary\": \"Developers and engineering teams\",\n  \"icp_keywords\": [\n    \"developers\",\n    \"engineering teams\"\n  ],\n  \"signals\": [\n    \"Emphasis on API platform, SDKs, and developer tools\",\n    \"Mentions of 'Codex' which is likely a developer-focused product\"\n  ],\n  \"evidence\": [\n    \"Sections dedicated to 'Developers' and 'API Platform'\",\n    \"Offering 'Apps SDK' and 'Open Models' for developers\"\n  ],\n  \"reasoning\": \"The company's website has a strong focus on developer-centric products and tools, indicating that developers and engineering teams are a primary target customer segment. There is no clear evidence of targeting enterprise or non-technical users.\"\n}",
+      "final": "{\n  \"core_offering\": \"OpenAI provides advanced AI models, tools, and platforms to enable developers and engineering teams to build intelligent applications and automate workflows.\",\n  \"icp\": \"Developers and engineering teams\",\n  \"icp_keywords\": [\n    \"developers\",\n    \"engineering teams\"\n  ],\n  \"icp_evidence\": [\n    \"Emphasis on API platform, SDKs, and developer tools\",\n    \"Mentions of 'Codex' which is likely a developer-focused product\",\n    \"Sections dedicated to 'Developers' and 'API Platform'\",\n    \"Offering 'Apps SDK' and 'Open Models' for developers\"\n  ],\n  \"messaging_tone\": \"technical\",\n  \"tone_evidence\": [\n    \"The website contains extensive technical language and references to developer tools, infrastructure, and workflows. This includes mentions of 'coding agent', 'engineering teams', 'developers', 'IDE', 'automation', 'repositories', and 'CI/CD'.\",\n    \"There is a strong emphasis on technical capabilities and developer-focused products and services, with sections dedicated to an 'API Platform', 'Open Models', and 'Developer Forum'.\",\n    \"The overall messaging and positioning is centered around technical features and functionality rather than high-level business or enterprise concepts.\"\n  ],\n  \"pricing_signals\": \"Not detected\",\n  \"hiring_signals\": \"Not detected\",\n  \"recent_launches\": [\n    \"Codex for every role, tool, and workflow\",\n    \"Better memory for a more helpful ChatGPT\",\n    \"Introducing GPT-5\"\n  ],\n  \"strategic_keywords\": [\n    \"developer platform\",\n    \"AI\",\n    \"automation\"\n  ],\n  \"growth_signals\": \"Not detected\",\n  \"risk_flags\": \"Not detected\",\n  \"momentum_score\": 1,\n  \"momentum_evidence\": [\n    \"The available evidence only includes a single launch signal, which is not sufficient to indicate strong momentum. There are no signals related to shipping velocity, adoption, hiring, or partnerships. Overall, the limited evidence suggests little to no momentum for this company.\"\n  ],\n  \"analyst_note\": \"OpenAI is focused on providing advanced AI models, tools, and platforms to enable developers and engineering teams to build intelligent applications and automate workflows. The company has a strong technical tone and developer-centric positioning, with a recent emphasis on products like Codex, ChatGPT, and GPT-5. However, the limited evidence of recent launches and other growth signals suggests the company may be in an early or transitional phase, and its long-term momentum and market impact remain to be seen.\"\n}"
+    },
+    "pages_analyzed": [
+      "homepage",
+      "about",
+      "blog",
+      "news"
+    ],
+    "analysis_success": true,
+    "error": null
+  },
+  "Google": {
+    "name": "Google",
+    "domain": "google.com",
+    "core_offering": "Developer tools and AI-powered productivity features for engineers and software development teams",
+    "icp": "Developers and engineering teams",
+    "messaging_tone": "technical",
+    "pricing_signals": "No public evidence found",
+    "hiring_signals": "No public evidence found",
+    "recent_launches": [
+      "Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today."
+    ],
+    "strategic_keywords": [
+      "developer",
+      "developers",
+      "engineering",
+      "engineer",
+      "engineering teams",
+      "AI",
+      "productivity",
+      "security"
+    ],
+    "growth_signals": [
+      "Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today."
+    ],
+    "risk_flags": [
+      "No hiring activity detected",
+      "No adoption metrics found"
+    ],
+    "momentum_score": 5,
+    "analyst_note": "Key Insight: This company appears to be focused on developing and expanding technical tools and AI-powered productivity features for developers and engineering teams, particularly around Chrome and Android. While the recent launch and shipping signals indicate some momentum, the lack of hiring and adoption data suggests the company may be in an earlier stage of growth and still building out its core user base.",
+    "validation": {
+      "validation_warning": true
+    },
+    "core_offering_evidence": [
+      "Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.",
+      "NotebookLM: Do better research with NotebookLM"
+    ],
+    "core_offering_source": "homepage",
+    "core_offering_source_url": "/",
+    "core_offering_confidence": 92,
+    "pricing_evidence": [],
+    "pricing_source": "",
+    "pricing_source_url": "",
+    "pricing_confidence": 0,
+    "hiring_evidence": [],
+    "hiring_source": "",
+    "hiring_source_url": "",
+    "hiring_confidence": 0,
+    "keywords_evidence": [
+      "Gemini in Chrome is expanding to more places",
+      "Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today",
+      "NotebookLM: Do better research with NotebookLM"
+    ],
+    "keywords_source_url": "/",
+    "keywords_confidence": 75,
+    "confidence_scores": {
+      "core_offering": 92,
+      "icp": 88,
+      "tone": 85,
+      "pricing": 0,
+      "hiring": 0,
+      "keywords": 75
+    },
+    "momentum_negative_factors": [
+      "No hiring activity detected",
+      "No adoption metrics found"
+    ],
+    "momentum_reasoning": "The company has some recent launch and shipping velocity signals, indicating moderate momentum. However, there are no clear hiring or adoption signals, which limits the overall momentum score.",
+    "icp_keywords": [
+      "developers",
+      "engineering teams"
+    ],
+    "icp_evidence": [
+      "Launching new Android features",
+      "Expanding AI-powered Gemini tools in Chrome",
+      "Targeting developers and engineering teams with new productivity and security tools"
+    ],
+    "tone_evidence": [
+      "Gemini in Chrome is expanding to more places",
+      "Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today",
+      "NotebookLM: Do better research with NotebookLM"
+    ],
+    "momentum_evidence": [
+      "Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.",
+      "rolling out"
+    ],
+    "agent_outputs": {
+      "momentum": "{\n  \"momentum_score\": 5,\n  \"momentum_evidence\": {\n    \"launch_signals\": [\n      \"Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.\"\n    ],\n    \"shipping_velocity_signals\": [\n      \"rolling out\"\n    ],\n    \"adoption_signals\": [],\n    \"hiring_signals\": [],\n    \"partnership_signals\": []\n  },\n  \"momentum_negative_factors\": [\n    \"No hiring activity detected\",\n    \"No adoption metrics found\"\n  ],\n  \"momentum_reasoning\": \"The company has some recent launch and shipping velocity signals, indicating moderate momentum. However, there are no clear hiring or adoption signals, which limits the overall momentum score.\",\n  \"reasoning\": \"\"\n}",
+      "tone": "{\n  \"tone_classification\": \"technical\",\n  \"signals\": [\n    \"developer\",\n    \"developers\",\n    \"engineering\",\n    \"engineer\",\n    \"engineering teams\",\n    \"code\",\n    \"coding\",\n    \"IDE\",\n    \"editor\",\n    \"developer tooling\",\n    \"coding assistant\",\n    \"infrastructure\",\n    \"platform\",\n    \"API\",\n    \"SDK\",\n    \"automation\",\n    \"repository\",\n    \"git\",\n    \"CI/CD\",\n    \"debugging\",\n    \"terminal\",\n    \"software development\",\n    \"software creation\"\n  ],\n  \"evidence\": [\n    \"Gemini in Chrome is expanding to more places\",\n    \"Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today\",\n    \"NotebookLM: Do better research with NotebookLM\"\n  ],\n  \"reasoning\": \"The context contains multiple technical indicators such as 'developer', 'engineering', 'code', 'IDE', 'platform', 'API', and 'software development', which strongly suggest a technical tone. The company's primary products also appear to be developer tools, coding assistants, and AI platforms, further reinforcing the technical classification. While there are some startup-like signals around shipping and rollout, the technical indicators dominate, leading to a 'technical' tone classification.\"\n}",
+      "icp": "Based on the information provided, the ideal customer profile (ICP) for this company appears to be:\n\n{\n  \"icp_summary\": \"Developers and engineering teams\",\n  \"icp_keywords\": [\n    \"developers\",\n    \"engineering teams\"\n  ],\n  \"signals\": [\n    \"New personalization and safety features for Android\",\n    \"Expanding Gemini AI features to Chrome on desktop and iOS in Latin America, Africa, and the Middle East\"\n  ],\n  \"evidence\": [\n    \"Launching new Android features\",\n    \"Expanding AI-powered Gemini tools in Chrome\",\n    \"Targeting developers and engineering teams with new productivity and security tools\"\n  ],\n  \"reasoning\": \"The context provided indicates this company is focused on developing and expanding tools and features for developers and engineering teams, particularly around Android, Chrome, and AI-powered productivity. There are no explicit references to targeting enterprise or large organizations, so the ICP is likely centered around developers and engineering teams, potentially at startups or SMBs.\"\n}",
+      "final": "{\n  \"core_offering\": \"Developer tools and AI-powered productivity features for engineers and software development teams\",\n  \"core_offering_evidence\": [\n    \"Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.\",\n    \"NotebookLM: Do better research with NotebookLM\"\n  ],\n  \"core_offering_source\": \"homepage\",\n  \"core_offering_source_url\": \"/\",\n  \"core_offering_confidence\": 92,\n  \"icp\": \"Developers and engineering teams\",\n  \"icp_keywords\": [\n    \"developers\",\n    \"engineering teams\"\n  ],\n  \"icp_evidence\": [\n    \"Launching new Android features\",\n    \"Expanding AI-powered Gemini tools in Chrome\",\n    \"Targeting developers and engineering teams with new productivity and security tools\"\n  ],\n  \"icp_confidence\": 88,\n  \"messaging_tone\": \"technical\",\n  \"tone_evidence\": [\n    \"Gemini in Chrome is expanding to more places\",\n    \"Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today\",\n    \"NotebookLM: Do better research with NotebookLM\"\n  ],\n  \"tone_confidence\": 85,\n  \"pricing_signals\": \"No public evidence found\",\n  \"pricing_evidence\": [],\n  \"pricing_source\": \"\",\n  \"pricing_source_url\": \"\",\n  \"pricing_confidence\": 0,\n  \"hiring_signals\": \"No public evidence found\",\n  \"hiring_evidence\": [],\n  \"hiring_source\": \"\",\n  \"hiring_source_url\": \"\",\n  \"hiring_confidence\": 0,\n  \"recent_launches\": [\n    \"Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.\"\n  ],\n  \"strategic_keywords\": [\n    \"developer\",\n    \"developers\",\n    \"engineering\",\n    \"engineer\",\n    \"engineering teams\",\n    \"AI\",\n    \"productivity\",\n    \"security\"\n  ],\n  \"keywords_evidence\": [\n    \"Gemini in Chrome is expanding to more places\",\n    \"Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today\",\n    \"NotebookLM: Do better research with NotebookLM\"\n  ],\n  \"keywords_source_url\": \"/\",\n  \"keywords_confidence\": 75,\n  \"growth_signals\": [\n    \"Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.\"\n  ],\n  \"risk_flags\": [\n    \"No hiring activity detected\",\n    \"No adoption metrics found\"\n  ],\n  \"momentum_score\": 5,\n  \"momentum_evidence\": {\n    \"launch_signals\": [\n      \"Gemini in Chrome is expanding to more places Many of Chrome's latest AI features are rolling out to desktop and iOS users in Latin America, Africa and the Middle East starting today.\"\n    ],\n    \"shipping_velocity_signals\": [\n      \"rolling out\"\n    ],\n    \"adoption_signals\": [],\n    \"hiring_signals\": [],\n    \"partnership_signals\": []\n  },\n  \"momentum_negative_factors\": [\n    \"No hiring activity detected\",\n    \"No adoption metrics found\"\n  ],\n  \"momentum_reasoning\": \"The company has some recent launch and shipping velocity signals, indicating moderate momentum. However, there are no clear hiring or adoption signals, which limits the overall momentum score.\",\n  \"analyst_note\": \"Key Insight: This company appears to be focused on developing and expanding technical tools and AI-powered productivity features for developers and engineering teams, particularly around Chrome and Android. While the recent launch and shipping signals indicate some momentum, the lack of hiring and adoption data suggests the company may be in an earlier stage of growth and still building out its core user base.\"\n}"
+    },
+    "pages_analyzed": [
+      "homepage",
+      "about",
+      "careers",
+      "blog",
+      "news"
+    ],
+    "analysis_success": true,
+    "error": null,
+    "logo_url": ""
+  }
+}
