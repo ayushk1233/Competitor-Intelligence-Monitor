@@ -3,10 +3,10 @@ import os
 import pytest
 
 def test_competitor_dna_schema():
-    companies = ["openai", "google", "anthropic"]
+    companies = ["Notion", "Airtable", "Coda"]
     
     for company in companies:
-        artifact_path = f"artifacts/{company}/final_competitor_analysis.json"
+        artifact_path = f"artifacts/{company.lower()}/final_competitor_analysis.json"
         if not os.path.exists(artifact_path):
             pytest.skip("Benchmark artifacts not found.")
         with open(artifact_path, "r") as f:

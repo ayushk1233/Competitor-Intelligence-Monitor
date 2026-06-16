@@ -194,7 +194,7 @@ def main():
     with open(golden_path, "r") as f:
         golden_data = json.load(f)
         
-    companies = ["Openai", "Google", "Anthropic"]
+    companies = ["Notion", "Airtable", "Coda"]
     
     all_reports = {}
     

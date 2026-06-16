@@ -31,33 +31,34 @@ Return ONLY valid JSON with EXACTLY these fields:
 {
   "core_offering": "One sentence — what specific problem they solve and for whom",
   "core_offering_evidence": ["verbatim quote (max 2)"],
-  "core_offering_source": "homepage",
+  "core_offering_source": "homepage, blog (comma-separated list of all source pages where this was found)",
   "core_offering_source_url": "/",
   "icp": "Synthesize from the ICP analysis. Format as a clean string combining industry, company size, buyer, and user.",
   "icp_keywords": ["preserve", "directly", "from", "icp", "analysis"],
   "icp_evidence": ["max 2 quotes directly from icp analysis"],
   "messaging_tone": "Pick the primary tone from Tone analysis (e.g. Developer-First, Enterprise-First, etc.)",
   "tone_evidence": ["max 2 quotes directly from tone analysis"],
-  "pricing_signals": "Extract from context. Use 'No public evidence found' if unavailable.",
+  "pricing_signals": "Extract pricing when ANY of the following are detected: Tier Names (Free, Starter, Plus, Pro, Enterprise), Billing Models (per seat, usage, credits), or Usage Limits. Use 'No public evidence found' ONLY if none are present.",
   "pricing_evidence": ["max 2 quotes"],
-  "pricing_source": "",
+  "pricing_source": "comma-separated list of source pages",
   "pricing_source_url": "",
   "hiring_signals": "Extract from context. Use 'No public evidence found' if unavailable.",
   "hiring_evidence": ["max 2 quotes"],
-  "hiring_source": "",
+  "hiring_source": "comma-separated list of source pages",
   "hiring_source_url": "",
   "recent_launches": ["extract ONLY from momentum analysis (max 2)"],
   "strategic_keywords": ["extract recurring business themes (max 3)"],
   "keywords_evidence": ["max 2 quotes"],
+  "keywords_source": "comma-separated list of source pages",
   "keywords_source_url": "",
   "growth_signals": ["extract from momentum analysis (max 2)"],
-  "risk_flags": ["extract from context (max 2)"],
+  "risk_flags": ["Extract Strategic Risks, Execution Risks, Competitive Risks, or Market Risks (max 2). NEVER use 'No hiring found' or lack of hiring as a risk flag."],
   "momentum_score": 7,
   "momentum_evidence": ["max 2 quotes directly from momentum analysis"],
-  "momentum_negative_factors": ["list negative factors (max 2)"],
+  "momentum_source": "comma-separated list of source pages",
+  "momentum_negative_factors": ["list negative factors (max 2). NEVER include lack of hiring."],
   "momentum_reasoning": "Brief explanation of momentum score",
   "analyst_note": "Explain WHY the signals matter strategically. Surface hidden strategic patterns, defensibility maneuvers, and ecosystem expansion tactics.",
-
   "strategic_interpretation": {
     "strategic_direction": "From strategy analysis",
     "commercial_signal": "From strategy analysis",
@@ -67,7 +68,7 @@ Return ONLY valid JSON with EXACTLY these fields:
   }
 }
 
-CRITICAL: You MUST return perfectly valid JSON. Ensure all inner quotes inside strings are properly escaped to prevent Malformed JSON errors.
+CRITICAL: You MUST return exactly ONE single, unified, perfectly valid JSON object containing all of the fields. Do NOT return multiple JSON blocks or any text outside the JSON. Ensure all inner quotes inside strings are properly escaped to prevent Malformed JSON errors.
 """
 from backend.services.llm_service import call_openrouter
 

@@ -15,6 +15,27 @@ def score_company_understanding(expected_concepts: list[str], analysis: Competit
         actual_texts.add(analysis.analyst_note)
     if analysis.icp:
         actual_texts.add(analysis.icp)
+        
+    if getattr(analysis, "competitor_dna", None):
+        dna = analysis.competitor_dna
+        if isinstance(dna, dict):
+            if dna.get("archetype"):
+                actual_texts.add(dna.get("archetype"))
+            if dna.get("growth_model"):
+                actual_texts.add(dna.get("growth_model"))
+            if dna.get("strategic_risk"):
+                actual_texts.add(dna.get("strategic_risk"))
+            if dna.get("primary_moat"):
+                actual_texts.add(dna.get("primary_moat"))
+            if dna.get("expansion_vector"):
+                actual_texts.add(dna.get("expansion_vector"))
+                
+    if getattr(analysis, "strategic_interpretation", None):
+        interp = analysis.strategic_interpretation
+        if isinstance(interp, dict):
+            for v in interp.values():
+                if isinstance(v, str) and v:
+                    actual_texts.add(v)
 
     from backend.eval.scorer import semantic_similarity
     return semantic_similarity(set(expected_concepts), actual_texts, is_recall=True)

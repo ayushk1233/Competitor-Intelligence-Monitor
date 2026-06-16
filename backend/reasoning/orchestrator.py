@@ -259,11 +259,27 @@ async def run_intelligence_pipeline(
     else:
         cleaned_json_str = final_result_str
 
+    import re
     try:
         final_data = json.loads(cleaned_json_str)
     except json.JSONDecodeError:
-        # Fallback if synthesis failed to output json
-        final_data = {}
+        # Fallback if synthesis failed to output valid json directly
+        try:
+            # Try to find JSON block
+            json_match = re.search(r'\{.*\}', cleaned_json_str, re.DOTALL)
+            if json_match:
+                fallback_cleaned = json_match.group(0)
+                # Remove unescaped control characters which often break JSON
+                fallback_cleaned = re.sub(r'[\x00-\x1f\x7f](?!["\\n\\t])', '', fallback_cleaned)
+                final_data = json.loads(fallback_cleaned)
+            else:
+                final_data = {}
+        except Exception:
+            final_data = {}
+            
+    # If final_data is still empty, try to salvage any text as core_offering to prevent total failure
+    if not final_data:
+        final_data = {"core_offering": cleaned_json_str[:500]}
 
     registry = EvidenceRegistry()
     
@@ -290,15 +306,21 @@ async def run_intelligence_pipeline(
         src_val = final_data.get(src_key, "unknown")
         url_val = final_data.get(url_key, "")
         
+        parsed_sources = [s.strip() for s in src_val.split(",") if s.strip()]
+        if not parsed_sources:
+            parsed_sources = ["unknown"]
+            
         for ev_str in ev_list:
             if isinstance(ev_str, str) and ev_str:
-                registry.add_evidence(field_name, ev_str, url_val, src_val, src_val)
+                for s in parsed_sources:
+                    registry.add_evidence(field_name, ev_str, url_val, s, s)
 
     # Compute confidence for each field
     confidence_metrics = {}
     for field_name, ev_key, src_key, url_key in evidence_mappings:
-        items = [e["evidence"] for e in registry.get_evidence(field_name)]
-        sources = [e["source_type"] for e in registry.get_evidence(field_name)]
+        items = list(set([e["evidence"] for e in registry.get_evidence(field_name)]))
+        # Fix 6: Use distinct source_url if available to avoid LLM flattening all distinct pages into 'homepage'
+        sources = [e["source_url"] if e["source_url"] and e["source_url"] != "/" else e["source_type"] for e in registry.get_evidence(field_name)]
         conf_data = compute_confidence(field_name, items, sources)
         confidence_metrics[field_name] = conf_data
 

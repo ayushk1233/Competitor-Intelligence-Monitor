@@ -91,9 +91,11 @@ async def score_archetypes(
         else:
             normalized[arch] = 0.0
             
-    # 4. Sort archetypes by score descending
-    sorted_archetypes = sorted(normalized.items(), key=lambda x: x[1], reverse=True)
+    # 4. Sort archetypes by score descending, then by number of unique signals matched
+    sorted_archetypes_raw = sorted(scores.items(), key=lambda x: (x[1], len(supporting_signals_map[x[0]])), reverse=True)
     
+    # Map back to normalized confidence for the output
+    sorted_archetypes = [(arch, normalized[arch]) for arch, _ in sorted_archetypes_raw]
     # If no keywords matched at all, just return empty/unknown
     if total_score == 0:
         return {

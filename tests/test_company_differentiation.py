@@ -3,11 +3,11 @@ import os
 import pytest
 
 def test_company_strategic_differentiation():
-    companies = ["openai", "google", "anthropic"]
+    companies = ["Notion", "Airtable", "Coda"]
     analyses = {}
     
     for company in companies:
-        artifact_path = f"artifacts/{company}/final_competitor_analysis.json"
+        artifact_path = f"artifacts/{company.lower()}/final_competitor_analysis.json"
         
         # If the artifacts don't exist yet, we can't test
         if not os.path.exists(artifact_path):
@@ -19,41 +19,41 @@ def test_company_strategic_differentiation():
     # Verify we got all 3
     assert len(analyses) == 3
     
-    openai = analyses["openai"]
-    google = analyses["google"]
-    anthropic = analyses["anthropic"]
+    notion = analyses["Notion"]
+    airtable = analyses["Airtable"]
+    coda = analyses["Coda"]
     
     # 1. Assert Tones are not completely generic identical strings
     # We allow some overlap, but they shouldn't all just be "technical"
-    tones = set([openai.get("messaging_tone"), google.get("messaging_tone"), anthropic.get("messaging_tone")])
+    tones = set([notion.get("messaging_tone"), airtable.get("messaging_tone"), coda.get("messaging_tone")])
     assert len(tones) > 1, f"Tones failed to differentiate: {tones}"
     
     # 2. Assert ICPs are not all identical
-    icps = set([openai.get("icp"), google.get("icp"), anthropic.get("icp")])
+    icps = set([notion.get("icp"), airtable.get("icp"), coda.get("icp")])
     assert len(icps) > 1, f"ICPs failed to differentiate: {icps}"
     
     # 3. Assert Strategic Interpretation is present and distinct
-    assert "strategic_interpretation" in openai
-    assert "strategic_interpretation" in google
-    assert "strategic_interpretation" in anthropic
+    assert "strategic_interpretation" in notion
+    assert "strategic_interpretation" in airtable
+    assert "strategic_interpretation" in coda
     
     # Strategic directions should definitely be distinct
     directions = set([
-        openai["strategic_interpretation"].get("strategic_direction"),
-        google["strategic_interpretation"].get("strategic_direction"),
-        anthropic["strategic_interpretation"].get("strategic_direction")
+        notion["strategic_interpretation"].get("strategic_direction"),
+        airtable["strategic_interpretation"].get("strategic_direction"),
+        coda["strategic_interpretation"].get("strategic_direction")
     ])
     assert len(directions) >= 2, f"Strategic directions must be highly differentiated: {directions}"
 
     # 4. Assert Competitor DNA is present and distinct
-    assert "competitor_dna" in openai
-    assert "competitor_dna" in google
-    assert "competitor_dna" in anthropic
+    assert "competitor_dna" in notion
+    assert "competitor_dna" in airtable
+    assert "competitor_dna" in coda
     
     identities = set([
-        openai["competitor_dna"].get("archetype"),
-        google["competitor_dna"].get("archetype"),
-        anthropic["competitor_dna"].get("archetype")
+        notion["competitor_dna"].get("archetype"),
+        airtable["competitor_dna"].get("archetype"),
+        coda["competitor_dna"].get("archetype")
     ])
     if None in identities:
         pytest.skip("Competitor DNA incomplete — re-run benchmark_runner.py to regenerate artifacts.")

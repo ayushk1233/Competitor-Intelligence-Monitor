@@ -9,7 +9,7 @@ def test_strategic_accuracy_pass():
     analysis = CompetitorAnalysis(
         name="Openai",
         domain="openai.com",
-        strategic_keywords=["platform"],
+        strategic_keywords=["commercially established", "platform ecosystem"],
         core_offering="Commercially established AI platform.",
         analyst_note="They have built a massive ecosystem for enterprises.",
         icp="Enterprises",

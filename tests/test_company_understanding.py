@@ -8,7 +8,7 @@ def test_company_understanding_pass():
     analysis = CompetitorAnalysis(
         name="Openai",
         domain="openai.com",
-        strategic_keywords=["foundation models", "api", "enterprise"],
+        strategic_keywords=["foundation models", "enterprise AI", "API ecosystem"],
         core_offering="Building enterprise AI and foundation models",
         analyst_note="OpenAI is establishing an API ecosystem.",
         icp="Enterprises and developers",

@@ -597,8 +597,7 @@ def extract_signals(text: str) -> dict:
         if is_ocr_noise(sentence):
             continue
 
-        # Skip noise
-        if is_pricing_or_package_description(sentence) or is_newsletter_description(sentence):
+        if is_newsletter_description(sentence):
             continue
 
         # Skip historical references
@@ -680,6 +679,13 @@ def extract_signals(text: str) -> dict:
         for item in extract_partnership_signals(sentence):
             sig = format_signal(item, "partnership")
             extracted["partnership_signals"].append(sig)
+
+        # ---- PRICING ----
+        for kw in PRICING_TERMS:
+            if kw in sentence_lower:
+                sig = format_signal(sentence, "pricing")
+                extracted["pricing_signals"].append(sig)
+                break
 
         # ---- HIRING ----
         for item in extract_hiring_signals(sentence):

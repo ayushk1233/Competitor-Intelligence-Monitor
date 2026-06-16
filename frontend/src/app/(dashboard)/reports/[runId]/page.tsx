@@ -51,33 +51,13 @@ interface ReportPageProps {
   params: Promise<{ runId: string }>;
 }
 
-const toneColors: Record<string, string> = {
-  enterprise: "bg-[#6366F1]/15 text-[#6366F1] border-[#6366F1]/30",
-  startup: "bg-[#BC6C50]/15 text-[#BC6C50] border-[#BC6C50]/30",
-  technical: "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30",
-  visionary: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
-  hybrid: "bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30",
-};
-
-const severityColors: Record<string, string> = {
-  critical: "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30",
-  high: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
-  medium: "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30",
-  low: "bg-[#6B7280]/15 text-[var(--muted-text)] border-[#6B7280]/30",
-};
+import { getToneColorHex, getSeverityColorHex, getConfidenceColorHex, getInlineStyle } from "@/lib/color-utils";
 
 function ConfidenceBadge({ confidence }: { confidence: number }) {
   if (confidence === 0 || (!confidence && confidence !== 0)) return null;
-  const color =
-    confidence >= 90
-      ? "bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30"
-      : confidence >= 70
-        ? "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30"
-        : confidence >= 40
-          ? "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30"
-          : "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30";
+  const colors = getConfidenceColorHex(confidence);
   return (
-    <Badge variant="outline" className={`text-[10px] font-mono ${color}`}>
+    <Badge variant="outline" className="text-[10px] font-mono" style={getInlineStyle(colors)}>
       {confidence}%
     </Badge>
   );
@@ -269,9 +249,6 @@ function MomentumHero({ c }: { c: CompetitorAnalysisReport }) {
 
       {/* Gauge + Stars */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <StarRating score={score} />
-        </div>
         <div className="flex-1">
           <ScoreMeter score={score} />
         </div>
@@ -287,42 +264,6 @@ function MomentumHero({ c }: { c: CompetitorAnalysisReport }) {
           <span className="text-xs text-[#EF4444] font-medium">No hiring activity detected.</span>
         </div>
       )}
-
-      {/* Drivers + Negative Factors */}
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {positiveCount > 0 && (
-          <div>
-            <p className="flex items-center gap-1 text-xs font-semibold text-[#10B981] font-mono">
-              <TrendingUp className="h-3 w-3" />
-              Drivers
-            </p>
-            <div className="mt-1.5 space-y-1">
-              {c.momentum_evidence!.map((ev, i) => (
-                <p key={i} className="flex items-start gap-1.5 text-xs text-foreground">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#10B981]" />
-                  {ev}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-        {negativeCount > 0 && (
-          <div>
-            <p className="flex items-center gap-1 text-xs font-semibold text-[#EF4444] font-mono">
-              <TrendingDown className="h-3 w-3" />
-              Negative Factors
-            </p>
-            <div className="mt-1.5 space-y-1">
-              {c.momentum_negative_factors!.map((factor, i) => (
-                <p key={i} className="flex items-start gap-1.5 text-xs text-foreground">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
-                  {factor}
-                </p>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Reasoning */}
       {c.momentum_reasoning && (
@@ -372,7 +313,7 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
         <div className="flex flex-col items-end gap-1.5">
           <StarRating score={c.momentum_score} />
           {hasDrift && (
-            <Badge variant="outline" className={`text-[10px] font-medium capitalize ${severityColors[maxSeverity!]}`}>
+            <Badge variant="outline" className="text-[10px] font-medium capitalize" style={getInlineStyle(getSeverityColorHex(maxSeverity!))}>
               <Activity className="mr-1 h-3 w-3" />
               Drift Detected
             </Badge>
@@ -455,21 +396,23 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
                 </ul>
               </div>
 
-              {/* Key Risks */}
-              <div className="rounded-lg border border-[#EF4444]/20 bg-[#EF4444]/5 p-3.5">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-[#EF4444] font-mono">
-                  <XCircle className="h-3.5 w-3.5" />
-                  Key Risks
-                </p>
-                <ul className="mt-2 space-y-1.5">
-                  {c.momentum_negative_factors?.map((factor, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-foreground">
-                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
-                      {factor}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {/* Strategic Watchpoints */}
+              {(c.momentum_negative_factors?.filter(f => !f.toLowerCase().includes("no hiring activity detected")) || []).length > 0 && (
+                <div className="rounded-lg border border-[#EF4444]/20 bg-[#EF4444]/5 p-3.5">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-[#EF4444] font-mono">
+                    <XCircle className="h-3.5 w-3.5" />
+                    Strategic Watchpoints
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {c.momentum_negative_factors?.filter(f => !f.toLowerCase().includes("no hiring activity detected")).map((factor, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-foreground">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EF4444]" />
+                        {factor}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -504,9 +447,17 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
               confidence={c.confidence_scores?.tone}
             >
               {c.messaging_tone && (
-                <Badge variant="outline" className={`mt-1 text-[11px] font-medium capitalize ${toneColors[c.messaging_tone] ?? "bg-muted text-muted-foreground border-border"}`}>
-                  {c.messaging_tone}
-                </Badge>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {c.messaging_tone.split(',').map((t, idx) => {
+                    const cleanT = t.trim();
+                    if (!cleanT) return null;
+                    return (
+                      <Badge key={idx} variant="outline" className="text-[11px] font-medium capitalize" style={getInlineStyle(getToneColorHex(cleanT))}>
+                        {cleanT}
+                      </Badge>
+                    );
+                  })}
+                </div>
               )}
             </MetricCard>
             {/* Pricing */}
@@ -588,7 +539,7 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
               {competitorAlerts.map((alert) => (
                 <div key={alert.id} className="rounded-lg border border-border bg-muted p-3 space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`text-[10px] font-medium capitalize ${severityColors[alert.severity] ?? "bg-[#6B7280]/15 text-[var(--muted-text)]"}`}>
+                    <Badge variant="outline" className="text-[10px] font-medium capitalize" style={getInlineStyle(getSeverityColorHex(alert.severity))}>
                       {alert.severity}
                     </Badge>
                     <span className="text-sm font-medium text-foreground">{alert.headline}</span>
@@ -608,7 +559,7 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
               ))}
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className={`text-xs font-medium ${severityColors[maxSeverity!]}`}>
+              <Badge variant="outline" className="text-xs font-medium" style={getInlineStyle(getSeverityColorHex(maxSeverity!))}>
                 <AlertCircle className="mr-1 h-3 w-3" />
                 {competitorAlerts.length} {competitorAlerts.length === 1 ? "Alert" : "Alerts"}
               </Badge>

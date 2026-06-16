@@ -123,12 +123,13 @@ Reduce score when evidence shows:
 - bootstrapped lifestyle business
 - deliberately small team
 - stable mature company
-- little hiring activity
 - no recent launches
 - historical achievements only
 - long company history used as primary proof
 
 These indicate maturity, not acceleration.
+
+Do NOT strongly penalize a company purely for missing hiring signals. Treat hiring as supporting evidence for expansion, but lack of hiring does not mean lack of momentum if launches/adoption exist.
 
 CRITICAL HIRING RULES:
 A hiring signal may only exist if evidence contains:

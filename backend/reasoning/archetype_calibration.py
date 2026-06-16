@@ -41,12 +41,12 @@ def calibrate_archetype_weights(archetype_results: dict, registry: EvidenceRegis
         # AI Platform / Developer ecosystem
         {
             "keyword": "developer",
-            "weight": 8,
+            "weight": 3,
             "archetype": "AI Platform Builder"
         },
         {
             "keyword": "ecosystem",
-            "weight": 8,
+            "weight": 3,
             "archetype": "AI Platform Builder"
         },
         # Distribution

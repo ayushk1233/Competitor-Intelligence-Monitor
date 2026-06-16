@@ -15,7 +15,7 @@ PAGE_TYPE_LIMITS = {
     "about":    1,
     "blog":     2,
     "careers":  1,
-    "pricing":  1,
+    "pricing":  2,
     "docs":     1,
     "news":     2,
     "press":    2,
@@ -38,7 +38,7 @@ PAGE_TYPE_WEIGHTS = {
     "docs":      1.5,
     "about":     1.0,
     "homepage":  1.0,
-    "pricing":   0.5,
+    "pricing":   2.5,
 }
 
 # Fix: Page selection priority — sort before diversity enforcement
@@ -47,13 +47,13 @@ PAGE_PRIORITY = {
     "press":     95,
     "blog":      90,
     "research":  85,
+    "pricing":   80,
     "careers":   70,
     "changelog": 70,
     "launches":  70,
     "docs":      60,
     "homepage":  50,
     "about":     40,
-    "pricing":   30,
 }
 
 # High-signal keywords — chunks containing these are PROTECTED from diversity eviction
@@ -63,6 +63,7 @@ HIGH_SIGNAL_KEYWORDS = [
     "new product", "product announcement", "think 2026", "red hat",
     "ibm bob", "open source", "$5 billion", "5 billion",
     "published 20", "adoption", "% of engineers",
+    "pricing", "plans", "billed", "subscription", "price",
 ]
 
 NOISE_PATTERNS = [
@@ -270,8 +271,8 @@ def build_ranked_context(
 
     # ---- Separate momentum-signal chunks from the rest ----
     # Fix 6: Protect high-signal chunks — they go in first regardless of score
-    priority_chunks = [(s, c, pt) for s, c, pt in all_ranked_chunks if has_momentum_signal(c)]
-    normal_chunks   = [(s, c, pt) for s, c, pt in all_ranked_chunks if not has_momentum_signal(c)]
+    priority_chunks = [(s, c, pt) for s, c, pt in all_ranked_chunks if has_momentum_signal(c) or pt == "pricing"]
+    normal_chunks   = [(s, c, pt) for s, c, pt in all_ranked_chunks if not (has_momentum_signal(c) or pt == "pricing")]
 
     priority_chunks.sort(key=lambda x: x[0], reverse=True)
     normal_chunks.sort(key=lambda x: x[0], reverse=True)

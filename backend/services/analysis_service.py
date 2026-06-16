@@ -44,7 +44,7 @@ Answer these questions:
 6. Is your confidence LOW? (validation_warning — true if you are uncertain about the company identity, false if confident)
 
 VALIDATION WARNING TRIGGERS — set validation_warning = true if ANY apply:
-- The company appears to be a consulting firm, agency, or services company (not a product company)
+- The company appears to be a consulting firm, agency, or services company (not a product company). Note: Financial infrastructure, payment gateways (like Stripe/Adyen), and developer platforms ARE product companies, DO NOT penalize them as services.
 - You cannot clearly determine what product they sell
 - The content is ambiguous or contradictory about what the company does
 - The company seems to be an IT services/outsourcing firm rather than a software product company
@@ -54,16 +54,20 @@ COMMON MISTAKES TO AVOID:
 - Crayon is NOT IT services — it is a COMPETITIVE INTELLIGENCE platform. Its category should be "Competitive Intelligence" or "Market Intelligence".
 - Klue is NOT lead generation — it is a COMPETITIVE INTELLIGENCE platform. Its category should be "Competitive Intelligence".
 - If a company's homepage says "competitive intelligence", "competitor tracking", or "market intelligence", categorize it as "Competitive Intelligence", not "IT Services" or "Lead Generation".
+- DO NOT trigger a warning for large horizontal companies (e.g., Google, OpenAI, Microsoft, AWS, Stripe, Vercel, Netlify, Render, Notion, Airtable, Coda) simply because they offer many products or cloud services. They are still highly confident identifications.
+- NEVER trigger a validation_warning for a SaaS company, productivity tool, no-code platform, or software workspace. These are all valid product companies.
+- ONLY set validation_warning to true if you are genuinely uncertain if this is a real company or if you cannot figure out what they do.
 
 Return ONLY valid JSON:
-{
+{{
   "company_name": "exact company name",
   "company_description": "what they do in one sentence",
   "category": "most specific category (never 'IT Services' for software products)",
   "product_type": "most specific product type",
   "primary_use_case": "who their customers are",
-  "validation_warning": false
-}
+  "validation_warning": false,
+  "reason": "If validation_warning is true, explain why. Otherwise omit or leave empty."
+}}
 
 Content:
 {content}"""
@@ -90,7 +94,7 @@ Return ONLY a valid JSON object with exactly these fields:
   "core_offering": "One sentence — what specific problem they solve and for whom",
   "icp": "Ideal customer profile based on messaging evidence — industry, company size, role",
   "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid",
-  "pricing_signals": "Any pricing tier names, price points, model (per seat/usage/flat), or recent changes detected. Write 'No public evidence found' if pricing page was unavailable.",
+  "pricing_signals": "Extract pricing when ANY of the following are detected: Tier Names (Free, Starter, Plus, Pro, Business, Team, Enterprise), Billing Models (per user, per seat, monthly, annual, usage based, credits), or Usage Limits (e.g. 10 AI credits, 1000 requests). Write 'No public evidence found' ONLY if none of these are present.",
   "hiring_signals": "Which job functions dominate their open roles? What does this reveal about their growth direction?",
   "recent_launches": ["list", "of", "detectable", "new", "features", "or", "product", "announcements"],
   "strategic_keywords": ["top", "8", "recurring", "strategic", "terms", "from", "their", "content"],
@@ -296,37 +300,62 @@ class AnalysisService:
 
         content = "\n\n".join(validation_pages)
 
+        validation = {
+            "company_name": competitor_pages.name,
+            "company_description": "No content available",
+            "category": "Unknown",
+            "product_type": "Unknown",
+            "primary_use_case": "Unknown",
+            "validation_warning": True,
+            "reason": "Failed to parse validation data",
+        }
+
         try:
             response = await call_openrouter(
                 prompt=VALIDATION_USER_PROMPT_TEMPLATE.format(content=content),
                 system_prompt=VALIDATION_SYSTEM_PROMPT
             )
 
-            if not response:
-                print(f"  [validation] Empty response for {competitor_pages.name}")
-                return {"validation_warning": True}
+            if response:
+                import re
+                # Extract json block if there is a preamble
+                json_match = re.search(r'```(?:json)?\n(.*?)\n```', response, re.DOTALL)
+                clean_resp = json_match.group(1).strip() if json_match else response.strip()
 
-            data = safe_json_loads(response)
-            if not isinstance(data, dict):
-                return {"validation_warning": True}
-
-            validation = {
-                "company_name": ensure_string(data.get("company_name", competitor_pages.name)),
-                "company_description": ensure_string(data.get("company_description", "")),
-                "category": ensure_string(data.get("category", "")),
-                "product_type": ensure_string(data.get("product_type", "")),
-                "primary_use_case": ensure_string(data.get("primary_use_case", "")),
-                "validation_warning": bool(data.get("validation_warning", False)),
-            }
-
-            print(f"  [validation] Result: {validation.get('company_name')} "
-                  f"(warning={validation.get('validation_warning')})")
-
-            return validation
-
+                import json
+                data = json.loads(clean_resp)
+                if isinstance(data, dict):
+                    validation.update({
+                        "company_name": ensure_string(data.get("company_name", competitor_pages.name)),
+                        "company_description": ensure_string(data.get("company_description", "")),
+                        "category": ensure_string(data.get("category", "")),
+                        "product_type": ensure_string(data.get("product_type", "")),
+                        "primary_use_case": ensure_string(data.get("primary_use_case", "")),
+                        "validation_warning": bool(data.get("validation_warning", False)),
+                        "reason": ensure_string(data.get("reason", "")),
+                    })
         except Exception as e:
-            print(f"  [validation] Failed for {competitor_pages.name}: {e}")
-            return {"validation_warning": True}
+            print(f"  [validation] Failed parsing for {competitor_pages.name}: {e}")
+
+        # Fallback page detection (Task C & D)
+        valid_scraped_pages = [p.page_type for p in competitor_pages.pages if p.fetch_success and len((p.content or "").split()) > 100]
+        core_pages_found = validation.get("core_pages_found") or valid_scraped_pages
+        validation["core_pages_found"] = core_pages_found
+
+        # Fix 2: Hard override for known companies with good data
+        if validation.get("validation_warning"):
+            has_homepage = "homepage" in core_pages_found
+            major_pages = {"pricing", "careers", "about", "product", "enterprise", "security"}
+            has_other_major = any(p in major_pages for p in core_pages_found)
+            
+            if has_homepage and has_other_major:
+                validation["validation_warning"] = False
+                validation["reason"] = "Overridden: Core pages exist with sufficient content."
+
+        print(f"  [validation] Result: {validation.get('company_name')} "
+              f"(warning={validation.get('validation_warning')})")
+
+        return validation
 
 
     async def analyze_competitor(
@@ -422,7 +451,8 @@ class AnalysisService:
             return self._empty_analysis(
                 competitor_pages.name,
                 competitor_pages.domain,
-                "LLM API call failed after retries"
+                "LLM API call failed after retries",
+                validation
             )
 
         agent_outputs = {
@@ -531,30 +561,36 @@ class AnalysisService:
                     except (ValueError, TypeError):
                         data[field] = 0
 
-            # Build confidence_scores dict from individual fields
+            # Build confidence_scores dict from confidence_metrics (0.0 - 1.0) to preserve Understanding Score
             confidence_scores = {}
-            for key in ["core_offering", "icp", "tone", "pricing", "hiring", "keywords"]:
-                confidence_key = f"{key}_confidence"
-                if key == "icp":
-                    confidence_val = data.get("icp_confidence", data.get("confidence_scores", {}).get("icp", 0))
-                elif key == "tone":
-                    confidence_val = data.get("tone_confidence", data.get("confidence_scores", {}).get("tone", 0))
-                else:
-                    confidence_val = data.get(confidence_key, data.get("confidence_scores", {}).get(key, 0))
-                try:
-                    confidence_scores[key] = int(confidence_val)
-                except (ValueError, TypeError):
-                    confidence_scores[key] = 0
-
-                # Calibrate: if evidence exists for a section, boost confidence floor to 50
-                evidence_key = f"{key}_evidence"
-                if key == "tone":
-                    evidence_key = "tone_evidence"
-                if key == "keywords":
-                    evidence_key = "keywords_evidence"
-                existing_evidence = data.get(evidence_key, [])
-                if isinstance(existing_evidence, list) and len(existing_evidence) > 0:
-                    confidence_scores[key] = max(confidence_scores[key], 50)
+            # Map legacy keys to metrics keys
+            metrics_map = {
+                "core_offering": "core_offering",
+                "icp": "icp",
+                "tone": "messaging_tone",
+                "pricing": "pricing_signals",
+                "hiring": "hiring_signals",
+                "keywords": "strategic_keywords"
+            }
+            
+            for legacy_key, metrics_key in metrics_map.items():
+                conf_val = 0
+                if "confidence_metrics" in data and metrics_key in data["confidence_metrics"]:
+                    conf_val = int(data["confidence_metrics"][metrics_key].get("confidence", 0.0) * 100)
+                
+                if conf_val == 0:
+                    if legacy_key in ("pricing", "hiring", "core_offering", "keywords", "icp", "tone"):
+                        conf_val = 30 # Base penalty instead of full 0 to prevent total score collapse
+                    
+                    evidence_key = f"{legacy_key}_evidence"
+                    if legacy_key == "tone": evidence_key = "tone_evidence"
+                    if legacy_key == "keywords": evidence_key = "keywords_evidence"
+                    
+                    existing_evidence = data.get(evidence_key, [])
+                    if isinstance(existing_evidence, list) and len(existing_evidence) > 0:
+                        conf_val = max(conf_val, 50)
+                
+                confidence_scores[legacy_key] = conf_val
 
             data["confidence_scores"] = confidence_scores
             data["validation"] = validation
@@ -650,18 +686,33 @@ class AnalysisService:
                                 data[field] = 0
 
                     confidence_scores = {}
-                    for key in ["core_offering", "icp", "tone", "pricing", "hiring", "keywords"]:
-                        confidence_key = f"{key}_confidence"
-                        if key == "icp":
-                            confidence_val = data.get("icp_confidence", data.get("confidence_scores", {}).get("icp", 0))
-                        elif key == "tone":
-                            confidence_val = data.get("tone_confidence", data.get("confidence_scores", {}).get("tone", 0))
-                        else:
-                            confidence_val = data.get(confidence_key, data.get("confidence_scores", {}).get(key, 0))
-                        try:
-                            confidence_scores[key] = int(confidence_val)
-                        except (ValueError, TypeError):
-                            confidence_scores[key] = 0
+                    metrics_map = {
+                        "core_offering": "core_offering",
+                        "icp": "icp",
+                        "tone": "messaging_tone",
+                        "pricing": "pricing_signals",
+                        "hiring": "hiring_signals",
+                        "keywords": "strategic_keywords"
+                    }
+                    
+                    for legacy_key, metrics_key in metrics_map.items():
+                        conf_val = 0
+                        if "confidence_metrics" in data and metrics_key in data["confidence_metrics"]:
+                            conf_val = int(data["confidence_metrics"][metrics_key].get("confidence", 0.0) * 100)
+                        
+                        if conf_val == 0:
+                            if legacy_key in ("pricing", "hiring", "core_offering", "keywords", "icp", "tone"):
+                                conf_val = 30 # Base penalty instead of full 0 to prevent total score collapse
+                            
+                            evidence_key = f"{legacy_key}_evidence"
+                            if legacy_key == "tone": evidence_key = "tone_evidence"
+                            if legacy_key == "keywords": evidence_key = "keywords_evidence"
+                            
+                            existing_evidence = data.get(evidence_key, [])
+                            if isinstance(existing_evidence, list) and len(existing_evidence) > 0:
+                                conf_val = max(conf_val, 50)
+                        
+                        confidence_scores[legacy_key] = conf_val
 
                     data["confidence_scores"] = confidence_scores
                     data["validation"] = validation
@@ -678,12 +729,15 @@ class AnalysisService:
             except Exception as e2:
                 print(f"  [analysis] Fallback parser also failed: {e2}")
 
-            return self._empty_analysis(name, domain, f"Parse error: {e}")
+            return self._empty_analysis(name, domain, f"Parse error: {e}", validation)
     
 
     def _empty_analysis(
-        self, name: str, domain: str, reason: str
+        self, name: str, domain: str, reason: str, validation: dict = None
     ) -> CompetitorAnalysis:
+        if validation is None:
+            validation = {"validation_warning": True, "reason": reason}
+
         return CompetitorAnalysis(
             name=name,
             domain=domain,
@@ -701,5 +755,5 @@ class AnalysisService:
             pages_analyzed=[],
             analysis_success=False,
             error=reason,
-            validation={"validation_warning": True, "reason": reason},
+            validation=validation,
         )
