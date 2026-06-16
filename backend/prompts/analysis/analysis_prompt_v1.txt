@@ -24,7 +24,7 @@ Return ONLY a valid JSON object with exactly these fields:
   "core_offering": "One sentence — what specific problem they solve and for whom",
   "icp": "Ideal customer profile based on messaging evidence — industry, company size, role",
   "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid",
-  "pricing_signals": "Any pricing tier names, price points, model (per seat/usage/flat), or recent changes detected. Write Not detected if pricing page was unavailable.",
+  "pricing_signals": "Extract pricing signals from ALL categories: (1) Tier pricing — Free, Plus, Pro, Team, Business, Enterprise, Starter; (2) Usage-based pricing — token pricing, API pricing, credits, usage limits, request limits, inference pricing, pay-as-you-go, consumption pricing; (3) Developer pricing — API costs, model pricing, consumption costs. Do NOT require 'monthly', 'annual', or 'seat' to classify as pricing. Write 'No public evidence found' ONLY if none of these categories are present.",
   "hiring_signals": "Which job functions dominate their open roles? What does this reveal about their growth direction?",
   "recent_launches": ["list", "of", "detectable", "new", "features", "or", "product", "announcements"],
   "strategic_keywords": ["top", "8", "recurring", "strategic", "terms", "from", "their", "content"],

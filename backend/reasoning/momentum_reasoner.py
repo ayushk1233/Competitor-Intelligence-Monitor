@@ -62,10 +62,10 @@ Score 1-3:
 Little or no evidence of launches, hiring, adoption, partnerships, or shipping velocity. Company appears stagnant or very early.
 
 Score 4-5:
-A few signals exist but activity is moderate or inconclusive. Typical for established companies maintaining status quo without acceleration. No strong evidence of growth or decline.
+A few signals exist but activity is moderate or inconclusive. No strong evidence of growth or decline. Typical for mature companies maintaining status quo.
 
 Score 6-7:
-Multiple recent launches, adoption indicators, partnerships, or product updates exist. Company appears to be actively building but not yet at high velocity.
+Clear evidence of momentum in 1-2 categories — multiple recent launches, partnerships, ecosystem expansion, or adoption indicators. Company is actively building. Score can reach 7 if launches, partnerships, OR expansion signals are strong, even without hiring.
 
 Score 8-9:
 Strong evidence of rapid momentum across multiple dimensions.
@@ -74,8 +74,11 @@ Examples:
 - active changelog/product updates spanning multiple months
 - multiple adoption signals
 - specific AI product launches (not generic AI claims)
-- partnerships
-- visible growth
+- partnerships with major ecosystem players
+- acquisitions expanding capabilities or distribution
+- ecosystem or distribution expansion
+- visible growth in users, customers, or market presence
+Hiring is not required for 8-9 if other dimensions are strong.
 
 Score 10:
 Exceptional momentum with overwhelming evidence across most categories.
@@ -89,14 +92,18 @@ CRITICAL:
 
 Momentum != company size.
 
-Large established companies should default to 3-5 unless there is strong evidence of aggressive expansion. Size is NOT momentum.
+A large company with static products and no launches = 3-5. Size is NOT momentum.
 
-Only score 8-10 if multiple distinct signals exist:
-- active hiring across multiple roles
+BUT a large company actively launching new AI products, forming partnerships, acquiring startups, and expanding distribution can score 7-9. Evidence of real acceleration matters more than company age or size.
+
+Only score 8-10 if multiple distinct signal categories show evidence:
 - recent launches of specific products (not generic AI claims)
-- specific AI product initiatives
-- market expansion
-- pricing changes
+- specific AI product initiatives or platform launches
+- market expansion or new vertical entry
+- partnerships with major ecosystem players
+- acquisitions expanding capabilities or distribution
+- pricing changes or new tiers
+- active hiring across multiple roles (supporting, not required)
 
 Momentum measures current acceleration.
 
@@ -110,7 +117,7 @@ Momentum does NOT measure:
 
 Ignore any evidence older than 24 months.
 
-If no recent launches, hiring, expansion, funding, acquisitions, or AI initiatives exist, score conservatively.
+If no recent launches, hiring, expansion, funding, acquisitions, partnerships, AI initiatives, or distribution growth exist, score conservatively.
 
 Do not infer hiring.
 Do not infer expansion.
@@ -123,12 +130,15 @@ Reduce score when evidence shows:
 - bootstrapped lifestyle business
 - deliberately small team
 - stable mature company
-- little hiring activity
 - no recent launches
+- no partnerships or ecosystem expansion
+- no acquisitions or distribution growth
 - historical achievements only
 - long company history used as primary proof
 
 These indicate maturity, not acceleration.
+
+Do NOT strongly penalize a company purely for missing hiring signals. Treat hiring as supporting evidence for expansion, but lack of hiring does not mean lack of momentum if launches/adoption exist.
 
 CRITICAL HIRING RULES:
 A hiring signal may only exist if evidence contains:

@@ -32,13 +32,7 @@ interface CompetitorDetailPageProps {
   params: Promise<{ id: string; companyName: string }>;
 }
 
-const toneConfig: Record<string, string> = {
-  enterprise: "bg-[#6366F1]/15 text-[#6366F1] border-[#6366F1]/30",
-  startup: "bg-[#BC6C50]/15 text-[#BC6C50] border-[#BC6C50]/30",
-  technical: "bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30",
-  visionary: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
-  hybrid: "bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/30",
-};
+import { getToneColorHex, getInlineStyle } from "@/lib/color-utils";
 
 const severityColor: Record<string, string> = {
   HIGH: "bg-[#EF4444]",
@@ -119,7 +113,7 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
     );
   }
 
-  const toneClass = toneConfig[analysis.messaging_tone] ?? "bg-muted text-muted-foreground border-border";
+
 
   return (
     <div className="space-y-6 p-6">
@@ -146,16 +140,24 @@ export default function CompetitorDetailPage({ params }: CompetitorDetailPagePro
         <h1 className="text-2xl font-bold text-foreground">{analysis.name}</h1>
         <div className="mt-2 flex items-center gap-4">
           <ScoreLabel delta={drift?.momentum_delta ?? 0} />
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
             <MessageSquare className="h-4 w-4" />
             {analysis.messaging_tone ? (
-              <Badge variant="outline" className={`text-xs font-medium capitalize ${toneClass}`}>
-                {analysis.messaging_tone}
-              </Badge>
+              <div className="flex flex-wrap gap-1">
+                {analysis.messaging_tone.split(',').map((t, idx) => {
+                  const cleanT = t.trim();
+                  if (!cleanT) return null;
+                  return (
+                    <Badge key={idx} variant="outline" className="text-xs font-medium capitalize" style={getInlineStyle(getToneColorHex(cleanT))}>
+                      {cleanT}
+                    </Badge>
+                  );
+                })}
+              </div>
             ) : (
               "No tone data"
             )}
-          </span>
+          </div>
         </div>
       </div>
 

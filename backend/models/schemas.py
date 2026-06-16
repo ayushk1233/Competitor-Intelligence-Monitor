@@ -52,6 +52,10 @@ class CompetitorAnalysis(BaseModel):
     # Company Validation (Problem 1)
     validation: dict = {}           # {company_name, company_description, category, product_type, primary_use_case, validation_warning}
 
+    # Strategy & Differentiation (v1.2 Upgrade)
+    strategic_interpretation: dict = {}
+    competitor_dna: dict = {}
+
     # Per-section Evidence (Problem 2)
     core_offering_evidence: list[str] = []
     core_offering_source: str = ""
@@ -69,8 +73,11 @@ class CompetitorAnalysis(BaseModel):
     keywords_source_url: str = ""
     keywords_confidence: int = 0
 
-    # Per-section Confidence (Problem 5)
+    # Per-section Confidence (Problem 5) — legacy format kept for backward compatibility
     confidence_scores: dict = {}    # {core_offering: 92, icp: 88, tone: 85, pricing: 40, hiring: 70, keywords: 75}
+
+    # Evidence-Based Confidence (v1.2.3) — additive; pre-v1.2.3 reports default to {}
+    confidence_metrics: dict = {}   # {field: {confidence, evidence_count, source_count, source_types, agreement_score}}
 
     # Momentum Driver Explanation (Problem 3)
     momentum_negative_factors: list[str] = []

@@ -332,9 +332,9 @@ async def get_recent_runs(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get the 10 most recent analysis runs for the authenticated user."""
+    """Get the 100 most recent analysis runs for the authenticated user."""
     db_service = DatabaseService(db)
-    runs = await db_service.get_recent_runs(limit=10, user_id=str(current_user.id))
+    runs = await db_service.get_recent_runs(limit=100, user_id=str(current_user.id))
     return [
         {
             "run_id": r.id,

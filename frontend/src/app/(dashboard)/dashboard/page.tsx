@@ -20,13 +20,7 @@ import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
 import type { DashboardAlertResponse, DashboardCompetitor } from "@/types/api";
 
-const toneColors: Record<string, string> = {
-  enterprise: "bg-[var(--tone-enterprise-bg)] text-[var(--tone-enterprise-text)]",
-  startup: "bg-[var(--tone-startup-bg)] text-[var(--tone-startup-text)]",
-  technical: "bg-[var(--tone-technical-bg)] text-[var(--tone-technical-text)]",
-  visionary: "bg-[var(--tone-visionary-bg)] text-[var(--tone-visionary-text)]",
-  hybrid: "bg-[var(--tone-hybrid-bg)] text-[var(--tone-hybrid-text)]",
-};
+import { getToneColorHex, getInlineStyle } from "@/lib/color-utils";
 
 function matchesRunName(companyName: string, domain: string | undefined, candidates: Set<string> | string[]): boolean {
   if (candidates instanceof Set && candidates.has(companyName)) return true;
@@ -104,13 +98,17 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
 
       <div className="flex items-center justify-between">
         {competitor.messaging_tone ? (
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-              toneColors[competitor.messaging_tone] || "bg-neutral-800 text-neutral-400"
-            }`}
-          >
-            {competitor.messaging_tone}
-          </span>
+          <div className="flex flex-wrap gap-1 mt-2 mb-3">
+            {competitor.messaging_tone.split(',').map((t, idx) => {
+              const cleanT = t.trim();
+              if (!cleanT) return null;
+              return (
+                <span key={idx} className="px-2 py-0.5 rounded-full text-xs font-medium capitalize" style={getInlineStyle(getToneColorHex(cleanT))}>
+                  {cleanT}
+                </span>
+              );
+            })}
+          </div>
         ) : (
           <span />
         )}

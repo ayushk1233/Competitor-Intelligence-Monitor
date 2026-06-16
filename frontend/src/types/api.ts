@@ -328,6 +328,35 @@ export interface CompetitorAnalysisReport {
   tone_evidence?: string[];
   momentum_evidence?: string[];
   agent_outputs?: Record<string, unknown>;
+
+  // v1.2.x Intelligence Fields — additive, always optional for backward compat
+  competitor_dna?: {
+    archetype?: string;
+    confidence?: number;
+    supporting_signals?: string[];
+    alternative_archetypes?: Array<{ archetype: string; confidence: number }>;
+    growth_model?: string;
+    primary_moat?: string;
+    strategic_risk?: string;
+    expansion_vector?: string;
+    likely_next_moves?: Array<{ hypothesis: string; confidence: string }>;
+  };
+
+  strategic_interpretation?: {
+    strategic_direction?: string;
+    commercial_signal?: string;
+    expansion_signal?: string;
+    defensibility_signal?: string;
+    market_position?: string;
+  };
+
+  confidence_metrics?: Record<string, {
+    confidence: number;
+    evidence_count: number;
+    source_count: number;
+    source_types: string[];
+    agreement_score: number;
+  }>;
 }
 
 export interface ComparisonResult {

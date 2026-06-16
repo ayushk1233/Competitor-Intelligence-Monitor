@@ -1,0 +1,22 @@
+[
+  {
+    "company": "HubSpot",
+    "evidence": "Inbound marketing leader focusing on self-serve onboarding. Freemium plans available for early stage startups. High adoption velocity and product-led growth motion targeting smb."
+  },
+  {
+    "company": "Salesforce",
+    "evidence": "Enterprise CRM giant dominating operations and workflow approvals. Highly customized for enterprise needs with massive productivity enhancements for IT teams."
+  },
+  {
+    "company": "Datadog",
+    "evidence": "Developer platform for monitoring infrastructure. Strong ecosystem with hundreds of integrations and robust api access."
+  },
+  {
+    "company": "MongoDB",
+    "evidence": "Database platform for developers. Open source roots, strong developer docs, and cloud ecosystem expansion."
+  },
+  {
+    "company": "Canva",
+    "evidence": "Product-led growth motion. Self-serve templates, freemium tier, incredibly popular with creators and solopreneur."
+  }
+]

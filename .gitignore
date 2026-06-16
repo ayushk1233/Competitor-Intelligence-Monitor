@@ -36,4 +36,8 @@ evaluation_runs/
 logs/
 alert_runs/
 
-tree_ouput.txt
+tree_output.txt
+
+artifacts/
+
+backend/eval/reports/

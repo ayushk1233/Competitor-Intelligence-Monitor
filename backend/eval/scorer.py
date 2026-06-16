@@ -3,6 +3,11 @@ from unittest.mock import MagicMock
 from backend.eval.models import EvalExpectation, EvalResult
 from backend.models.schemas import CompetitorAnalysis
 
+from backend.eval.intelligence_scorer import score_company_understanding, score_strategic_accuracy
+from backend.eval.confidence_validator import score_confidence_calibration
+from backend.eval.false_negative_detector import score_false_negatives
+from backend.eval.evidence_scorer import score_evidence_quality
+
 try:
     from sentence_transformers import SentenceTransformer, util
     _model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -129,18 +134,38 @@ def score_analysis(
     )
 
     # ---------------------------------------
+    # Intelligence Quality Scores
+    # ---------------------------------------
+
+    cu_score = score_company_understanding(expectation.expected_company_concepts, analysis)
+    sa_score = score_strategic_accuracy(expectation.expected_strategic_pass, expectation.expected_strategic_fail, analysis)
+    cc_score = score_confidence_calibration(analysis)
+    fn_score = score_false_negatives(analysis)
+    eq_score = score_evidence_quality(analysis)
+
+    # ---------------------------------------
     # Weighted Final Score
     # ---------------------------------------
 
     tone_score = 1.0 if tone_match else 0.0
     momentum_score = 1.0 if momentum_in_range else 0.0
 
-    overall_score = (
-        (tone_score * 0.25)
-        + (momentum_score * 0.25)
-        + (keyword_overlap_score * 0.30)
-        + (icp_recall_score * 0.20)
+    extraction_layer_score = (
+        (tone_score * 0.10)
+        + (momentum_score * 0.10)
+        + (keyword_overlap_score * 0.15)
+        + (icp_recall_score * 0.10)
     )
+
+    intelligence_layer_score = (
+        (cu_score * 0.20)
+        + (sa_score * 0.20)
+        + (cc_score * 0.05)
+        + (fn_score * 0.05)
+        + (eq_score * 0.05)
+    )
+
+    overall_score = extraction_layer_score + intelligence_layer_score
 
     # ---------------------------------------
     # Validation
@@ -166,6 +191,15 @@ def score_analysis(
             icp_recall_score,
             3
         ),
+
+        extraction_score=round(extraction_layer_score / 0.45, 3),
+        intelligence_score=round(intelligence_layer_score / 0.55, 3),
+
+        company_understanding_score=round(cu_score, 3),
+        strategic_accuracy_score=round(sa_score, 3),
+        confidence_calibration_score=round(cc_score, 3),
+        false_negative_score=round(fn_score, 3),
+        evidence_quality_score=round(eq_score, 3),
 
         overall_score=round(
             overall_score,
