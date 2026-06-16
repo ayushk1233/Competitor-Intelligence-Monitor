@@ -38,7 +38,7 @@ Return ONLY valid JSON with EXACTLY these fields:
   "icp_evidence": ["max 2 quotes directly from icp analysis"],
   "messaging_tone": "Pick the primary tone from Tone analysis (e.g. Developer-First, Enterprise-First, etc.)",
   "tone_evidence": ["max 2 quotes directly from tone analysis"],
-  "pricing_signals": "Extract pricing when ANY of the following are detected: Tier Names (Free, Starter, Plus, Pro, Enterprise), Billing Models (per seat, usage, credits), or Usage Limits. Use 'No public evidence found' ONLY if none are present.",
+  "pricing_signals": "Extract pricing signals from ALL categories: (1) Tier pricing — Free, Plus, Pro, Team, Business, Enterprise, Starter; (2) Usage-based pricing — token pricing, API pricing, credits, usage limits, request limits, inference pricing, pay-as-you-go, consumption pricing; (3) Developer pricing — API costs, model pricing, consumption costs. Do NOT require 'monthly', 'annual', or 'seat' to classify as pricing. Use 'No public evidence found' ONLY if none are present.",
   "pricing_evidence": ["max 2 quotes"],
   "pricing_source": "comma-separated list of source pages",
   "pricing_source_url": "",

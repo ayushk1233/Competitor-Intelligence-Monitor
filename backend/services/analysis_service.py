@@ -94,7 +94,7 @@ Return ONLY a valid JSON object with exactly these fields:
   "core_offering": "One sentence — what specific problem they solve and for whom",
   "icp": "Ideal customer profile based on messaging evidence — industry, company size, role",
   "messaging_tone": "Pick exactly one: enterprise | startup | technical | visionary | hybrid",
-  "pricing_signals": "Extract pricing when ANY of the following are detected: Tier Names (Free, Starter, Plus, Pro, Business, Team, Enterprise), Billing Models (per user, per seat, monthly, annual, usage based, credits), or Usage Limits (e.g. 10 AI credits, 1000 requests). Write 'No public evidence found' ONLY if none of these are present.",
+  "pricing_signals": "Extract pricing signals from ALL of these categories: (1) Tier pricing — Free, Plus, Pro, Team, Business, Enterprise, Starter; (2) Usage-based pricing — token pricing, API pricing, credits, usage limits, request limits, inference pricing, pay-as-you-go, consumption pricing; (3) Developer pricing — API costs, model pricing, consumption costs. Do NOT require 'monthly', 'annual', or 'seat' to classify as pricing. Pay-as-you-go token/API models ARE pricing. Write 'No public evidence found' ONLY if none of these categories are present.",
   "hiring_signals": "Which job functions dominate their open roles? What does this reveal about their growth direction?",
   "recent_launches": ["list", "of", "detectable", "new", "features", "or", "product", "announcements"],
   "strategic_keywords": ["top", "8", "recurring", "strategic", "terms", "from", "their", "content"],
@@ -337,16 +337,18 @@ class AnalysisService:
         except Exception as e:
             print(f"  [validation] Failed parsing for {competitor_pages.name}: {e}")
 
-        # Fallback page detection (Task C & D)
-        valid_scraped_pages = [p.page_type for p in competitor_pages.pages if p.fetch_success and len((p.content or "").split()) > 100]
-        core_pages_found = validation.get("core_pages_found") or valid_scraped_pages
+        # Task C & D: Null-safe page reconstruction from scraped pages
+        all_fetched_pages = [p.page_type for p in competitor_pages.pages if p.fetch_success and p.content]
+        core_pages_found = validation.get("core_pages_found")
+        if not core_pages_found:
+            core_pages_found = all_fetched_pages or []
         validation["core_pages_found"] = core_pages_found
 
-        # Fix 2: Hard override for known companies with good data
+        # Validation override: homepage + 1 additional major page = confident
         if validation.get("validation_warning"):
             has_homepage = "homepage" in core_pages_found
             major_pages = {"pricing", "careers", "about", "product", "enterprise", "security"}
-            has_other_major = any(p in major_pages for p in core_pages_found)
+            has_other_major = any(p in major_pages for p in core_pages_found if p != "homepage")
             
             if has_homepage and has_other_major:
                 validation["validation_warning"] = False

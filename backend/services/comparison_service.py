@@ -43,7 +43,7 @@ Return ONLY a valid JSON object with exactly these fields:
   "fastest_mover_reason": "2-3 sentences with specific evidence: which product areas, which hiring patterns, which content signals suggest aggressive forward momentum",
   "pivot_detected": "Competitor name + 2-3 sentences describing the strategic shift: what they were doing before vs now, and what this signals about their new direction. Write null if none detected.",
   "smb_to_enterprise_shift": ["list of competitor names showing this pattern — empty list if none"],
-  "ai_emphasis_ranking": ["ranked list of all competitors from most to least AI-focused based on content signals"],
+  "ai_emphasis_ranking": ["ranked list of all competitors from most to least AI-focused based on this evidence: AI product launches, AI platform breadth, AI distribution scale, AI ecosystem investment, AI partnerships, AI expansion initiatives. Do NOT rank based on company-name familiarity or keyword density alone. Base every position on specific evidence from the summaries provided."],
   "messaging_gaps": "3-4 sentences describing specific positioning territory that NONE of these competitors own. Name the underserved customer segment, the unaddressed pain point, and why this is a real opportunity rather than a gap they ignored intentionally.",
   "messaging_gap": {{
     "title": "Short opportunity title (e.g. 'Citizen Developer & SMB Automation Gap')",
