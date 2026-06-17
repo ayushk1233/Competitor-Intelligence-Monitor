@@ -5,6 +5,7 @@ import { QUERY_KEYS } from "@/constants";
 import {
   fetchCompetitors,
   addCompetitor,
+  deleteCompetitor,
 } from "@/services/competitor.service";
 import type { CompetitorCreateRequest } from "@/types/api";
 
@@ -23,6 +24,25 @@ export function useAddCompetitor(watchlistId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.competitors(watchlistId),
+      });
+    },
+  });
+}
+
+export function useDeleteCompetitor(watchlistId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (competitorId: string) =>
+      deleteCompetitor(watchlistId, competitorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.competitors(watchlistId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-summary"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-competitors"],
       });
     },
   });

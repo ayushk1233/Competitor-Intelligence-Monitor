@@ -12,7 +12,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants";
-import { Users, ExternalLink } from "lucide-react";
+import { useDeleteCompetitor } from "@/hooks/use-competitors";
+import { Users, ExternalLink, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { extractApiError } from "@/lib/utils";
 import type { CompetitorResponse } from "@/types/api";
 
 interface CompetitorTableProps {
@@ -29,6 +32,7 @@ function SkeletonRow() {
       <TableCell><Skeleton className="h-4 w-20 bg-[#2A2A2A]" /></TableCell>
       <TableCell><Skeleton className="h-4 w-24 bg-[#2A2A2A]" /></TableCell>
       <TableCell><Skeleton className="h-5 w-16 rounded-full bg-[#2A2A2A]" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-8 bg-[#2A2A2A]" /></TableCell>
     </TableRow>
   );
 }
@@ -40,17 +44,31 @@ const priorityColors: Record<string, string> = {
 };
 
 export function CompetitorTable({ watchlistId, competitors, isLoading }: CompetitorTableProps) {
+  const deleteMutation = useDeleteCompetitor(watchlistId);
+
+  const handleRemove = (competitorId: string, companyName: string) => {
+    if (confirm(`Remove ${companyName} from this watchlist?`)) {
+      deleteMutation.mutate(competitorId, {
+        onSuccess: () => toast.success(`${companyName} removed from watchlist`),
+        onError: (error) => toast.error(extractApiError(error)),
+      });
+    }
+  };
+
+  const headerClass = "text-xs font-medium uppercase text-[var(--dialog-muted)]";
+
   return (
     <div className="rounded-lg border border-[var(--dialog-border)] bg-[var(--dialog-bg)]">
       {isLoading ? (
         <Table>
           <TableHeader>
             <TableRow className="border-[var(--dialog-border)] hover:bg-transparent">
-              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Company Name</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Domain</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Priority</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Monitoring</TableHead>
-              <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Status</TableHead>
+              <TableHead className={headerClass}>Company Name</TableHead>
+              <TableHead className={headerClass}>Domain</TableHead>
+              <TableHead className={headerClass}>Priority</TableHead>
+              <TableHead className={headerClass}>Monitoring</TableHead>
+              <TableHead className={headerClass}>Status</TableHead>
+              <TableHead className={`${headerClass} text-right`}></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -74,11 +92,12 @@ export function CompetitorTable({ watchlistId, competitors, isLoading }: Competi
           <Table>
             <TableHeader>
               <TableRow className="border-[var(--dialog-border)] hover:bg-transparent">
-                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Company Name</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Domain</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Priority</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Monitoring</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-[var(--dialog-muted)]">Status</TableHead>
+                <TableHead className={headerClass}>Company Name</TableHead>
+                <TableHead className={headerClass}>Domain</TableHead>
+                <TableHead className={headerClass}>Priority</TableHead>
+                <TableHead className={headerClass}>Monitoring</TableHead>
+                <TableHead className={headerClass}>Status</TableHead>
+                <TableHead className={`${headerClass} text-right`}></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -124,6 +143,16 @@ export function CompetitorTable({ watchlistId, competitors, isLoading }: Competi
                         Inactive
                       </Badge>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <button
+                      onClick={() => handleRemove(c.id, c.company_name)}
+                      disabled={deleteMutation.isPending}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--dialog-muted)] transition-colors hover:bg-[var(--dialog-surface)] hover:text-[#EF4444] disabled:opacity-50"
+                      title={`Remove ${c.company_name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </TableCell>
                 </TableRow>
               ))}

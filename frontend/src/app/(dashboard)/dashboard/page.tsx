@@ -55,16 +55,27 @@ const severityDot: Record<string, string> = {
   LOW: "bg-emerald-500",
 };
 
+const severityGlow: Record<string, { glow: string; fade: string }> = {
+  CRITICAL: { glow: "#EF4444", fade: "rgba(239,68,68,0.5)" },
+  HIGH: { glow: "#EF4444", fade: "rgba(239,68,68,0.5)" },
+  MEDIUM: { glow: "#F59E0B", fade: "rgba(245,158,11,0.5)" },
+  LOW: { glow: "#22C55E", fade: "rgba(34,197,94,0.5)" },
+};
+
 function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
   const hasAlerts = competitor.has_active_alerts;
   const sev = competitor.max_severity || "";
   const borderClass = hasAlerts
-    ? `border ${severityBorder[sev] || "border-red-500/70"}`
+    ? `border animate-border-pop ${severityBorder[sev] || "border-red-500/70"}`
     : "border border-neutral-800";
   const dotClass = hasAlerts ? severityDot[sev] || "bg-red-500" : "";
+  const glow = hasAlerts ? severityGlow[sev] || severityGlow.HIGH : null;
 
   return (
-    <div className={`rounded-xl bg-card p-4 flex flex-col gap-4 ${borderClass}`}>
+    <div
+      className={`rounded-xl bg-card p-4 flex flex-col gap-4 ${borderClass}`}
+      style={glow ? { "--border-pop-glow": glow.glow, "--border-pop-fade": glow.fade } as React.CSSProperties : undefined}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 min-w-0">
           {competitor.logo_url && (
@@ -77,7 +88,7 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-base font-bold text-foreground">{competitor.company_name}</span>
+              <Link href={`/battlecards?company=${encodeURIComponent(competitor.company_name)}`} className="text-base font-bold text-foreground hover:text-[var(--link-accent)] transition-colors">{competitor.company_name}</Link>
               {hasAlerts && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
             </div>
             {competitor.domain && (
@@ -326,10 +337,15 @@ export default function DashboardPage() {
             {topCompetitors.map((comp) => {
               const s = comp.max_severity || "";
               const topBorder = comp.has_active_alerts
-                ? `border ${severityBorder[s] || "border-red-500/70"}`
+                ? `border animate-border-pop ${severityBorder[s] || "border-red-500/70"}`
                 : "border border-neutral-800";
+              const topGlow = comp.has_active_alerts ? severityGlow[s] || severityGlow.HIGH : null;
               return (
-              <div key={comp.company_name} className={`rounded-xl bg-card p-4 ${topBorder}`}>
+              <div
+                key={comp.company_name}
+                className={`rounded-xl bg-card p-4 ${topBorder}`}
+                style={topGlow ? { "--border-pop-glow": topGlow.glow, "--border-pop-fade": topGlow.fade } as React.CSSProperties : undefined}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     {comp.logo_url && (

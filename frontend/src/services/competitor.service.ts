@@ -24,3 +24,12 @@ export async function addCompetitor(
   );
   return response.data;
 }
+
+export async function deleteCompetitor(
+  watchlistId: string,
+  competitorId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/api/watchlists/${watchlistId}/competitors/${competitorId}`
+  );
+}

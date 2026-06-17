@@ -368,3 +368,18 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: #424442;
 }
+
+/* ── Alert border pulse animation ──────────────────────────────────────────── */
+@keyframes border-pop {
+  0%, 100% {
+    box-shadow: 0 0 4px 0 var(--border-pop-fade);
+    border-color: var(--border-pop-fade);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px var(--border-pop-glow);
+    border-color: var(--border-pop-glow);
+  }
+}
+.animate-border-pop {
+  animation: border-pop 1.8s ease-in-out infinite;
+}
