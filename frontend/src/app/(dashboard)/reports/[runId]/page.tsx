@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ROUTES } from "@/constants";
 import {
   ArrowLeft,
@@ -297,14 +298,12 @@ function CompetitorSection({ c, alerts }: { c: CompetitorAnalysisReport; alerts:
       {/* ── HEADER ── */}
       <div className="flex items-start justify-between p-6 pb-4 border-b border-border">
         <div className="flex items-center gap-4">
-          {c.logo_url && (
-            <img
-              src={c.logo_url}
-              alt={`${c.name} logo`}
-              className="h-12 w-12 rounded-xl bg-muted object-contain shrink-0"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
-            />
-          )}
+          <Avatar className="h-12 w-12 rounded-xl">
+            <AvatarImage src={c.logo_url} alt={`${c.name} logo`} />
+            <AvatarFallback className="rounded-xl bg-muted text-base font-bold text-muted-foreground">
+              {c.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <h2 className="text-xl font-bold text-foreground">{c.name}</h2>
             <p className="text-sm text-[var(--muted-text)] mt-0.5">{c.domain}</p>

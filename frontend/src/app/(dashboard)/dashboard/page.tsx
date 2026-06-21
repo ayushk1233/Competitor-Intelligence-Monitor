@@ -11,6 +11,7 @@ import {
 import { useRunStatus } from "@/hooks/use-run-status";
 import { useRecentAnalysisRuns } from "@/hooks/use-analysis-runs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DashboardOverview, MomentumRanking, RecentRunsWidget } from "@/components/dashboard/DashboardOverview";
 import { NewAnalysisModal } from "@/components/dashboard/NewAnalysisModal";
 import { RecentRunsTable } from "@/components/dashboard/RecentRunsTable";
@@ -78,14 +79,12 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          {competitor.logo_url && (
-            <img
-              src={competitor.logo_url}
-              alt={`${competitor.company_name} logo`}
-              className="h-8 w-8 rounded-lg bg-neutral-800 object-contain shrink-0"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
-            />
-          )}
+          <Avatar className="h-8 w-8 rounded-lg">
+            <AvatarImage src={competitor.logo_url} alt={`${competitor.company_name} logo`} />
+            <AvatarFallback className="rounded-lg bg-neutral-800 text-xs font-bold text-neutral-400">
+              {competitor.company_name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Link href={`/battlecards?company=${encodeURIComponent(competitor.company_name)}`} className="text-base font-bold text-foreground hover:text-[var(--link-accent)] transition-colors">{competitor.company_name}</Link>
@@ -348,14 +347,12 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    {comp.logo_url && (
-                      <img
-                        src={comp.logo_url}
-                        alt={`${comp.company_name} logo`}
-                        className="h-8 w-8 rounded-lg bg-neutral-800 object-contain shrink-0"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
-                      />
-                    )}
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={comp.logo_url} alt={`${comp.company_name} logo`} />
+                      <AvatarFallback className="rounded-lg bg-neutral-800 text-xs font-bold text-neutral-400">
+                        {comp.company_name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-foreground">{comp.company_name}</span>
