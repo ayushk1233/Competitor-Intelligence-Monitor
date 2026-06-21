@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -237,14 +238,12 @@ export function MomentumRanking({ competitors, isLoading }: MomentumRankingProps
                 {i + 1}
               </span>
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                {comp.logo_url && (
-                  <img
-                    src={comp.logo_url}
-                    alt=""
-                    className="h-5 w-5 rounded bg-muted object-contain shrink-0"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
-                  />
-                )}
+                <Avatar className="h-5 w-5 rounded">
+                  <AvatarImage src={comp.logo_url} alt="" />
+                  <AvatarFallback className="rounded bg-muted text-[8px] font-bold text-muted-foreground">
+                    {comp.company_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="text-sm font-medium text-card-foreground truncate">{comp.company_name}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">

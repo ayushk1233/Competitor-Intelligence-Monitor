@@ -229,7 +229,7 @@ async def get_dashboard_competitors(
             DashboardCompetitorResponse(
                 company_name=r.competitor_name,
                 domain=r.domain,
-                logo_url=f"https://icons.duckduckgo.com/ip3/{_extract_hostname(r.domain)}.ico" if r.domain else None,
+                logo_url=f"https://www.google.com/s2/favicons?domain={_extract_hostname(r.domain)}&sz=32" if r.domain else None,
                 messaging_tone=r.messaging_tone,
                 momentum_score=r.momentum_score,
                 last_analyzed_at=r.created_at,

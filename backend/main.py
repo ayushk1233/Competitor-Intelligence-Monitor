@@ -298,7 +298,7 @@ async def get_report(
         if ca.domain and not ca.logo_url:
             raw_url = ca.domain if ca.domain.startswith("http") else f"https://{ca.domain}"
             hostname = urlparse(raw_url).hostname or ca.domain
-            ca.logo_url = f"https://icons.duckduckgo.com/ip3/{hostname}.ico"
+            ca.logo_url = f"https://www.google.com/s2/favicons?domain={hostname}&sz=32"
         competitors.append(ca)
     if not comparison_record or not comparison_record.full_comparison:
         raise HTTPException(
