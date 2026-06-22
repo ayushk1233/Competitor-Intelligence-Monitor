@@ -14,6 +14,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -229,6 +230,58 @@ class AlertHistory(Base):
 
 
 # ─────────────────────────────────────────────────────────────
+# Organizations
+# ─────────────────────────────────────────────────────────────
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True
+    )
+
+    slug: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=True
+    )
+
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="organization",
+        lazy="selectin"
+    )
+
+
+# ─────────────────────────────────────────────────────────────
 # Users
 # ─────────────────────────────────────────────────────────────
 
@@ -266,6 +319,19 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("organizations.id"),
+        nullable=True,
+        index=True
+    )
+
+    organization: Mapped[Optional["Organization"]] = relationship(
+        "Organization",
+        back_populates="users",
+        lazy="selectin"
     )
 
     password_hash: Mapped[str] = mapped_column(
