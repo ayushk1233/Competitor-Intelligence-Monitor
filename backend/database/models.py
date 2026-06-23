@@ -321,14 +321,14 @@ class User(Base):
         nullable=True,
     )
 
-    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    organization_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("organizations.id"),
-        nullable=True,
+        nullable=False,
         index=True
     )
 
-    organization: Mapped[Optional["Organization"]] = relationship(
+    organization: Mapped["Organization"] = relationship(
         "Organization",
         back_populates="users",
         lazy="selectin"
