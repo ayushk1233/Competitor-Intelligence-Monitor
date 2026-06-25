@@ -1,8 +1,11 @@
+import enum
 import uuid
 from datetime import datetime
 from typing import Optional
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Enum,
     JSON,
     Boolean,
     DateTime,
@@ -23,6 +26,20 @@ from backend.database.connection import Base
 
 def generate_uuid() -> str:
     return str(uuid.uuid4())
+
+
+class EmbeddingSourceType(str, enum.Enum):
+    ANALYSIS = "analysis"
+    DRIFT_INTERPRETATION = "drift_interpretation"
+    COMPARISON_BRIEF = "comparison_brief"
+
+
+class ChunkType(str, enum.Enum):
+    EXECUTIVE_BRIEFING = "executive_briefing"
+    ANALYST_NOTE = "analyst_note"
+    STRUCTURED_SUMMARIES = "structured_summaries"
+    DRIFT_INTERPRETATION = "drift_interpretation"
+    COMPARISON_SUMMARY = "comparison_summary"
 
 
 # ── Table 1: runs ─────────────────────────────────────────────────────────────
@@ -732,5 +749,109 @@ class AlertSuppression(Base):
             "company_name",
             "alert_type",
             "suppressed_until",
+        ),
+    )
+
+
+class IntelligenceEmbedding(Base):
+    __tablename__ = "intelligence_embeddings"
+
+    id = mapped_column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    organization_id = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    run_id = mapped_column(
+        String(36),
+        ForeignKey("runs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    company_name = mapped_column(
+        String(200),
+        nullable=False,
+        index=True,
+    )
+
+    source_type = mapped_column(
+        Enum(
+            EmbeddingSourceType,
+            name="embedding_source_type_enum",
+        ),
+        nullable=False,
+    )
+
+    source_id = mapped_column(
+        String(64),
+        nullable=False,
+        index=True,
+    )
+
+    chunk_type = mapped_column(
+        Enum(
+            ChunkType,
+            name="chunk_type_enum",
+        ),
+        nullable=False,
+    )
+
+    chunk_order = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    chunk_text = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    embedding_model = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    embedding = mapped_column(
+        Vector(384),
+        nullable=False,
+    )
+
+    content_hash = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+    )
+
+    analyzed_at = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    created_at = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_embeddings_company_time",
+            "company_name",
+            "analyzed_at",
+        ),
+        Index(
+            "ix_embeddings_source",
+            "source_type",
+            "source_id",
         ),
     )
