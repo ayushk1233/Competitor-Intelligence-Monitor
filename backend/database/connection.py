@@ -45,40 +45,27 @@ async def get_db():
             await session.close()
 
 
-async def create_tables():
+async def verify_database():
     """
-    Create all tables defined in models.py if they don't exist.
-    Called once on app startup.
+    Verify that the database schema has already been created by Alembic.
+
+    This function intentionally does NOT create tables or modify schema.
+    Database structure must always be managed through Alembic migrations.
     """
     async with engine.begin() as conn:
-        from backend.database import models  # noqa: F401 — registers models
-        await conn.run_sync(Base.metadata.create_all)
+        # Import models so SQLAlchemy metadata is registered.
+        from backend.database import models  # noqa: F401
 
-        # Dev migrations: add columns that may not exist on existing tables
-        migrations = [
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS watchlist_id VARCHAR(36) REFERENCES watchlists(id) ON DELETE SET NULL",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS headline VARCHAR(300) NOT NULL DEFAULT ''",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS summary TEXT",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS evidence JSON DEFAULT '[]'::json",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS confidence INTEGER DEFAULT 90",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS business_impact VARCHAR(500)",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS recommended_action VARCHAR(500)",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS fingerprint_hash VARCHAR(64)",
-            "ALTER TABLE alert_history ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ",
-            "ALTER TABLE watchlist_competitors ADD COLUMN IF NOT EXISTS priority VARCHAR(10) DEFAULT 'medium'",
-            "ALTER TABLE watchlist_competitors ADD COLUMN IF NOT EXISTS monitoring_enabled BOOLEAN DEFAULT TRUE",
-            "ALTER TABLE watchlists ADD COLUMN IF NOT EXISTS monitoring_config JSON DEFAULT '{}'::json",
-            "ALTER TABLE watchlists ADD COLUMN IF NOT EXISTS alert_rules JSON DEFAULT '{}'::json",
-            "ALTER TABLE watchlists ADD COLUMN IF NOT EXISTS notification_channels JSON DEFAULT '[]'::json",
-            "ALTER TABLE runs ADD COLUMN IF NOT EXISTS user_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL",
-            "CREATE INDEX IF NOT EXISTS ix_runs_user_id ON runs(user_id)",
-            "CREATE INDEX IF NOT EXISTS ix_alert_history_company_name ON alert_history(company_name)",
-            "CREATE INDEX IF NOT EXISTS ix_alert_history_watchlist_id ON alert_history(watchlist_id)",
-            "CREATE INDEX IF NOT EXISTS ix_alert_history_fingerprint_hash ON alert_history(fingerprint_hash)",
-        ]
-        for migration in migrations:
-            try:
-                await conn.execute(text(migration))
-            except Exception:
-                pass  # Skip if column already exists or other non-critical error
+        # Simple connectivity check.
+        await conn.execute(text("SELECT 1"))
+
+        # Verify Alembic has initialized the database.
+        await conn.execute(
+            text(
+                """
+                SELECT 1
+                FROM alembic_version
+                LIMIT 1
+                """
+            )
+        )

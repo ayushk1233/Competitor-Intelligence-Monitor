@@ -23,7 +23,7 @@ from backend.api.notifications import (
 )
 from backend.api.watchlists import router as watchlist_router
 from backend.auth.dependencies import get_current_user
-from backend.database.connection import create_tables, get_db
+from backend.database.connection import verify_database, get_db
 from backend.database.db_service import DatabaseService
 from backend.database.models import (
     ComparisonRecord,
@@ -110,7 +110,7 @@ async def startup():
         os.makedirs(PROM_DIR, exist_ok=True)
 
     # Existing startup logic
-    await create_tables()
+    await verify_database()
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
