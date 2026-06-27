@@ -22,6 +22,10 @@ sqlalchemy>=2.0.42
 asyncpg==0.30.0
 pgvector==0.3.6
 
+# Embeddings
+sentence-transformers==3.0.1
+torch==2.4.1
+
 # Utilities
 tenacity==8.3.0
 
