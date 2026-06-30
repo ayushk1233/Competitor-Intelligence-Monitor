@@ -4,16 +4,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
 
-class EmbeddingSourceType(str, Enum):
-    PAGE_SNAPSHOT = "page_snapshot"
-    ANALYSIS_RECORD = "analysis_record"
-    COMPARISON_RECORD = "comparison_record"
-
-class ChunkType(str, Enum):
-    TEXT = "text"
-    TABLE = "table"
-    CODE = "code"
-    SUMMARY = "summary"
+from backend.database.models import EmbeddingSourceType, ChunkType
 
 class MemoryDocument(BaseModel):
     organization_id: UUID

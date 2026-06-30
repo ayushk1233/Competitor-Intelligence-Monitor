@@ -24,9 +24,9 @@ async def main():
         organization_id=uuid.uuid4(),
         run_id="run_2026",
         company_name="Acme Corp",
-        source_type=EmbeddingSourceType.ANALYSIS_RECORD,
+        source_type=EmbeddingSourceType.ANALYSIS,
         source_id="analysis_1",
-        chunk_type=ChunkType.TEXT,
+        chunk_type=ChunkType.EXECUTIVE_BRIEFING,
         text=text,
         analyzed_at=datetime.now(timezone.utc),
         metadata={"version": 1}

@@ -49,9 +49,9 @@ def base_doc():
         organization_id=uuid.uuid4(),
         run_id="run_1",
         company_name="TestCorp",
-        source_type=EmbeddingSourceType.PAGE_SNAPSHOT,
+        source_type=EmbeddingSourceType.ANALYSIS,
         source_id="snap_1",
-        chunk_type=ChunkType.TEXT,
+        chunk_type=ChunkType.EXECUTIVE_BRIEFING,
         text="This is a test document.",
         analyzed_at=datetime.now(timezone.utc),
         metadata={}
