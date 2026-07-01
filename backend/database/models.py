@@ -93,7 +93,7 @@ class CompetitorAnalysisRecord(Base):
     domain: Mapped[str] = mapped_column(String(200), nullable=False)
 
     # Structured fields — stored as columns for fast querying
-    messaging_tone: Mapped[str] = mapped_column(String(50), nullable=True)
+    messaging_tone: Mapped[str] = mapped_column(String(255), nullable=True)
     momentum_score: Mapped[int] = mapped_column(Integer, nullable=True)
     analysis_success: Mapped[bool] = mapped_column(Boolean, default=True)
 

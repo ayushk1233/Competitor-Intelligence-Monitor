@@ -66,16 +66,18 @@ const severityGlow: Record<string, { glow: string; fade: string }> = {
 function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
   const hasAlerts = competitor.has_active_alerts;
   const sev = competitor.max_severity || "";
-  const borderClass = hasAlerts
-    ? `border animate-border-pop ${severityBorder[sev] || "border-red-500/70"}`
-    : "border border-neutral-800";
-  const dotClass = hasAlerts ? severityDot[sev] || "bg-red-500" : "";
-  const glow = hasAlerts ? severityGlow[sev] || severityGlow.HIGH : null;
+  const inWatchlist = competitor.is_in_watchlist;
+  
+  const showBorder = inWatchlist && hasAlerts;
+  const borderClass = showBorder ? "border-2" : "border-2 border-transparent";
+  const borderStyle = showBorder ? { borderColor: severityGlow[sev]?.glow || "#EF4444" } : undefined;
+  
+  const dotClass = showBorder ? severityDot[sev] || "bg-red-500" : "";
 
   return (
     <div
-      className={`rounded-xl bg-card p-4 flex flex-col gap-4 ${borderClass}`}
-      style={glow ? { "--border-pop-glow": glow.glow, "--border-pop-fade": glow.fade } as React.CSSProperties : undefined}
+      className={`rounded-xl bg-card p-4 flex flex-col gap-4 transition-colors ${borderClass}`}
+      style={borderStyle}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 min-w-0">
@@ -88,7 +90,7 @@ function CompetitorCard({ competitor }: { competitor: DashboardCompetitor }) {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Link href={`/battlecards?company=${encodeURIComponent(competitor.company_name)}`} className="text-base font-bold text-foreground hover:text-[var(--link-accent)] transition-colors">{competitor.company_name}</Link>
-              {hasAlerts && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
+              {(inWatchlist && hasAlerts) && <span className={`h-2 w-2 rounded-full shrink-0 ${dotClass}`} />}
             </div>
             {competitor.domain && (
               <p className="text-xs text-neutral-500 truncate mt-0.5 font-sans">{competitor.domain}</p>
@@ -335,15 +337,15 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {topCompetitors.map((comp) => {
               const s = comp.max_severity || "";
-              const topBorder = comp.has_active_alerts
-                ? `border animate-border-pop ${severityBorder[s] || "border-red-500/70"}`
-                : "border border-neutral-800";
-              const topGlow = comp.has_active_alerts ? severityGlow[s] || severityGlow.HIGH : null;
+              const inWatchlist = comp.is_in_watchlist;
+              const showTopBorder = inWatchlist && comp.has_active_alerts;
+              const topBorderClass = showTopBorder ? "border-2" : "border-2 border-transparent";
+              const topBorderStyle = showTopBorder ? { borderColor: severityGlow[s]?.glow || "#EF4444" } : undefined;
               return (
               <div
                 key={comp.company_name}
-                className={`rounded-xl bg-card p-4 ${topBorder}`}
-                style={topGlow ? { "--border-pop-glow": topGlow.glow, "--border-pop-fade": topGlow.fade } as React.CSSProperties : undefined}
+                className={`rounded-xl bg-card p-4 transition-colors ${topBorderClass}`}
+                style={topBorderStyle}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">

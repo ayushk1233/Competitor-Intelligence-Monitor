@@ -39,6 +39,7 @@ export interface DashboardCompetitor {
   max_severity?: string;
   analyst_note?: string;
   core_offering?: string;
+  is_in_watchlist: boolean;
 }
 
 export interface DashboardCompetitorsResponse {

@@ -60,7 +60,7 @@ async def get_dashboard_summary(
     alert_counts = await service.get_alert_counts_by_severity_for_user(current_user.id)
     last_monitoring_run = await service.get_last_run_for_user(current_user.id)
     last_adhoc_run = await service.get_last_adhoc_run(user_id=str(current_user.id))
-    active_run = await service.get_active_run()
+    active_run = await service.get_active_run(user_id=str(current_user.id))
 
     candidates = []
     if last_monitoring_run:
@@ -219,6 +219,8 @@ async def get_dashboard_competitors(
     records = await service.get_all_latest_analyses(competitor_names=user_competitor_names)
 
     user_watchlist_ids = await service.get_user_watchlist_ids(current_user.id)
+    watchlist_competitors = await service.get_user_watchlist_competitor_names(str(current_user.id))
+    watchlist_competitors_set = set(watchlist_competitors)
 
     items = []
     for r in records:
@@ -238,6 +240,7 @@ async def get_dashboard_competitors(
                 max_severity=max_severity,
                 analyst_note=fa.get("analyst_note"),
                 core_offering=fa.get("core_offering"),
+                is_in_watchlist=(r.competitor_name in watchlist_competitors_set),
             )
         )
 

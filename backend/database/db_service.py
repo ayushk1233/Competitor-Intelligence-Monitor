@@ -338,13 +338,13 @@ class DatabaseService:
         if run:
             run.total_pages_fetched = total_pages
 
-    async def get_active_run(self) -> Run | None:
-        result = await self.session.execute(
-            select(Run)
-            .where(Run.status.in_(["queued", "scraping", "analyzing", "comparing"]))
-            .order_by(Run.created_at.desc())
-            .limit(1)
-        )
+    async def get_active_run(self, user_id: str | None = None) -> Run | None:
+        query = select(Run).where(Run.status.in_(["queued", "scraping", "analyzing", "comparing"]))
+        if user_id:
+            query = query.where(Run.user_id == user_id)
+        query = query.order_by(Run.created_at.desc()).limit(1)
+        
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def save_page_snapshots(

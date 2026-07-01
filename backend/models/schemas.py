@@ -402,6 +402,7 @@ class DashboardCompetitorResponse(BaseModel):
     max_severity: str | None = None
     analyst_note: str | None = None
     core_offering: str | None = None
+    is_in_watchlist: bool = False
 
     class Config:
         from_attributes = True
