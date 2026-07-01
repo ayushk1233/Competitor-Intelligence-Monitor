@@ -182,13 +182,58 @@ async def _run_pipeline(run_id: str, competitors: list[str], competitor_urls: di
 
                 stage_start = time.time()
 
-                report = await comparator.generate_report(analyses, start_time)
+                from backend.memory.factory import MemoryDocumentFactory
+                from backend.memory.providers.factory import ProviderFactory
+                from backend.memory.embedding import EmbeddingService
+                from backend.memory.repository import EmbeddingRepository
+                from backend.memory.pipeline import MemoryIngestionPipeline
+                from sqlalchemy import select
+                from backend.database.models import Run, User
+                import uuid
 
+                report = await comparator.generate_report(analyses, start_time)
+                
                 pipeline_stage_duration.labels(stage="comparing").observe(
                     time.time() - stage_start
                 )
 
                 await db.save_full_report(run_id, report)
+                
+                # Fetch organization_id for memory indexing
+                run_result = await session.execute(select(Run).where(Run.id == run_id))
+                run_obj = run_result.scalar_one_or_none()
+                org_id = uuid.UUID("00000000-0000-0000-0000-000000000001") # Fallback to default
+                if run_obj and run_obj.user_id:
+                    user_result = await session.execute(select(User).where(User.id == run_obj.user_id))
+                    user_obj = user_result.scalar_one_or_none()
+                    if user_obj and user_obj.organization_id:
+                        org_id = user_obj.organization_id
+
+                documents = MemoryDocumentFactory.from_report(
+                    report=report,
+                    organization_id=org_id,
+                    run_id=run_id,
+                    analyzed_at=report.generated_at,
+                )
+
+                provider = ProviderFactory.create()
+                await provider.initialize()
+                memory_pipeline = MemoryIngestionPipeline(EmbeddingService(provider), EmbeddingRepository())
+
+                ingestion_result = await memory_pipeline.ingest_many(
+                    documents=documents,
+                    session=session,
+                )
+                
+                logger.info(
+                    "Memory ingestion complete: processed_documents=%d, processed_chunks=%d, inserted_chunks=%d, skipped_duplicates=%d, runtime_ms=%.2f",
+                    ingestion_result.processed_documents,
+                    ingestion_result.processed_chunks,
+                    ingestion_result.inserted_chunks,
+                    ingestion_result.skipped_duplicates,
+                    ingestion_result.runtime_ms,
+                )
+
                 await session.commit()
 
                 # ✅ FIX 2c: correct name — pipelines_total not pipeline_runs_total
@@ -205,6 +250,7 @@ async def _run_pipeline(run_id: str, competitors: list[str], competitor_urls: di
                 )
 
             except Exception:
+                await session.rollback()
                 # ✅ FIX 2d: correct name — pipelines_total not pipeline_runs_total
                 pipeline_duration.labels(status="failed").observe(
                     time.time() - start_time
@@ -486,6 +532,65 @@ def monitor_watchlist_task(
             loop.run_until_complete(_mark_monitoring_failed(monitoring_run_id, str(e)))
         except Exception as e2:
             print(f"[monitoring] Could not mark run as failed: {e2}")
+        raise
+    finally:
+        try:
+            loop.close()
+        except Exception:
+            pass
+
+@celery_app.task(
+    bind=True,
+    name="run_memory_backfill",
+)
+def run_memory_backfill_task(self, batch_size: int = 50, resume: bool = True):
+    print("[task] Starting memory backfill...")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    async def _run_backfill():
+        SessionLocal, engine = _make_session_factory()
+        
+        from backend.memory.backfill import HistoricalBackfillService
+        from backend.memory.providers.factory import ProviderFactory
+        from backend.memory.embedding import EmbeddingService
+        from backend.memory.repository import EmbeddingRepository
+        from backend.memory.pipeline import MemoryIngestionPipeline
+        
+        provider = ProviderFactory.create()
+        await provider.initialize()
+        
+        pipeline = MemoryIngestionPipeline(
+            embedding_service=EmbeddingService(provider),
+            repository=EmbeddingRepository()
+        )
+        service = HistoricalBackfillService(pipeline)
+        
+        try:
+            async with SessionLocal() as session:
+                result = await service.backfill(
+                    session=session,
+                    batch_size=batch_size,
+                    resume=resume
+                )
+                
+                print(f"Historical Backfill Complete")
+                print(f"Analyses processed: {result.analyses_processed}")
+                print(f"Comparisons processed: {result.comparisons_processed}")
+                print(f"Documents generated: {result.documents_generated}")
+                print(f"Chunks inserted: {result.chunks_inserted}")
+                print(f"Duplicates skipped: {result.duplicates_skipped}")
+                print(f"Failures: {result.failures}")
+                print(f"Runtime: {result.runtime_ms:.2f}ms")
+                
+                return result.model_dump()
+        finally:
+            await engine.dispose()
+            
+    try:
+        return loop.run_until_complete(_run_backfill())
+    except Exception as e:
+        logger.exception("Memory backfill failed")
         raise
     finally:
         try:

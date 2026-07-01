@@ -40,7 +40,13 @@ class EmbeddingRepository:
         hashes = [r.content_hash for r in records]
         existing_hashes = await self.get_existing_hashes(session, hashes)
 
-        new_records = [r for r in records if r.content_hash not in existing_hashes]
+        new_records = []
+        seen_hashes = set(existing_hashes)
+        for r in records:
+            if r.content_hash not in seen_hashes:
+                new_records.append(r)
+                seen_hashes.add(r.content_hash)
+                
         if not new_records:
             return 0
 
