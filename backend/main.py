@@ -22,6 +22,7 @@ from backend.api.notifications import (
     router as notification_router,
 )
 from backend.api.watchlists import router as watchlist_router
+from backend.api.intelligence import router as intelligence_router
 from backend.auth.dependencies import get_current_user
 from backend.database.connection import verify_database, get_db
 from backend.database.db_service import DatabaseService
@@ -76,6 +77,7 @@ app.include_router(watchlist_router)
 app.include_router(auth_router)
 app.include_router(notification_router)
 app.include_router(dashboard_router)
+app.include_router(intelligence_router)
 # ── Prometheus instrumentation ────────────────────────────────────────────────
 # Auto-instruments all HTTP endpoints with request count and latency metrics
 # Exposes them at GET /metrics — this is what Prometheus scrapes
