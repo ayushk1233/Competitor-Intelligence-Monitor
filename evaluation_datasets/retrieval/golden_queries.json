@@ -1,0 +1,19 @@
+[
+  {
+    "query": "What changed in Anthropic pricing?",
+    "company": "Anthropic",
+    "expected_runs": [
+      "7b78213d-204c-47a1-8086-3eecafd2f5aa",
+      "eac0d865-28a8-4045-8cc9-48d09da3aa31",
+      "0dca048b-5c38-4c3d-a2aa-a78129a5ef94"
+    ]
+  },
+  {
+    "query": "How is Anthropic competing in enterprise AI?",
+    "company": "Anthropic",
+    "expected_runs": [
+      "f6480296-e0d8-408d-b77b-a72dd0de6c1c",
+      "db6a5efd-e733-4745-958f-9267dfab6429"
+    ]
+  }
+]
