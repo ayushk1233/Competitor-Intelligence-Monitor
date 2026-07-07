@@ -8,8 +8,13 @@ from backend.temporal.models import (
     TemporalChange,
     TimelineComparison,
     TemporalAnalysis,
-    TemporalComparisonResult
+    TemporalComparisonResult,
+    ComparisonMetadata,
+    ReasoningContext
 )
+from backend.temporal.comparator import TimelineComparator
+from backend.temporal.llm import TemporalLLM, LLMProvider, OpenRouterLLMProvider
+from backend.temporal.engine import TemporalEngine
 
 __all__ = [
     "TemporalChangeCategory",
@@ -19,5 +24,12 @@ __all__ = [
     "TemporalChange",
     "TimelineComparison",
     "TemporalAnalysis",
-    "TemporalComparisonResult"
+    "TemporalComparisonResult",
+    "ComparisonMetadata",
+    "ReasoningContext",
+    "TimelineComparator",
+    "TemporalLLM",
+    "LLMProvider",
+    "OpenRouterLLMProvider",
+    "TemporalEngine"
 ]
