@@ -22,8 +22,10 @@ class StrategicSignal(BaseModel):
     severity: SignalSeverity
     evidence: list[TemporalEvidence]
     originating_run_id: str
+    signal_source: str
     prompt_version: str
     model_name: str
+    analysis_version: str
     detected_at: datetime
     
     model_config = {"protected_namespaces": ()}

@@ -45,7 +45,8 @@ async def test_temporal_llm_success():
     context = ReasoningContext(
         comparison=comparison,
         prompt_version="v1",
-        model_name="test-model"
+        model_name="test-model",
+        analysis_version="temporal-engine-v1"
     )
     
     analysis = await llm.analyze(context)
@@ -63,7 +64,8 @@ async def test_temporal_llm_timeout():
     context = ReasoningContext(
         comparison=comparison,
         prompt_version="v1",
-        model_name="test-model"
+        model_name="test-model",
+        analysis_version="temporal-engine-v1"
     )
     
     with pytest.raises(TemporalReasoningError) as exc:
@@ -79,7 +81,8 @@ async def test_temporal_llm_parser_failure():
     context = ReasoningContext(
         comparison=comparison,
         prompt_version="v1",
-        model_name="test-model"
+        model_name="test-model",
+        analysis_version="temporal-engine-v1"
     )
     
     with pytest.raises(TemporalReasoningError) as exc:

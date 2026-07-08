@@ -62,8 +62,10 @@ class StrategicSignalExtractor:
                 severity=severity,
                 evidence=change.evidence,
                 originating_run_id=latest_run_id,
+                signal_source="temporal_engine",
                 prompt_version=context.prompt_version,
                 model_name=context.model_name,
+                analysis_version=context.analysis_version,
                 detected_at=analysis.analysis_timestamp
             )
             

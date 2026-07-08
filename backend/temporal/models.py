@@ -42,6 +42,7 @@ class ReasoningContext(BaseModel):
     comparison: TimelineComparison
     prompt_version: str
     model_name: str
+    analysis_version: str
     
     model_config = {"protected_namespaces": ()}
 

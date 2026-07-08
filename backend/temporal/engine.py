@@ -38,7 +38,8 @@ class TemporalEngine:
             context = ReasoningContext(
                 comparison=comparison,
                 prompt_version=TEMPORAL_PROMPT_VERSION,
-                model_name=self._model_name
+                model_name=self._model_name,
+                analysis_version="temporal-engine-v1"
             )
             
             # 3. Reason via LLM

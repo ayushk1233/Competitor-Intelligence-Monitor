@@ -25,6 +25,8 @@ def test_strategic_signal_validation():
         originating_run_id="run_123",
         prompt_version="v1",
         model_name="test-model",
+        analysis_version="temporal-engine-v1",
+        signal_source="temporal_engine",
         detected_at=datetime.now(timezone.utc)
     )
     
@@ -46,5 +48,7 @@ def test_strategic_signal_validation():
             originating_run_id="run_123",
             prompt_version="v1",
             model_name="test-model",
+            analysis_version="temporal-engine-v1",
+            signal_source="temporal_engine",
             detected_at=datetime.now(timezone.utc)
         )

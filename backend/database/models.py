@@ -17,7 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -93,6 +93,7 @@ class CompetitorAnalysisRecord(Base):
     domain: Mapped[str] = mapped_column(String(200), nullable=False)
 
     # Structured fields — stored as columns for fast querying
+    originating_run_id: Mapped[str | None] = mapped_column(String)
     messaging_tone: Mapped[str] = mapped_column(String(255), nullable=True)
     momentum_score: Mapped[int] = mapped_column(Integer, nullable=True)
     analysis_success: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -854,4 +855,41 @@ class IntelligenceEmbedding(Base):
             "source_type",
             "source_id",
         ),
+    )
+# ── Table 9: strategic_signals ────────────────────────────────────────────────
+class StrategicSignalRecord(Base):
+    __tablename__ = "strategic_signals"
+
+    signal_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    
+    company_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    direction: Mapped[str] = mapped_column(String(50), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    business_impact: Mapped[str] = mapped_column(Text, nullable=False)
+    
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
+    confidence_level: Mapped[str] = mapped_column(String(50), nullable=False)
+    severity: Mapped[str] = mapped_column(String(50), nullable=False)
+    
+    evidence: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
+    
+    originating_run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    prompt_version: Mapped[str] = mapped_column(String(50), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    analysis_version: Mapped[str] = mapped_column(String(50), nullable=False)
+    signal_source: Mapped[str] = mapped_column(String(100), nullable=False)
+    signal_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    
+    detected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    
+    __table_args__ = (
+        Index("ix_strategic_signals_company_detected", "company_name", "detected_at"),
     )

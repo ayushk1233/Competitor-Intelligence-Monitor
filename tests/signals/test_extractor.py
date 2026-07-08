@@ -53,7 +53,8 @@ def build_mock_context() -> ReasoningContext:
             )
         ),
         prompt_version="v1",
-        model_name="test-model"
+        model_name="test-model",
+        analysis_version="temporal-engine-v1"
     )
 
 def test_extractor_success():
